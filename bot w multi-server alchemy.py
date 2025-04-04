@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 import operator
 import os
 import random
-from random import uniform
 import re
 from bs4 import BeautifulSoup
 import discord
@@ -31,7 +30,7 @@ from economy import (
     update_trackables_owned, update_trackables_activated, update_trackables_discovered, 
     update_events_hosted, update_events_attended, update_souvenirs_recieved, update_caches_damaged,
     update_cache_damage_recieved, update_cache_damage_balance, get_hide_by_id, get_hides_by_user, 
-    get_inventory, remove_inv_item, add_inv_item,
+    get_inventory, remove_inv_item, add_inv_item, find, get_finds_for_cache,
     add_hide, delete_hide, get_db_settings, set_cacher_name, add_user_to_db, get_all_hide_ids, Session
 )
 import logging
@@ -65,25 +64,29 @@ async def on_ready():
 warnings.filterwarnings('ignore') 
 #logging.basicConfig(level=logging.DEBUG)
 
+YOUCANTDOTHIS = discord.Embed(title="<:denied:1336100920039313448> | You can't do this!",
+                      colour=0xff0000)
+
+NOPERMISSIONS = discord.Embed(title="<:denied:1336100920039313448> | I don't have permission to do this!",
+                      colour=0xff0000)
+
+RANDOMERROR = discord.Embed(title="<:denied:1336100920039313448> | An error occured! The Dev has been notified.",
+                      colour=0xff0000)
+
 GOD_LOG_ID = 1341819097591185479 
 LOG_CHANNEL_ID = True
-
-@bot.hybrid_command(name="setlog")
-async def setlog(ctx, channel: discord.TextChannel):
-    update_guild_settings(ctx.guild.id, log_channel_id=channel.id)
-    await ctx.reply(f"✅ Log channel set to {channel.mention}")
     
 @bot.hybrid_command(name="setmod", description="Set the moderator roles.")
 @commands.has_permissions(administrator=True)
 async def setmod(ctx, roles: commands.Greedy[discord.Role]):
-    role_ids = ",".join(str(role.id) for role in roles)  # Convert role list to CSV
+    role_ids = ",".join(str(role.id) for role in roles)  
     update_guild_settings(ctx.guild.id, mod_role_ids=role_ids)
     await ctx.reply(f"✅ Moderator roles set: {', '.join(role.mention for role in roles)}")
 
 @bot.hybrid_command(name="setperm", description="Set the permission roles.")
 @commands.has_permissions(administrator=True)
 async def setperm(ctx, roles: commands.Greedy[discord.Role]):
-    role_ids = ",".join(str(role.id) for role in roles)  # Convert role list to CSV
+    role_ids = ",".join(str(role.id) for role in roles)  
     update_guild_settings(ctx.guild.id, perm_role_ids=role_ids)
     await ctx.reply(f"✅ Permission roles set: {', '.join(role.mention for role in roles)}")
 
@@ -123,7 +126,6 @@ async def settings(ctx):
         value=", ".join(f"<@&{role_id}>" for role_id in sorted(set(perm_roles))) if perm_roles else "None",
         inline=False
     )
-    embed.add_field(name="Log Channel", value=f"<#{settings.log_channel_id}>" if settings.log_channel_id else "Not set", inline=False)
     embed.add_field(name="Skullboard Enabled", value="Yes" if settings.skullboard_status else "No", inline=False)
     embed.add_field(name="Skullboard Channel", value=f"<#{settings.skullboard_channel_id}>" if settings.skullboard_channel_id else "Not set", inline=False)
 
@@ -139,10 +141,6 @@ def is_mod():
         if interaction.user.id == 820297275448098817 or any(role.id in mod_role_ids for role in interaction.user.roles):
             return True
 
-        await interaction.response.send_message(
-            "<:denied:1336100920039313448> | You do not have permission to execute this command!", 
-            ephemeral=True
-        )
         return False
     
     return app_commands.check(predicate)
@@ -154,11 +152,7 @@ def is_perm():
 
         if interaction.user.id == 820297275448098817 or any(role.id in perm_role_ids for role in interaction.user.roles):
             return True
-
-        await interaction.response.send_message(
-            "<:denied:1336100920039313448> | You do not have permission to execute this command!", 
-            ephemeral=True
-        )
+        
         return False
     
     return app_commands.check(predicate)
@@ -174,10 +168,6 @@ def is_perm_mod():
            any(role.id in perm_role_ids for role in interaction.user.roles):
             return True
 
-        await interaction.response.send_message(
-            "<:denied:1336100920039313448> | You do not have permission to execute this command!", 
-            ephemeral=True
-        )
         return False
     
     return app_commands.check(predicate)
@@ -187,10 +177,6 @@ def is_dev():
         dev_id = 820297275448098817
         
         if interaction.user.id != dev_id:  
-            await interaction.response.send_message(
-                "<:denied:1336100920039313448> | You do not have permission to execute this command!", 
-                ephemeral=True
-            )
             return False  
         
         return True
@@ -314,9 +300,9 @@ async def get_message_link(bot, guild_id: int, message_id: int) -> str:
             message = await channel.fetch_message(message_id)
             return f"https://discord.com/channels/{guild.id}/{channel.id}/{message.id}"
         except discord.NotFound:
-            continue  # Message not found in this channel
+            continue  
         except discord.Forbidden:
-            continue  # Bot lacks permissions for this channel
+            continue  
 
     raise ValueError("Message not found in any accessible channels.")
     
@@ -325,42 +311,50 @@ async def get_message_link(bot, guild_id: int, message_id: int) -> str:
 @is_dev()
 async def sync(ctx):
     """Admin / Dev Only - Syncs the Bot's app commands."""
-    try:
-        if ctx.interaction: 
-            await ctx.interaction.response.defer() 
-        
-        await bot.tree.sync()
-        
-        message = await ctx.reply("Synced!", mention_author=False)
-        
-        await asyncio.sleep(5)
-        if message:
-            await message.delete()
-        else:
-            return
-    except commands.CheckFailure:
-        pass
+    if ctx.interaction: 
+        await ctx.interaction.response.defer() 
+    
+    await bot.tree.sync()
+    
+    message = await ctx.reply("Synced!", mention_author=False)
+    
+    await asyncio.sleep(5)
+    if message:
+        await message.delete()
+    else:
+        return
+    
+@sync.error
+async def sync_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CheckFailure):
+        await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+    else:
+        raise error   
     
 # CLEAR CMD  
 @bot.hybrid_command()
 @is_dev()
 async def clear_cmds(ctx):
     """Admin / Dev Only - Clears the Bot's app commands."""
-    try:
-        if ctx.interaction: 
-            await ctx.interaction.response.defer() 
-        
-        bot.tree.clear_commands(guild=None)
-        
-        message = await ctx.reply("Commands Cleared!", mention_author=False)
-        
-        await asyncio.sleep(5)
-        if message:
-            await message.delete()
-        else:
-            return
-    except commands.CheckFailure:
-        pass
+    if ctx.interaction: 
+        await ctx.interaction.response.defer() 
+    
+    bot.tree.clear_commands(guild=None)
+    
+    message = await ctx.reply("Commands Cleared!", mention_author=False)
+    
+    await asyncio.sleep(5)
+    if message:
+        await message.delete()
+    else:
+        return
+    
+@clear_cmds.error
+async def clear_commands_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CheckFailure):
+        await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+    else:
+        raise error   
     
 class Message(commands.Cog):
     DELETE_TIME_DELAY = 5
@@ -377,68 +371,60 @@ class Message(commands.Cog):
     )
     async def say(self, interaction: discord.Interaction, saying: str, channel: discord.TextChannel = None):
         """Says what you wanted where you wanted."""
-        try:
-            speak_channel = channel or interaction.channel
-            if not is_perm_mod(interaction.user):
-                await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to make me say `{saying}` in {speak_channel} ({interaction.channel.name}) but didn't have permissions.")
+        speak_channel = channel or interaction.channel
+        if not is_perm_mod(interaction.user):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+            return
+        else:
+            if "@everyone" not in saying or "@here" not in saying:
+                try:
+                    sent_message = await speak_channel.send(saying)
+                    await interaction.response.send_message(
+                        f"Message sent.", ephemeral=True
+                    )
+                except discord.Forbidden:
+                    no_chan = f"<#{speak_channel.id}>"
+                    await interaction.response.send_message(
+                        f"I do not have permission to send messages in {no_chan}. Please notify an Administrator and try again.",
+                        ephemeral=True,
+                    )
+                except Exception as e:
+                    await log_error(interaction.guild, bot, interaction.command.name,
+                        f"User: {interaction.user.mention} ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) saying `{saying}`. Error: \n```\n{str(e)}\n```"
+                    )
+                    await interaction.response.send_message(
+                        "Unknown error speaking. The Dev has been notified.",
+                        ephemeral=True,
+                    )
+            elif ("@everyone" in saying and "@here" in saying) and is_moderator():
+                try:
+                    await interaction.response.send_message(
+                        f"Message sent.", ephemeral=True
+                    )
+                except discord.Forbidden:
+                    no_chan = f"<#{speak_channel.id}>"
+                    await interaction.response.send_message(
+                        f"I do not have permission to send messages in {no_chan}. Please notify an Administrator and try again.",
+                        ephemeral=True,
+                    )
+                except Exception as e:
+                    await log_error(interaction.guild, bot, interaction.command.name, 
+                        f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) saying `{saying}`. Error: \n```\n{str(e)}\n```"
+                    )
+                    await interaction.response.send_message(
+                        "An unknown error occured. The Dev has been notified.",
+                        ephemeral=True,
+                    )
             else:
-                if "@everyone" not in saying or "@here" not in saying:
-                    try:
-                        sent_message = await speak_channel.send(saying)
-                        await log_message(interaction.guild, bot,
-                            f"[I spoke in this channel](<{sent_message.jump_url}>) at {interaction.user.mention} ({interaction.user.name})'s request, saying: `{saying}`"
-                        )
-                        await interaction.response.send_message(
-                            f"Message sent.", ephemeral=True
-                        )
-                    except discord.Forbidden:
-                        no_chan = f"<#{speak_channel.id}>"
-                        await log_message(interaction.guild, bot, interaction.command.name, f"I do not have permissions to speak in {no_chan}.")
-                        await interaction.response.send_message(
-                            f"I do not have permission to send messages in {no_chan}. Please ask an Administrator to check the logs.",
-                            ephemeral=True,
-                        )
-                    except Exception as e:
-                        await log_error(interaction.guild, bot, interaction.command.name,
-                            f"User: {interaction.user.mention} ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) saying `{saying}`. Error: \n```\n{str(e)}\n```"
-                        )
-                        await interaction.response.send_message(
-                            "Unknown error speaking. The Dev has been notified.",
-                            ephemeral=True,
-                        )
-                        await log_message(interaction.guild, bot, interaction.command.name, f"An unknown error occured while {interaction.user.mention} ({interaction.user.name}) was speaking. The Dev has been notified.")
-                elif ("@everyone" in saying and "@here" in saying) and is_moderator():
-                    try:
-                        sent_message = await speak_channel.send(saying)
-                        await log_message(interaction.guild, bot, interaction.command.name,  
-                            f"[I spoke in this channel](<{sent_message.jump_url}>) at {interaction.user.mention}'s ({interaction.user.name}) request, saying: `{saying}`"
-                        )
-                        await interaction.response.send_message(
-                            f"Message sent.", ephemeral=True
-                        )
-                    except discord.Forbidden:
-                        no_chan = f"<#{speak_channel.id}>"
-                        await log_message(interaction.guild, bot, interaction.command.name, f"User: {interaction.user.mention} ({interaction.user.name}) | Please give me permission to send messages in {no_chan}.")
-                        await interaction.response.send_message(
-                            f"I do not have permission to send messages in {no_chan}. Please ask an Administrator to check the logs.",
-                            ephemeral=True,
-                        )
-                    except Exception as e:
-                        await log_error(interaction.guild, bot, interaction.command.name, 
-                            f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) saying `{saying}`. Error: \n```\n{str(e)}\n```"
-                        )
-                        await log_message(interaction.guild, bot, interaction.command.name, f"An error occured while {interaction.user.mention} ({interaction.user.name}) was speaking. The Dev has been notified.")
-                        await interaction.response.send_message(
-                            "An unknown error occured. The Dev has been notified.",
-                            ephemeral=True,
-                        )
-                else:
-                    await interaction.response.send_message(f"Please do NOT put everyone or here pings in your message.", ephemeral=True)
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to send a message which contains an everyone or here ping: ```{saying}```")
+                await interaction.response.send_message(f"Please do NOT put everyone or here pings in your message. If you should be allowed to, contact the server owner and try again.", ephemeral=True)
         
-        except commands.CheckFailure:
-            pass
-
+    @say.error
+    async def say_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+        else:
+            raise error   
+        
 # REPLY
     @app_commands.command()
     @is_perm_mod()
@@ -448,38 +434,38 @@ class Message(commands.Cog):
     )
     async def reply(self, interaction: discord.Interaction, message_id: str, message: str):
         """Replies to a specific message."""
-        try:
-            await interaction.response.defer(ephemeral=True)
-            if not is_perm_mod(interaction.user):
-                link = await get_message_link(interaction.client, interaction.guild.id, message_id)
-                await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to make me reply to [this message](<{link}>) in <#{interaction.channel.id}>, saying `{message}` but had no permissions.")
-            else:
-                try:
-                    target_message = await interaction.channel.fetch_message(int(message_id))
-                    reply_content = message
-                    await target_message.reply(reply_content)
-                    link = await get_message_link(interaction.client, interaction.guild.id, message_id)
-                    await log_message(interaction.guild, bot, f"I replied to [this message](<{link}>) in <#{interaction.channel.id}> ({interaction.channel.name}) at {interaction.user.mention} ({interaction.user.name})'s ({interaction.user.name}) request, saying: `{message}`.")
-                    await interaction.followup.send("I replied successfully.", ephemeral=True)
-                except discord.NotFound:
-                    await interaction.followup.send("The specified message was not found.", ephemeral=True)
-                except discord.Forbidden:
-                    await log_message(interaction.guild, bot, interaction.command.name, f"User: {interaction.user.mention} ({interaction.user.name}) | Please give me permission to send messages in <#{interaction.channel.id}> ({interaction.channel.name}).")
-                    await interaction.response.send_message(
-                        f"I do not have permission to send messages in <#{interaction.channel.id}>. Please ask an Administrator to check the logs.",
-                        ephemeral=True,
-                    )
-                except Exception as e:
-                    await log_error(interaction.guild, bot, interaction.command.name, 
-                        f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) replying with `{message}`. Error: \n```\n{str(e)}\n```"
-                    )
-                    await log_message(interaction.guild, bot, interaction.command.name, f"An error occured while {interaction.user.mention} ({interaction.user.name}) was replying. The Dev has been notified.")
-                    await interaction.response.send_message(
-                        "An unknown error occured. The Dev has been notified.",
-                        ephemeral=True,
-                    )
-        except commands.CheckFailure:
-            pass
+        await interaction.response.defer(ephemeral=True)
+        if not is_perm_mod(interaction.user):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+            return
+        else:
+            try:
+                target_message = await interaction.channel.fetch_message(int(message_id))
+                reply_content = message
+                await target_message.reply(reply_content)
+                await interaction.followup.send("I replied successfully.", ephemeral=True)
+            except discord.NotFound:
+                await interaction.followup.send("The specified message was not found.", ephemeral=True)
+            except discord.Forbidden:
+                await interaction.response.send_message(
+                    f"I do not have permission to send messages in <#{interaction.channel.id}>. Please notify an Administrator and try again.",
+                    ephemeral=True,
+                )
+            except Exception as e:
+                await log_error(interaction.guild, bot, interaction.command.name, 
+                    f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) replying with `{message}`. Error: \n```\n{str(e)}\n```"
+                )
+                await interaction.response.send_message(
+                    "An unknown error occured. The Dev has been notified.",
+                    ephemeral=True,
+                )
+
+    @reply.error
+    async def reply_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+        else:
+            raise error   
 
 # DELETE
     @app_commands.command()
@@ -487,27 +473,21 @@ class Message(commands.Cog):
     @app_commands.describe(messageid="ID of the message to delete")
     async def delete(self, interaction: discord.Interaction, messageid: str):
         """Delete a specified message."""
-        try:
-            if not is_perm_mod(interaction.user):
-                await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to make me delete [this message](<{origMessage.jump_url}>) in <#{interaction.channel.id}> ({interaction.channel.name}) but had no permissions.")
+        if not is_perm_mod(interaction.user):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+            return
+        else:
+            if messageid is None or messageid == "" or not (re.search(r"^\d{18,19}$", messageid)):
+                await interaction.response.send_message("Invalid `/delete` Usage! messageID is invalid or blank!")
+            origMessage = await interaction.channel.fetch_message(messageid)
+            if origMessage.author != self.bot.user:
+                await interaction.response.send_message("I can only delete my own messages.", f"{origMessage.jump_url} is owned by <@{origMessage.author.id}>.")
+            if self.DELETE_TIME_DELAY > 0:
+                await origMessage.delete(delay=self.DELETE_TIME_DELAY)
+                await interaction.response.send_message(f"The message will be deleted in approximately {self.DELETE_TIME_DELAY} seconds.", ephemeral=True)
             else:
-                if messageid is None or messageid == "" or not (re.search(r"^\d{18,19}$", messageid)):
-                    await interaction.response.send_message("Invalid `/delete` Usage! messageID is invalid or blank!")
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to make me delete a message but left `messageID` blank or invalid.")
-                origMessage = await interaction.channel.fetch_message(messageid)
-                if origMessage.author != self.bot.user:
-                    await interaction.response.send_message("I can only delete my own messages.", f"{origMessage.jump_url} is owned by <@{origMessage.author.id}>.")
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to make me delete {origMessage.jump_url} but that message wasn't sent by me.")
-                if self.DELETE_TIME_DELAY > 0:
-                    await origMessage.delete(delay=self.DELETE_TIME_DELAY)
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) made me delete my message. It read: `{origMessage.content}`.")
-                    await interaction.response.send_message(f"The message will be deleted in approximately {self.DELETE_TIME_DELAY} seconds.", ephemeral=True)
-                else:
-                    await origMessage.delete()
-                    await interaction.response.send_message(f"The message will be deleted shortly.", ephemeral=True)
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) made me delete my message in <#{origMessage.channel.id}> ({origMessage.channel.name}). It read: `{origMessage.content}`")
-        except commands.CheckFailure:
-            pass
+                await origMessage.delete()
+                await interaction.response.send_message(f"The message will be deleted shortly.", ephemeral=True)
             
 # REACT       
     @app_commands.command(name="react", description="React to a specified message.")
@@ -515,46 +495,37 @@ class Message(commands.Cog):
     @app_commands.describe(reaction="How do you want me to react?")
     @is_perm_mod()
     async def react(self, interaction: discord.Interaction, messageid: str, reaction: str):
-        try:
-            if not is_perm_mod(interaction.user):
-                await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to make me react to [this message](<{origMessage.jump_url}>) in <#{interaction.channel.id}> ({interaction.channel.name}) with {reaction} but had no permissions.")
+        if not is_perm_mod(interaction.user):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+            return
+        else:
+            if not re.fullmatch(r"\d{18,19}", messageid):
+                await interaction.response.send_message("Invalid `/react` Usage. Please get the correct messageID and try again.", ephemeral=True)
+                return
+            try:
+                origMessage = await interaction.channel.fetch_message(int(messageid))
+            except discord.NotFound:
+                await interaction.response.send_message("Message not found! Check the messageID is correct.", ephemeral=True)
+                return
+            except discord.Forbidden:
+                await interaction.response.send_message(
+                    f"I do not have permission to send messages in <#{interaction.channel.id}>. Please notify an Administrator and try again.",
+                    ephemeral=True,
+                )
+            match = re.fullmatch(r"<:(\w+):(\d+)>", reaction)
+            if match:
+                emoji = discord.utils.get(interaction.guild.emojis, id=int(match.group(2)))
+                if not emoji:
+                    await interaction.response.send_message("I can't use that emoji!", ephemeral=True)
+                    return
             else:
-                if not re.fullmatch(r"\d{18,19}", messageid):
-                    await interaction.response.send_message("Invalid `/react` Usage", ephemeral=True)
-                    await log_message(interaction.guild, bot, interaction.command.name, 
-                        f"{interaction.user.mention} ({interaction.user.name}) tried to make me react to a message with {reaction} but provided an invalid message ID."
-                    )
-                    return
-                try:
-                    origMessage = await interaction.channel.fetch_message(int(messageid))
-                except discord.NotFound:
-                    await interaction.response.send_message("Message not found! Check the messageID is correct.", ephemeral=True)
-                    return
-                except discord.Forbidden:
-                    await log_message(interaction.guild, bot, interaction.command.name, f"User: {interaction.user.mention} ({interaction.user.name}) | Please give me permission to send messages in <#{interaction.channel.id}> ({interaction.channel.name}).")
-                    await interaction.response.send_message(
-                        f"I do not have permission to send messages in <#{interaction.channel.id}>. Please ask an Administrator to check the logs.",
-                        ephemeral=True,
-                    )
-                match = re.fullmatch(r"<:(\w+):(\d+)>", reaction)
-                if match:
-                    emoji = discord.utils.get(interaction.guild.emojis, id=int(match.group(2)))
-                    if not emoji:
-                        await interaction.response.send_message("I can't use that emoji!", ephemeral=True)
-                        return
-                else:
-                    emoji = reaction 
-                try:
-                    await origMessage.add_reaction(emoji)
-                    await interaction.response.send_message("Reacted!", ephemeral=True)
-                    await log_message(interaction.guild, bot, interaction.command.name, 
-                        f"{interaction.user.mention} ({interaction.user.name}) made me react to [this message](<{origMessage.jump_url}>) with {emoji}."
-                    )
-                except discord.HTTPException:
-                    await interaction.response.send_message("Failed to react! Please try again.", ephemeral=True)
-                    return   
-        except commands.CheckFailure:
-            pass
+                emoji = reaction 
+            try:
+                await origMessage.add_reaction(emoji)
+                await interaction.response.send_message("Reacted!", ephemeral=True)
+            except discord.HTTPException:
+                await interaction.response.send_message("Failed to react! Please try again.", ephemeral=True)
+                return   
             
 # EDIT
     @app_commands.command(name="edit", description="Edit a specified message.")
@@ -562,24 +533,18 @@ class Message(commands.Cog):
     @app_commands.describe(messageid="ID of the message to delete")
     @app_commands.describe(newmessage="New message content")
     async def edit(self, interaction: discord.Interaction, messageid: str, newmessage: str):
-        try:
-            if not is_perm_mod(interaction.user):
-                await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to make me edit [this message](<{origMessage.jump_url}>) in <#{interaction.channel.id}> ({interaction.channel.name}) to say {newmessage} but had no permissions.")
-            else:
-                if messageid is None or messageid == "" or not (re.search(r"^\d{18,19}$", messageid)):
-                    await interaction.response.send_message("Invalid `/edit` Usage! messageID is invalid or blank.")
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to make me edit a message but left `messageID` blank or invalid.")
-                    return
-                origMessage = await interaction.channel.fetch_message(messageid)
-                if origMessage.author != self.bot.user:
-                    await interaction.response.send_message(f"I can only edit my own messages. {origMessage.jump_url} is owned by <@{origMessage.author.id}>.")
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to make me edit [a message](<{origMessage.jump_url}>) which I don't own.")
-                    return
-                await origMessage.edit(content=newmessage)
-                await interaction.response.send_message("I edited the message!", ephemeral=True)
-                await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) made me edit [this message](<{origMessage.jump_url}>). Before: `{origMessage.content}` After: `{newmessage}`.")
-        except commands.CheckFailure:
-            pass
+        if not is_perm_mod(interaction.user):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+            return
+        else:
+            if messageid is None or messageid == "" or not (re.search(r"^\d{18,19}$", messageid)):
+                await interaction.response.send_message("Invalid `/edit` Usage! messageID is invalid or blank.")
+            origMessage = await interaction.channel.fetch_message(messageid)
+            if origMessage.author != self.bot.user:
+                await interaction.response.send_message(f"I can only edit my own messages. {origMessage.jump_url} is owned by <@{origMessage.author.id}>.")
+                return
+            await origMessage.edit(content=newmessage)
+            await interaction.response.send_message("I edited the message!", ephemeral=True)
 
 class TBDatabase(app_commands.Group):
     """Commands for the public TB database."""
@@ -607,7 +572,7 @@ class TBDatabase(app_commands.Group):
         """Adds a TB to the public database."""
         if code.lower().startswith("tb"):
             await interaction.response.send_message(f"Please try again with the private code (this can be found on the TB itself) as the code, instead of `{code}`. If you believe this to be an error, please contact staff.")
-            await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb add` but entered the public code instead of the private one: `{code}`.")
+            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb add` but entered the public code instead of the private one: `{code}`.")
         else:
             headers = {
                 "User-Agent": "GCDiscordBot/1.0 (+https://discord.gg/EKn8z23KkC)"
@@ -629,7 +594,7 @@ class TBDatabase(app_commands.Group):
                     cleaned_text = re.sub(r"\s+", " ", cleaned_text)
                 else:
                     await interaction.response.send_message(f"The TB code you entered (`{code}`) was not valid. Please try again with a valid code.")
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add` but the TB code was not valid.")
+                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add` but the TB code was not valid.")
                     cleaned_text = "Not Found"
 
                 owner_label = soup.find("dt", string=lambda text: text and "Owner:" in text)
@@ -653,21 +618,19 @@ class TBDatabase(app_commands.Group):
                             """, (code, cleaned_owner_name, user_id, cleaned_text))
                             conn1.commit()
                             await interaction.response.send_message(f"This TB (`{code}`) has been added to the public database - thanks for sharing!")
-                            await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
+                            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
                     else:
                         await interaction.response.send_message("Owner name not found. Please make sure the TB is activated and try again.")
-                        await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add`, but the owner name was not found. Code: `{code}`")
+                        await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add`, but the owner name was not found. Code: `{code}`")
                 else:
                     await interaction.response.send_message("Owner label not found. Please make sure the TB is activated and try again.")
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add`, but the owner label was not found. Code: `{code}`")
+                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add`, but the owner label was not found. Code: `{code}`")
 
             except Exception as e:
                 await interaction.response.send_message(f"An unknown error occured whilst processing code `{code}`. The Dev has been notified.")
                 await log_error(interaction.guild, bot, interaction.command.name, 
                     f"User: {interaction.user.mention} ({interaction.user.name}) adding TB `{code}` to the database. Error: \n```\n{str(e)}\n```"
                 )
-                await log_message(interaction.guild, bot, interaction.command.name, f"An error occured while {interaction.user.mention} ({interaction.user.name}) was adding TB `{code}` to the database. The Dev has been notified.")
-                print(e)
         
     @add.error
     async def add_error(self, interaction: discord.Interaction, error, code):
@@ -679,13 +642,11 @@ class TBDatabase(app_commands.Group):
             await log_error(interaction.guild, bot, interaction.command.name, 
                     f"User: {interaction.user.mention} ({interaction.user.name}) adding a TB (`{code}`) to the database. Error: \n```\n{str(error)}\n```"
                 )
-            print({str(error)})
         else:
             await interaction.response.send_message(f"An unknown error occurred. The Dev has been notified.")
             await log_error(interaction.guild, bot, interaction.command.name, 
                     f"User: {interaction.user.mention} ({interaction.user.name}) adding a TB (`{code}`) to the database. Error: \n```\n{str(error)}\n```"
                 )
-            print({str(error)})
     
 # TB BULKADD        
     @app_commands.command()
@@ -701,7 +662,7 @@ class TBDatabase(app_commands.Group):
 
         for code in tb_codes:
             if code.lower().startswith("tb"):
-                await log_message(interaction.guild, bot, interaction.command.name,
+                await master_log_message(interaction.guild, bot, interaction.command.name,
                     f"{interaction.user.mention} ({interaction.user.name}) tried to use `bulkadd` but entered the public code instead of the private one: `{code}`."
                 )
                 failed_codes.append(code)
@@ -725,7 +686,7 @@ class TBDatabase(app_commands.Group):
                     cleaned_text = re.sub(r"\b(?:Use|to|reference|this|item)\b", "", tb_code_line, flags=re.IGNORECASE).strip()
                     cleaned_text = re.sub(r"\s+", " ", cleaned_text)
                 else:
-                    await log_message(interaction.guild, bot, interaction.command.name,
+                    await master_log_message(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd` but the TB code line was not found for code: `{code}`."
                     )
                     failed_codes.append(code)
@@ -742,7 +703,7 @@ class TBDatabase(app_commands.Group):
                         cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
                         existing_entry = cursor1.fetchone()
                         if existing_entry:
-                            await log_message(interaction.guild, bot, interaction.command.name,
+                            await master_log_message(interaction.guild, bot, interaction.command.name,
                                 f"{interaction.user.mention} ({interaction.user.name}) attempted to bulkadd TB `{code}`, but it already exists in the database."
                             )
                             failed_codes.append(code)
@@ -753,17 +714,17 @@ class TBDatabase(app_commands.Group):
                                 VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
                             """, (code, cleaned_owner_name, user_id, cleaned_text))
                             conn1.commit()
-                            await log_message(interaction.guild, bot, interaction.command.name,
+                            await master_log_message(interaction.guild, bot, interaction.command.name,
                                 f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!"
                             )
                             successful_codes.append(code)
                     else:
-                        await log_message(interaction.guild, bot, interaction.command.name,
+                        await master_log_message(interaction.guild, bot, interaction.command.name,
                             f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd`, but the owner name was not found. Code: `{code}`."
                         )
                         failed_codes.append(code)
                 else:
-                    await log_message(interaction.guild, bot, interaction.command.name,
+                    await master_log_message(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd`, but the owner label was not found. Code: `{code}`."
                     )
                     failed_codes.append(code)
@@ -781,7 +742,7 @@ class TBDatabase(app_commands.Group):
             f"Finished processing TB codes!\n"
             f"Successfully added: {len(successful_codes)} ({successful_str})\n"
             f"Failed to add: {len(failed_codes)} ({failed_str})\n"
-            f"Thank you for your contribution towards the trackable database!",
+            f"Thank you for your contribution(s) towards the trackable database!",
             ephemeral=True
         )
             
@@ -809,7 +770,7 @@ class TBDatabase(app_commands.Group):
         """Smash crash forces a TB into the public database."""
         if code.lower().startswith("tb"):
             await interaction.response.send_message(f"Please try again with the private code (this can be found on the TB itself) as the code, instead of `{code}`. If you believe this to be an error, please contact the Dev.")
-            await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb forceadd` but entered the public code instead of the private one: `{code}`.")
+            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb forceadd` but entered the public code instead of the private one: `{code}`.")
         else:
             headers = {
                 "User-Agent": "GCDiscordBot/1.0 (+https://discord.gg/EKn8z23KkC)"
@@ -830,7 +791,7 @@ class TBDatabase(app_commands.Group):
                     cleaned_text = re.sub(r"\b(?:Use|to|reference|this|item)\b", "", tb_code_line, flags=re.IGNORECASE).strip()
                     cleaned_text = re.sub(r"\s+", " ", cleaned_text)
                 else:
-                    await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb forceadd` but the public TB code was not found.")
+                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb forceadd` but the public TB code was not found.")
                     cleaned_text = "Not Found"
 
                 owner_label = soup.find("dt", string=lambda text: text and "Owner:" in text)
@@ -854,7 +815,7 @@ class TBDatabase(app_commands.Group):
                                 """, (code, cleaned_owner_name, user_id, cleaned_text))
                                 conn1.commit()
                                 await interaction.response.send_message(f"This TB has been forcibly added to the public database - thanks for sharing!")
-                                await log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been forcibly added to the database!")
+                                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been forcibly added to the database!")
                         else:
                             await interaction.response.send_message(f"It appears that the owner name does not exist. The Dev has been notified.")
                             await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) was using `tb forceadd`: It appears that the `cleaned_owner_name` variable does not exist.")
@@ -919,7 +880,8 @@ class TBDatabase(app_commands.Group):
             
     @purge.error
     async def purge_error(self, interaction: discord.Interaction, error: commands.CommandError):
-        if isinstance(error, commands.MissingPermissions):
+        if isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
             username = interaction.data.get("options")[0]["value"] if interaction.data.get("options") else "Unknown"
         else:
             await interaction.response.send_message(
@@ -944,16 +906,16 @@ class TBDatabase(app_commands.Group):
                     cursor1.execute("DELETE FROM trackables WHERE code = ?", (code,))
                     conn1.commit()
                     await interaction.response.send_message(f"The TB with code `{code}` has been removed from the database.")
-                    await bot.get_channel(1322311043493531669).send(f"{interaction.user.mention} ({interaction.user.name}) removed TB `{code}` from the database.")
+                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) removed TB `{code}` from the database.")
                 else:
                     await interaction.response.send_message(f"You do not own this TB, so cannot delete it. If you believe this is a mistake, or have a reason for this to be deleted, please contact an Administrator.")
-                    await bot.get_channel(1322311043493531669).send(f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB {code} from the database but does not own it.")
+                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB {code} from the database but does not own it.")
             else:
                 await interaction.response.send_message(f"No TB with the code `{code}` was found in the database.")
-                await bot.get_channel(1322311043493531669).send(f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB `{code}` from the database but it wasnt there.")
+                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB `{code}` from the database but it wasnt there.")
         except Exception as e:
             await interaction.response.send_message(f"An error occurred while trying to remove the TB. Please ask an Administrator to check the logs.")
-            await bot.get_channel(1322311043493531669).send(f"An error occurred while {interaction.user.mention} ({interaction.user.name}) tried to remove TB `{code}`: {e}")
+            await master_log_message(interaction.guild, bot, interaction.command.name, f"An error occurred while {interaction.user.mention} ({interaction.user.name}) tried to remove TB `{code}`: {e}")
             
 # TB FORCEREMOVE
     @app_commands.command()
@@ -969,26 +931,20 @@ class TBDatabase(app_commands.Group):
                 cursor1.execute("DELETE FROM trackables WHERE code = ?", (code,))
                 conn1.commit()
                 await interaction.response.send_message(f"The TB with code `{code}` has been forcibly removed from the database.")
-                await bot.get_channel(1322311043493531669).send(f"{interaction.user.mention} ({interaction.user.name}) forcibly removed TB `{code}` from the database.")
+                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) forcibly removed TB `{code}` from the database.")
             else:
                 await interaction.response.send_message(f"No TB with the code `{code}` was found in the database.")
-                await bot.get_channel(1322311043493531669).send(f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}` from the database but it wasn't there.")
+                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}` from the database but it wasn't there.")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred while trying to remove the TB. Please ask an Administrator to check the logs.")
-            await bot.get_channel(1322311043493531669).send(f"An error occurred while {interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}`: {e}")
+            await interaction.response.send_message(f"An error occurred while trying to remove the TB. The Dev has been notified.")
+            await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}`. Error: {e}")
             
     @forceremove.error
-    async def forceremove_error(self, interaction: discord.Interaction, error: commands.CommandError):
-        if isinstance(error, commands.MissingPermissions):
-            code = interaction.data.get("options")[0]["value"] if interaction.data.get("options") else "Unknown"
-            await interaction.response.send_message(
-                "You do not have the required permissions to use this command.", ephemeral=True
-            )
-            await bot.get_channel(1322311043493531669).send(f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove a TB ({code}) but didn't have permissions.")
+    async def forceremove_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
         else:
-            await interaction.response.send_message(
-                "An unexpected error occurred. Please contact an administrator.", ephemeral=True
-            )
+            raise error   
             
 # TB VIEW
     @app_commands.command()
@@ -1086,10 +1042,8 @@ class TBDatabase(app_commands.Group):
 
             try:
                 await interaction.user.send(codes)
-                await bot.get_channel(1322311043493531669).send(f"{interaction.user.mention} ({interaction.user.name}) used /tb bulkview successfully")
                 await interaction.response.send_message("The TB codes have been sent to your DMs.", ephemeral=True)
             except discord.Forbidden:
-                await bot.get_channel(1322311043493531669).send(f"{interaction.user.mention} ({interaction.user.name}) used /tb bulkview but had their DMs disabled.")
                 await interaction.response.send_message(
                     "I couldn't send you a DM. Please make sure your DMs are open and try again.",
                     ephemeral=True
@@ -1099,8 +1053,8 @@ class TBDatabase(app_commands.Group):
                 f"An error occurred while retrieving the TB codes. Please ask an Administrator to check the logs.",
                 ephemeral=True
             )
-            await bot.get_channel(1322311043493531669).send(
-                f"An error occurred while {interaction.user.mention} ({interaction.user.name}) used `bulkview`: {e}"
+            await log_error(interaction.guild, bot, interaction.command.name, 
+                f"{interaction.user.mention} ({interaction.user.name}) used `bulkview`. Error: {e}"
             )
     
 tb_commands = TBDatabase(name="tb", description="Public TB Database commands.")
@@ -1478,10 +1432,30 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
 gcblacklist = ["GC", "GCHQ"]
 tbblacklist = ["TB", "TBF", "TBH", "TBS"]
 
+POLL_JSON_FILE = "poll_dates.json"
+
+def load_poll_date():
+    """Load the last poll date from a JSON file."""
+    try:
+        with open(POLL_JSON_FILE, "r") as f:
+            data = json.load(f)
+            return data.get("last_poll_date", None)
+    except FileNotFoundError:
+        return None 
+
+def save_poll_date(date):
+    """Save the current poll date to a JSON file."""
+    with open(POLL_JSON_FILE, "w") as f:
+        json.dump({"last_poll_date": date}, f)
+
+last_poll_date = load_poll_date()
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
+
+    global last_poll_date
 
     clean_content = re.sub(r'[^A-Za-z0-9\s]', '', message.content)
 
@@ -1499,6 +1473,18 @@ async def on_message(message):
     if matches or match:
         finalmessage = get_cache_basic_info(gc_codes, tb_codes)
         await message.channel.send(finalmessage)
+        
+    elif message.poll:
+        if message.channel.id == 1321981187585081384:
+            today = datetime.now().date()
+
+            if last_poll_date != today:
+                last_poll_date = today
+                save_poll_date(str(today))
+                await message.channel.send(f"It's poll time! <@&1354064754204872714>")
+        else:
+            return
+        
     else:
         return
     
@@ -1522,6 +1508,13 @@ async def foxfil(interaction: discord.Interaction):
                         icon_url="https://cdn-icons-png.flaticon.com/512/25/25231.png")
 
     await interaction.response.send_message(embed=embed)
+ 
+@foxfil.error
+async def foxfil_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CheckFailure):
+        await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+    else:
+        raise error   
         
 operators = {
     '+': operator.add,
@@ -2127,12 +2120,76 @@ async def ping(ctx):
 @is_dev()
 async def status(interaction: discord.Interaction, *, new_status: str):
     """⚙️ | Change the Bot's status."""
+    await bot.change_presence(activity=discord.CustomActivity(name=new_status))
+    await interaction.response.send_message(f'Status changed to: `{new_status}`', ephemeral=True)
+    await master_log_message(interaction.guild, bot, interaction.command.name,f"{interaction.user.mention} ({interaction.user.name}) changed my status to `{new_status}`.")
+
+@status.error
+async def status_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
+    if isinstance(error, app_commands.CheckFailure):
+        await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+    else:
+        raise error   
+       
+# SKULLBOARD
+STAR_EMOJIS = {"💀"}  
+REACTION_THRESHOLD = 3 
+SKULLBOARD_DATA_FILE = "skullboarded_messages.json"  
+
+def load_skullboarded_messages():
     try:
-        await bot.change_presence(activity=discord.CustomActivity(name=new_status))
-        await interaction.response.send_message(f'Status changed to: `{new_status}`', ephemeral=True)
-        await master_log_message(interaction.guild, bot, interaction.command.name,f"{interaction.user.mention} ({interaction.user.name}) changed my status to `{new_status}`.")
-    except commands.CheckFailure:
-        pass
+        with open(SKULLBOARD_DATA_FILE, "r") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return data
+            else:
+                return list(data.keys())  
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+def save_skullboarded_messages(message_ids):
+    with open(SKULLBOARD_DATA_FILE, "w") as f:
+        json.dump(message_ids, f)
+
+skullboarded_messages = load_skullboarded_messages()
+
+@bot.event
+async def on_raw_reaction_add(payload):
+    guild_id = payload.guild_id
+    settings = get_guild_settings(guild_id)
+    
+    STARBOARD_CHANNEL_ID = settings.skullboard_channel_id if settings.skullboard_channel_id else None
+    
+    if settings.skullboard_channel_id is None:
+        return
+    
+    if not payload.guild_id:
+        return  
+    
+    if payload.channel_id == STARBOARD_CHANNEL_ID:
+        return  
+    
+    if str(payload.emoji.name) not in STAR_EMOJIS:
+        return  
+    
+    guild = bot.get_guild(payload.guild_id)
+    channel = guild.get_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id)  
+    
+    if message.id in skullboarded_messages:
+        return 
+    
+    reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
+    if reaction and reaction.count == REACTION_THRESHOLD:
+        starboard_channel = bot.get_channel(STARBOARD_CHANNEL_ID)
+        if not starboard_channel:
+            return  
+        
+        await message.forward(destination=starboard_channel)
+        await starboard_channel.send(f"**lmao get clipped 💀** - {message.author.mention}")
+        
+        skullboarded_messages.append(message.id) 
+        save_skullboarded_messages(skullboarded_messages) 
         
 class DeleteEmbedView(View):
     def __init__(self):
@@ -2180,9 +2237,8 @@ class PurchaseModal(Modal, title="Purchase Items"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        # Parse the input into a list of item IDs
         raw_input = self.selection.value.strip()
-        item_ids = [item.strip() for item in raw_input.split(',') if item.strip()]  # Split by commas and strip whitespace
+        item_ids = [item.strip() for item in raw_input.split(',') if item.strip()] 
 
         total_price = 0
         purchased_items = []
@@ -2198,10 +2254,14 @@ class PurchaseModal(Modal, title="Purchase Items"):
 
                 price = SHOP_PRICES.get(parts[0], 0)
 
-                if main_item == "Unknown Item" or (parts[0] in ['4', '5', '6'] and '.' in item_id):
+                if main_item == "Unknown Item":
                     await interaction.response.send_message(
                         f"Invalid item ID: {item_id}. Please try again.", ephemeral=True
                     )
+                    return
+            
+                if parts[0] in ['1', '2', '3'] and len(parts) == 1:
+                    await interaction.response.send_message("You cannot buy pens without colour.", ephemeral=True)
                     return
 
                 if balance < total_price + price:
@@ -2213,13 +2273,11 @@ class PurchaseModal(Modal, title="Purchase Items"):
                 total_price += price
                 purchased_items.append(item_id)
 
-            # Deduct the total price and add items to inventory
             new_balance = balance - total_price
             await update_balance(session, user_id, new_balance)
             for item_id in purchased_items:
                 await add_inv_item(session, user_id, item_id)
 
-            # Prepare the response message
             purchased_names = ", ".join(
                 f"{ALT_INVENTORY.get(f'.{item.split('.')[1]}', '')} {MAIN_INVENTORY.get(item.split('.')[0], 'Unknown Item')}".strip()
                 if '.' in item else MAIN_INVENTORY.get(item, "Unknown Item")
@@ -2656,15 +2714,14 @@ class Economy(app_commands.Group):
                 await original_message.edit(view=CacherNameView(original_message))
                 return
             else:
-                inventory_items = await get_inventory(session, user_id)  # Fetch all inventory items
+                inventory_items = await get_inventory(session, user_id)  
                 if not inventory_items:
                     await interaction.response.send_message("Your inventory is empty.", ephemeral=True)
                     return
 
-                # Count occurrences of each item
                 item_counts = {}
                 for item in inventory_items:
-                    item = item.strip()  # Remove any leading/trailing whitespace
+                    item = item.strip() 
                     item_counts[item] = item_counts.get(item, 0) + 1
 
                 embed = discord.Embed(
@@ -2673,11 +2730,10 @@ class Economy(app_commands.Group):
                 )
 
                 for item, count in item_counts.items():
-                    # Split the item ID into main and optional color parts
                     parts = item.split('.')
-                    main_item = MAIN_INVENTORY.get(parts[0], "Unknown Item")  # Get the main item
-                    alt_item = ALT_INVENTORY.get(f".{parts[1]}", "") if len(parts) > 1 else ""  # Get the color if it exists
-                    item_name = f"{alt_item} {main_item}".strip()  # Combine color and main item, if any
+                    main_item = MAIN_INVENTORY.get(parts[0], "Unknown Item")  
+                    alt_item = ALT_INVENTORY.get(f".{parts[1]}", "") if len(parts) > 1 else "" 
+                    item_name = f"{alt_item} {main_item}".strip() 
                     embed.add_field(
                         name=f"{count}x {item_name}",
                         value="", 
@@ -2685,6 +2741,100 @@ class Economy(app_commands.Group):
                     )
 
                 await interaction.response.send_message(embed=embed)
+        
+    @app_commands.command()
+    @app_commands.choices(option=[
+        app_commands.Choice(name="Do NOT give FP", value="0"),
+        app_commands.Choice(name="Give FP", value="1")
+    ])
+    async def find(self, interaction: discord.Interaction, cache_id: str, log_content: str = "", fp_status: app_commands.Choice[int] = 0):
+        """
+        Find a cache and log it.
+        
+        Args:
+            cache_id (str): The ID of the cache to find.
+            log_content (str): Optional log content for the find.
+            fp_status (int): Optional favorite point status (0: not given, 1: given).
+        """
+        async with Session() as session:
+            user_id = interaction.user.id
+            user_database_settings = await get_db_settings(session, user_id)
+            if user_database_settings is None:
+                await interaction.response.send_message(
+                    f"It appears you haven't set your cacher name yet! Please press the button below to enter your name and start caching.",
+                    ephemeral=True
+                )
+                original_message = await interaction.original_response()
+                await original_message.edit(view=CacherNameView(original_message))
+                return
+
+            # Attempt to find the cache
+            success = await find(session, user_id, cache_id, log_content, fp_status)
+            if success:
+                if fp_status.value == 1:
+                    fp_bal = await get_db_settings(session, user_id)
+                    fp_bal1 = fp_bal.fav_points_owned
+                    final_bal = fp_bal1 - 1
+                    await update_fav_points_owned(session, user_id, final_bal)
+                hide = await get_hide_by_id(session, cache_id)
+                co_name_id = hide.user_id
+                cache_name = hide.name
+                co_info = await get_db_settings(session, co_name_id)
+                co_name = co_info.cacher_name
+                fp_status = "✅" if fp_status.value == 1 else "❌"
+                embed = discord.Embed(title="Cache successfully logged!",
+                      description=f"Cache Name: {cache_name} (ID: {cache_id})\nOwner: {co_name}\nLog: {log_content}\nFP: {fp_status}",
+                      colour=0x8e8948)
+                await interaction.response.send_message(embed=embed)
+            else:
+                await interaction.response.send_message(f"This cache doesn't exist, or you have already found it.", ephemeral=True)
+        
+    @app_commands.command()
+    async def cache_finds(self, interaction: discord.Interaction, cache_id: str):
+        """
+        Retrieve all finds for a specific cache and display them in an embed.
+        
+        Args:
+            cache_id (str): The ID of the cache to retrieve finds for.
+        """
+        async with Session() as session:
+            user_id = interaction.user.id
+            # Check if the cache exists
+            hide = await get_hide_by_id(session, cache_id)
+            if not hide:
+                await interaction.response.send_message(f"Cache `{cache_id}` not found.", ephemeral=True)
+                return
+
+            # Retrieve all finds for the cache using the new function
+            finds = await get_finds_for_cache(session, cache_id)
+
+            if not finds:
+                await interaction.response.send_message(f"No finds have been logged for cache `{cache_id}` yet.", ephemeral=True)
+                return
+
+            cacher_name_db = await get_db_settings(session, user_id)
+            cacher_name = cacher_name_db.cacher_name
+
+            # Create the embed
+            embed = discord.Embed(
+                title=f"Finds for Cache: {hide.name}",
+                description=f"Cache ID: `{cache_id}`\nTotal Finds: **{len(finds)}**",
+                colour=0xad7e66
+            )
+            embed.add_field(name="Location", value=f"{hide.location_name} ({hide.location_lat:.6f}, {hide.location_lon:.6f})", inline=False)
+
+            # Add each find to the embed
+            for find in finds:
+                log_content = find.log_content if find.log_content else "No log content provided."
+                fp_status = "✅" if find.fp_status == 1 else "❌"
+                embed.add_field(
+                    name=f"Finder: {cacher_name}",
+                    value=f"**Log:** {log_content}\n**FP:** {fp_status}",
+                    inline=False
+                )
+
+            # Send the embed
+            await interaction.response.send_message(embed=embed)
         
 eco_commands = Economy(name="game", description="Geocaching Game Commands.")
 bot.tree.add_command(eco_commands)
@@ -2710,6 +2860,13 @@ class Game_Admin(app_commands.Group):
         await interaction.response.send_message(f"Added G${amount} to {user.mention} ({user.name})'s balance, which is now G${newbal}.")
         await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) added G${amount} to {user.mention} ({user.name})'s balance, which is now G${newbal}.")
         
+    @add_money.error
+    async def add_money_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CheckFailure):
+            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+        else:
+            raise error        
+    
 eco_a_commands = Game_Admin(name="game_admin", description="Geocaching Game Admin Commands.")
 bot.tree.add_command(eco_a_commands)
 
