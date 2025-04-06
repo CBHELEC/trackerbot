@@ -45,6 +45,8 @@ GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 GOOGLE_CX_ID = os.getenv('GOOGLE_SEARCH_ID')
 GOOGLE_NORMAL_API_KEY = os.getenv('GOOGLE_SEARCH_API_KEY')
 GOOGLE_NORMAL_SEARCH_ID = os.getenv('GOOGLE_SEARCH_NORMAL_ID')
+EMAIL = os.getenv('EMAIL')
+PASSWORD = os.getenv('PASSWORD')
 
 intents = discord.Intents.all()
 
@@ -1383,7 +1385,7 @@ bot.tree.add_command(verify_commands)
 def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
     final_message = []
     geocaching = pycaching.login(
-        "cbhelectronicsofficial@gmail.com", "no"
+        EMAIL, PASSWORD
     )
     for code in geocache_codes:
         try:
@@ -2201,7 +2203,7 @@ class DeleteEmbedView(View):
         await interaction.message.delete()
 
 class ShopDropdown(Select):
-    def __init__(self, author = typing.Union[discord.Member, discord.User]):
+    def __init__(self, author: typing.Union[discord.Member, discord.User]):
         self.author = author
         options = [
             discord.SelectOption(label="Writing Instruments", value="writing"),
@@ -2297,9 +2299,9 @@ class PurchaseModal(Modal, title="Purchase Items"):
             )
 
 class ShopView(View):
-    def __init__(self):
+    def __init__(self, interaction):
         super().__init__()
-        self.add_item(ShopDropdown())
+        self.add_item(ShopDropdown(interaction.user))
         self.add_item(PurchaseButton())
 
 class PurchaseButton(Button):
@@ -2706,7 +2708,7 @@ class Economy(app_commands.Group):
                 return
             else:
                 embed = discord.Embed(title="G$ Shop", description="Select a category from the dropdown to browse items.", colour=0xad7e66)
-                await interaction.response.send_message(embed=embed, view=ShopView())
+                await interaction.response.send_message(embed=embed, view=ShopView(interaction))
                 
     @app_commands.command()
     async def inventory(self, interaction: discord.Interaction):
