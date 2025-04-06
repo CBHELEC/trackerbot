@@ -35,6 +35,7 @@ from economy import (
 )
 import logging
 import string
+import typing
 
 from dotenv import load_dotenv
 load_dotenv(".env")
@@ -1382,7 +1383,7 @@ bot.tree.add_command(verify_commands)
 def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
     final_message = []
     geocaching = pycaching.login(
-        "cbhelectronicsofficial@gmail.com", "TrackerIsALil'Cutie"
+        "cbhelectronicsofficial@gmail.com", "no"
     )
     for code in geocache_codes:
         try:
@@ -2200,7 +2201,8 @@ class DeleteEmbedView(View):
         await interaction.message.delete()
 
 class ShopDropdown(Select):
-    def __init__(self):
+    def __init__(self, author = typing.Union[discord.Member, discord.User]):
+        self.author = author
         options = [
             discord.SelectOption(label="Writing Instruments", value="writing"),
             discord.SelectOption(label="Logbooks", value="logbooks"),
@@ -2228,6 +2230,12 @@ Mechanical Pencil [ID: **6**] {Uses: **50**} (Price: **G$30**)
             "containers": discord.Embed(title="Containers", description="Coming soon...", colour=0xad7e66)
         }
         await interaction.response.edit_message(embed=embeds[self.values[0]], view=self.view)
+        
+    async def interaction_check(self, interaction: discord.Interaction):
+            if not interaction.user == self.author:
+                await interaction.response.send_message(content="You cannot use this dropdown!", ephemeral=True)
+                return False
+            return True
 
 class PurchaseModal(Modal, title="Purchase Items"):
     selection = TextInput(
@@ -2743,18 +2751,17 @@ class Economy(app_commands.Group):
                 await interaction.response.send_message(embed=embed)
         
     @app_commands.command()
-    @app_commands.choices(option=[
-        app_commands.Choice(name="Do NOT give FP", value="0"),
-        app_commands.Choice(name="Give FP", value="1")
+    @app_commands.choices(fp_status=[
+        app_commands.Choice(name="Do NOT give FP", value=0),
+        app_commands.Choice(name="Give FP", value=1)
     ])
-    async def find(self, interaction: discord.Interaction, cache_id: str, log_content: str = "", fp_status: app_commands.Choice[int] = 0):
+    async def find(self, interaction: discord.Interaction, cache_id: str, log_content: str, fp_status: app_commands.Choice[int]):
         """
         Find a cache and log it.
         
         Args:
             cache_id (str): The ID of the cache to find.
             log_content (str): Optional log content for the find.
-            fp_status (int): Optional favorite point status (0: not given, 1: given).
         """
         async with Session() as session:
             user_id = interaction.user.id
@@ -2769,7 +2776,7 @@ class Economy(app_commands.Group):
                 return
 
             # Attempt to find the cache
-            success = await find(session, user_id, cache_id, log_content, fp_status)
+            success = await find(session, user_id, cache_id, log_content, fp_status.value)
             if success:
                 if fp_status.value == 1:
                     fp_bal = await get_db_settings(session, user_id)
