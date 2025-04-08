@@ -31,7 +31,7 @@ tbembed = discord.Embed(title="Trackables",
                       colour=0xad7e66)
 
 class ShopDropdown(Select):
-    def __init__(self, author: typing.Union[discord.Member, discord.User]):
+    def __init__(self, author: typing.Union[discord.Member, discord.User], timeout=30):
         self.author = author
         options = [
             discord.SelectOption(label="Writing Instruments", value="writing"),
@@ -40,7 +40,7 @@ class ShopDropdown(Select):
             discord.SelectOption(label="Transport", value="transport"),
             discord.SelectOption(label="Trackables", value="trackables"),
         ]
-        super().__init__(placeholder="Select a category", options=options, timeout=30)
+        super().__init__(placeholder="Select a category", options=options, timeout=timeout)
 
     async def on_timeout(self):
         """Disable all buttons when the view times out."""
@@ -116,8 +116,8 @@ class ShopView(View):
         self.add_item(PurchaseButton())
 
 class PurchaseButton(Button):
-    def __init__(self):
-        super().__init__(label="🛒 | Purchase", style=discord.ButtonStyle.primary, timeout=30)
+    def __init__(self, timeout=30):
+        super().__init__(label="🛒 | Purchase", style=discord.ButtonStyle.primary, timeout=timeout)
 
     async def on_timeout(self):
         """Disable all buttons when the view times out."""
