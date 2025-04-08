@@ -40,7 +40,14 @@ class ShopDropdown(Select):
             discord.SelectOption(label="Transport", value="transport"),
             discord.SelectOption(label="Trackables", value="trackables"),
         ]
-        super().__init__(placeholder="Select a category", options=options)
+        super().__init__(placeholder="Select a category", options=options, timeout=30)
+
+    async def on_timeout(self):
+        """Disable all buttons when the view times out."""
+        for dropdown in self.children:
+            dropdown.disabled = True  
+        if self.msg:
+            await self.msg.edit(view=self)
 
     async def callback(self, interaction: discord.Interaction):
         embeds = {
@@ -67,7 +74,7 @@ class PurchaseModal(Modal, title="Purchase Items"):
 
     async def on_submit(self, interaction: discord.Interaction):
         raw_input = self.selection.value.strip()
-        item_ids = [item.strip() for item in raw_input.split(',') if item.strip()] 
+        item_ids = [item.strip() for item in re.split(r'[,\s;/|]+', raw_input) if item.strip()]
 
         total_price = 0
         purchased_items = []
@@ -76,6 +83,7 @@ class PurchaseModal(Modal, title="Purchase Items"):
             balance = await get_balance(session, user_id)
 
             for item_id in item_ids:
+                print(f"purchasemodal {item_id}")
                 try:
                     price = calculate_price(item_id)
                 except ValueError as e:
@@ -109,7 +117,14 @@ class ShopView(View):
 
 class PurchaseButton(Button):
     def __init__(self):
-        super().__init__(label="🛒 | Purchase", style=discord.ButtonStyle.primary)
+        super().__init__(label="🛒 | Purchase", style=discord.ButtonStyle.primary, timeout=30)
+
+    async def on_timeout(self):
+        """Disable all buttons when the view times out."""
+        for button in self.children:
+            button.disabled = True  
+        if self.msg:
+            await self.msg.edit(view=self)
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_modal(PurchaseModal())
@@ -344,7 +359,7 @@ def calculate_price(item_id: str) -> int:
     """
     # Use regex to split the item ID while preserving periods and letters
     parts = re.findall(r'\d+|\.\d+|[A-Za-z]', item_id)
-    print(parts)  # Debugging output to verify the parsed parts
+    print(f"calculateprice {parts}")  # Debugging output to verify the parsed parts
     category = None
     total_price = 0
 
