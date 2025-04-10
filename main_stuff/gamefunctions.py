@@ -5,6 +5,35 @@ from economy import *
 import re
 import string
 from discord import Embed
+import random
+
+async def generate_public_code(session) -> str:
+    """
+    Generate a unique public code for a trackable.
+    The code will start with 'TB' followed by a mix of letters and numbers.
+    """
+    while True:
+        # Generate a random code starting with 'TB' and followed by 6 alphanumeric characters
+        public_code = "TB" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        
+        # Check if the code already exists in the database
+        result = await session.execute(select(Trackables).where(Trackables.public_code == public_code))
+        if not result.scalar():  # If no matching code is found, it's unique
+            return public_code
+
+async def generate_private_code(session) -> str:
+    """
+    Generate a unique private code for a trackable.
+    The code will consist of 8 alphanumeric characters.
+    """
+    while True:
+        # Generate a random code with 8 alphanumeric characters
+        private_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        
+        # Check if the code already exists in the database
+        result = await session.execute(select(Trackables).where(Trackables.private_code == private_code))
+        if not result.scalar():  # If no matching code is found, it's unique
+            return private_code
 
 class DeleteEmbedView(View):
     def __init__(self):
@@ -31,7 +60,7 @@ tbembed = discord.Embed(title="Trackables",
                       colour=0xad7e66)
 
 class ShopDropdown(Select):
-    def __init__(self, author: typing.Union[discord.Member, discord.User], timeout=30):
+    def __init__(self, author: typing.Union[discord.Member, discord.User]):
         self.author = author
         options = [
             discord.SelectOption(label="Writing Instruments", value="writing"),
@@ -40,14 +69,7 @@ class ShopDropdown(Select):
             discord.SelectOption(label="Transport", value="transport"),
             discord.SelectOption(label="Trackables", value="trackables"),
         ]
-        super().__init__(placeholder="Select a category", options=options, timeout=timeout)
-
-    async def on_timeout(self):
-        """Disable all buttons when the view times out."""
-        for dropdown in self.children:
-            dropdown.disabled = True  
-        if self.msg:
-            await self.msg.edit(view=self)
+        super().__init__(placeholder="Select a category", options=options)
 
     async def callback(self, interaction: discord.Interaction):
         embeds = {
@@ -65,6 +87,18 @@ class ShopDropdown(Select):
                 return False
             return True
 
+items_by_id = {
+    33: {"emoji": "<:TBTAG_BASIC:1359163550697914538>", "name": "Basic Tag"},
+    34: {"emoji": "<:TBTAG_TRACKER:1359166477986562138>", "name": "Tracker Tag"},
+    35: {"emoji": "<:TBCOIN_LOGO_GOLD:1359172201726873894>", "name": "GC Logo Geocoin Gold"},
+    36: {"emoji": "<:TBCOIN_LOGO_SILVER:1359172203433689218>", "name": "GC Logo Geocoin Silver"},
+    37: {"emoji": "<:TBCOIN_TRACKER_GOLD:1359178687051730974>", "name": "Tracker Geocoin Gold"},
+    38: {"emoji": "<:TBCOIN_SIGNAL_GOLD:1359182225853382858>", "name": "Signal Geocoin Gold"},
+    39: {"emoji": "<:TBCOIN_DISCORD_SILVER:1359188642941374504>", "name": "Discord Geocoin Silver"},
+    40: {"emoji": "<:TBCOIN_AMMOCAN_BRASS:1359192217750732850>", "name": "Ammo Can Geocoin Brass"},
+    41: {"emoji": "<:TBCOIN_BOTSTART_ANCIENTSILVER:1359199275619192973>", "name": "Game Start Geocoin Ancient Silver"},
+}
+
 class PurchaseModal(Modal, title="Purchase Items"):
     selection = TextInput(
         label="Enter Item IDs",
@@ -73,6 +107,7 @@ class PurchaseModal(Modal, title="Purchase Items"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        await interaction.response.defer(thinking=True)
         raw_input = self.selection.value.strip()
         item_ids = [item.strip() for item in re.split(r'[,\s;/|]+', raw_input) if item.strip()]
 
@@ -83,7 +118,6 @@ class PurchaseModal(Modal, title="Purchase Items"):
             balance = await get_balance(session, user_id)
 
             for item_id in item_ids:
-                print(f"purchasemodal {item_id}")
                 try:
                     price = calculate_price(item_id)
                 except ValueError as e:
@@ -101,30 +135,45 @@ class PurchaseModal(Modal, title="Purchase Items"):
 
             new_balance = balance - total_price
             await update_balance(session, user_id, new_balance)
+            valid_ids = {33, 34, 35, 36, 37, 38, 39, 40, 41}
             for item_id in purchased_items:
-                await add_inv_item(session, user_id, item_id)
+                if item_id in valid_ids:
+                    public_code = await generate_public_code(session)
+                    private_code = await generate_private_code(session)
+                    current = await get_trackables_owned(session, user_id)
+                    new = current + 1
+                    await update_trackables_owned(session, user_id, new)
+                    await add_trackable(session, user_id, public_code, private_code, item_id)
+                    item = items_by_id.get(int(float(item_id)))
+                    embed = discord.Embed(title="Thank you for your TB purchase!",
+                      description=f"You purchased a {item['emoji']} {item['name']}.\nPublic Code: {public_code}, Private Code: {private_code}\n\nTo activate your TB, run </game activate_tb:1359120516627169318> and enter the private code in the appropriate field.",
+                      colour=0x00b0f4)
+                    await interaction.user.send(embed=embed)
+                else:
+                    await add_inv_item(session, user_id, item_id)
 
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"You bought **{', '.join(purchased_items)}**. Total cost: **G${total_price}**. New balance: **G${new_balance}**.",
                 ephemeral=True
             )
 
 class ShopView(View):
-    def __init__(self, interaction):
-        super().__init__()
+    def __init__(self, interaction, msg):
+        super().__init__(timeout=600)
         self.add_item(ShopDropdown(interaction.user))
         self.add_item(PurchaseButton())
-
-class PurchaseButton(Button):
-    def __init__(self, timeout=30):
-        super().__init__(label="🛒 | Purchase", style=discord.ButtonStyle.primary, timeout=timeout)
-
+        self.msg = msg
+        
     async def on_timeout(self):
         """Disable all buttons when the view times out."""
-        for button in self.children:
-            button.disabled = True  
+        for child in self.children:
+            child.disabled = True
         if self.msg:
             await self.msg.edit(view=self)
+
+class PurchaseButton(Button):
+    def __init__(self):
+        super().__init__(label="🛒 | Purchase", style=discord.ButtonStyle.primary)
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_modal(PurchaseModal())
@@ -245,7 +294,8 @@ SHOP_PRICES = {
             ".14": 0,  # Green
             ".15": 0,  # Blue
             ".16": 0,  # Purple
-            ".17": 0   # Black
+            ".17": 0,   # Black
+            ".18": 5   # Camo
         },
         "log": {
             "L": 1  # Add a log
@@ -359,7 +409,6 @@ def calculate_price(item_id: str) -> int:
     """
     # Use regex to split the item ID while preserving periods and letters
     parts = re.findall(r'\d+|\.\d+|[A-Za-z]', item_id)
-    print(f"calculateprice {parts}")  # Debugging output to verify the parsed parts
     category = None
     total_price = 0
 
