@@ -172,7 +172,9 @@ class Economy(app_commands.Group):
                 return
             else:
                 embed = discord.Embed(title="G$ Shop", description="Select a category from the dropdown to browse items.", colour=0xad7e66)
-                await interaction.response.send_message(embed=embed, view=ShopView(interaction))
+                await interaction.response.send_message(content=None, embed=embed)
+                msg = await interaction.original_response()
+                await interaction.edit_original_response(content=None, embed=embed, view=ShopView(interaction, msg))
                 
     @app_commands.command()
     async def inventory(self, interaction: discord.Interaction):
@@ -312,6 +314,162 @@ class Economy(app_commands.Group):
                 )
 
             # Send the embed
+            await interaction.response.send_message(embed=embed)
+        
+    @app_commands.command()
+    async def tb_activate(self, interaction: discord.Interaction, private_code: str):
+        """Activate a trackable using its private code."""
+        user_id = interaction.user.id
+        async with Session() as session:
+            trackable = await activate_trackable(session, user_id, private_code)
+            if trackable == "already_activated":
+                await interaction.response.send_message(
+                    "This trackable has already been activated.",
+                    ephemeral=True
+                )
+            elif trackable:
+                await interaction.response.send_message(
+                    f"Trackable with public code `{trackable.public_code}` has been successfully activated!",
+                    ephemeral=True
+                )
+            else:
+                await interaction.response.send_message(
+                    "Failed to activate trackable. Either it doesn't exist, or you don't own it.",
+                    ephemeral=True
+                )
+                
+    @app_commands.command()
+    async def tb_view(self, interaction: discord.Interaction, public_code: str):
+        """
+        View details about a trackable using its public code.
+        """
+        async with Session() as session:
+            # Retrieve the trackable by its public code
+            result = await session.execute(
+                select(Trackables).where(Trackables.public_code == public_code)
+            )
+            trackable = result.scalars().first()
+
+            if not trackable:
+                await interaction.response.send_message(
+                    f"Trackable with public code `{public_code}` not found.",
+                    ephemeral=True
+                )
+                return
+
+            # Retrieve the owner's cacher name
+            owner_name = await get_cacher_name(session, trackable.user_id)
+
+            activated_time_dt = datetime.strptime(trackable.activated_time.split('.')[0], "%Y-%m-%d %H:%M:%S")
+            unix_timestamp = int(activated_time_dt.timestamp())
+
+            # Format activation status and date
+            activation_status = "✅ Activated" if trackable.activated == 1 else "❌ Not Activated"
+            activation_date = f"<t:{unix_timestamp}:R>" if trackable.activated_time else "N/A"
+
+            # Retrieve all discoveries for the trackable
+            discoveries = await session.execute(
+                select(TBDiscover).where(TBDiscover.tb_private_code == trackable.private_code)
+            )
+            discoveries = discoveries.scalars().all()
+
+            # Create the embed
+            embed = discord.Embed(
+                title=f"Trackable Details: {public_code}",
+                colour=0xad7e66
+            )
+            embed.add_field(name="Public Code", value=trackable.public_code, inline=True)
+            embed.add_field(name="Owner", value=owner_name, inline=True)
+            embed.add_field(name="Activation Status", value=activation_status, inline=False)
+            embed.add_field(name="Activation Date", value=activation_date, inline=False)
+
+            # Add each discovery as a separate field
+            if discoveries:
+                for discovery in discoveries:
+                    userid2 = trackable.user_id if trackable else None
+                    userthingidk = await get_db_settings(session, userid2)
+                    usercachername = userthingidk.cacher_name
+                    discover_date = discovery.discover_date or "N/A"
+                    discover_log = discovery.discover_log or "No log provided."
+                    embed.add_field(
+                        name=f"Discovered by {usercachername}",
+                        value=f"**Date:** {discover_date}\n**Log:** {discover_log}",
+                        inline=False
+                    )
+            else:
+                embed.add_field(name="Discoveries", value="No discoveries yet.", inline=False)
+
+            await interaction.response.send_message(embed=embed)
+        
+    @app_commands.command()
+    async def tb_discover(self, interaction: discord.Interaction, private_code: str, log: str = None):
+        """
+        Discover a trackable using its private code.
+        """
+        user_id = interaction.user.id
+        async with Session() as session:            
+            # Retrieve the trackable by its private code
+            result = await session.execute(
+                select(Trackables).where(Trackables.private_code == private_code)
+            )
+            trackable = result.scalars().first()
+
+            if trackable.user_id == interaction.user.id:
+                await interaction.response.send_message(
+                    "You cannot discover your own trackable.",
+                    ephemeral=True
+                )
+                return
+
+            if not trackable:
+                await interaction.response.send_message(
+                    f"Trackable with private code `{private_code}` not found.",
+                    ephemeral=True
+                )
+                return
+
+            # Check if the trackable is activated
+            if trackable.activated == 0:
+                await interaction.response.send_message(
+                    f"Trackable with private code `{private_code}` has not been activated yet.",
+                    ephemeral=True
+                )
+                return
+
+            # Check if the user has already discovered this trackable
+            discovery_check = await session.execute(
+                select(TBDiscover).where(
+                    TBDiscover.user_id == user_id,
+                    TBDiscover.tb_private_code == private_code
+                )
+            )
+            existing_discovery = discovery_check.scalars().first()
+
+            if existing_discovery:
+                await interaction.response.send_message(
+                    f"You have already discovered this trackable.",
+                    ephemeral=True
+                )
+                return
+
+            # Log the discovery
+            discover_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            await add_tb_discovery(session, user_id, private_code, discover_date, log)
+
+            existing_discovery.discover_date = discover_date
+            if log:
+                existing_discovery.discover_log = f"{existing_discovery.discover_log or ''}\n{interaction.user.display_name}: {log}".strip()
+            await session.commit()
+
+            # Send confirmation message
+            embed = discord.Embed(
+                title="Trackable Discovered!",
+                description=f"You successfully discovered the trackable with public code `{trackable.public_code}`.",
+                colour=0x00b0f4
+            )
+            embed.add_field(name="Discovery Log", value=log or "No log provided.", inline=False)
+            embed.add_field(name="Last Discovery Date", value=f"<t:{int(datetime.now().timestamp())}:R>", inline=True)
+
             await interaction.response.send_message(embed=embed)
         
 eco_commands = Economy(name="game", description="Geocaching Game Commands.")
