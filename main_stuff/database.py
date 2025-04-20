@@ -25,28 +25,28 @@ Session = sessionmaker(bind=engine)
 
 def get_guild_settings(guild_id):
     """Fetch guild settings, create entry if missing."""
-    session = Session()
-    settings = session.query(GuildSettings).filter_by(guild_id=guild_id).first()
-    if not settings:
-        settings = GuildSettings(guild_id=guild_id)
-        session.add(settings)
-        session.commit()
-    session.close()
-    return settings
+    with Session() as session:
+        settings = session.query(GuildSettings).filter_by(guild_id=guild_id).first()
+        if not settings:
+            settings = GuildSettings(guild_id=guild_id)
+            session.add(settings)
+            session.commit()
+        session.close()
+        return settings
 
 def update_guild_settings(guild_id, **kwargs):
     """Update guild settings dynamically."""
-    session = Session()
-    settings = session.query(GuildSettings).filter_by(guild_id=guild_id).first()
-    if not settings:
-        settings = GuildSettings(guild_id=guild_id, **kwargs)
-        session.add(settings)
-    else:
-        for key, value in kwargs.items():
-            setattr(settings, key, value)
-    session.commit()
-    session.close()
-    
+    with Session() as session:
+        settings = session.query(GuildSettings).filter_by(guild_id=guild_id).first()
+        if not settings:
+            settings = GuildSettings(guild_id=guild_id, **kwargs)
+            session.add(settings)
+        else:
+            for key, value in kwargs.items():
+                setattr(settings, key, value)
+        session.commit()
+        session.close()
+        
 def get_log_channel(guild, bot):
     """Fetches the log channel for a guild from the database and returns a discord.TextChannel object."""
     settings = get_guild_settings(guild.id) 
