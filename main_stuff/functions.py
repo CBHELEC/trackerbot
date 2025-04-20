@@ -7,6 +7,7 @@ import discord
 from discord import app_commands
 from database import get_guild_settings, get_log_channel
 import os
+import psutil
 
 from dotenv import load_dotenv
 load_dotenv(".env")
@@ -28,6 +29,7 @@ RANDOMERROR = discord.Embed(title="<:denied:1336100920039313448> | An error occu
 
 GOD_LOG_ID = 1341819097591185479 
 LOG_CHANNEL_ID = True
+DEV_USER_ID = 820297275448098817
 
 def is_mod():
     async def predicate(interaction: discord.Interaction):
@@ -140,14 +142,14 @@ eightball_answers = [
 ]
 
 funny_eightball_answers = [
-    "woof.",
-    "rawr.",
-    "potato.",
-    "uwu :3.",
-    "GIB FOOD.",
+    "woof",
+    "rawr",
+    "potato",
+    "uwu :3",
+    "GIB FOOD",
     "i will send you to the basement.",
-    "dinoshark has gf.",
-    "D5/T5 nano on a cliff.",
+    "dinoshark has gf",
+    "D5/T5 nano on a cliff",
     "i am superior.",
     "you know what else is massive <:devious:1341566707206197340> - Buckeye",
     ":Blobfish:",  
@@ -158,7 +160,11 @@ funny_eightball_answers = [
     "1000 ammo can power trail",  
     "if you want a random persons license plate number contact @sharkanddino or @NightFlyer33",  
     "I dId NoT fInD tHe GeOcAcHe BuT i MaRkEd FoUnD bEcAuSe I aM lAzY",  
-    "sigma"
+    "sigma",
+    "furries are cool",
+    "i am a furry",
+    "cbh furry fr",
+    "mikaboo is gullible"
 ]
 
 class ImageSearchView(discord.ui.View):
@@ -452,3 +458,36 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
 
     final_message = "\n\n".join(final_message)
     return final_message
+
+def escape_markdown(text: str) -> str:
+    """Escapes markdown characters in a string."""
+    return text.replace("*", "\\*").replace("_", "\\_").replace("~", "\\~").replace("|", "\\|")
+
+def get_formatted_ram_usage():
+    mem = psutil.virtual_memory()
+    used_gb = mem.used / 1024 / 1024 / 1024
+    total_gb = mem.total / 1024 / 1024 / 1024
+    percent = mem.percent
+    return f"<:ram:1363597677912264966> | RAM: **{used_gb:.1f} / {total_gb:.1f} GB ({percent}%)**"
+
+def get_formatted_cpu_usage():
+    cpu_percent = psutil.cpu_percent(interval=1)
+
+    cpu_temp = None
+    try:
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            temp_str = f.read().strip()
+            cpu_temp = int(temp_str) / 1000  
+    except FileNotFoundError:
+        pass  
+
+    if cpu_temp is not None:
+        return f"<:cpu:1363599094395834430> | CPU: **{cpu_percent}% @ {cpu_temp:.1f}°C**"
+    else:
+        return f"<:cpu:1363599094395834430> | CPU: **{cpu_percent}%**"
+    
+def get_formatted_storage_usage():
+    disk = psutil.disk_usage('/')
+    used_gb = disk.used / 1024 / 1024 / 1024
+    total_gb = disk.total / 1024 / 1024 / 1024
+    return f"<:ssd:1363600388959506585> | Storage: **{used_gb:.1f} / {total_gb:.1f} GB**"
