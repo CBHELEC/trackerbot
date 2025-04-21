@@ -569,10 +569,9 @@ class HideConfigureSelect(Select):
         async with Session() as session:
             hide_code = await get_next_gc_code(session)
 
-        # Create a confirmation embed
         embed = discord.Embed(
             title="Hide Published!",
-            description=f"Your hide has been successfully published with the code: `{hide_code}`.",
+            description=f"Your hide has been successfully published with the code: `{hide_code}` and the container has been removed from your inventory.",
             colour=0x00ff00
         )
         embed.add_field(name="Name", value=self.hide_data.name, inline=False)
@@ -584,9 +583,9 @@ class HideConfigureSelect(Select):
         
         async with Session() as session:
             await add_hide(session, hide_code, interaction.user.id, self.hide_data.name, self.hide_data.lat, self.hide_data.lon, self.hide_data.description, self.hide_data.difficulty, self.hide_data.terrain, self.hide_data.container, self.hide_data.location)
+            await remove_inv_item(session, self.user_id, self.hide_data.container)
 
-        # Send the confirmation message
-        await interaction.response.edit_message(embed=embed, view=None)
+        await interaction.response.edit_message(embed=embed, view=None, content=None)
 
 class LocationSelect(Select):
     def __init__(self, hide_data: HideConfigData, interaction: discord.Interaction, original_message: discord.Message):
@@ -735,6 +734,7 @@ class ContainerSelectionModal(Modal, title="Select a Container"):
         super().__init__()
         self.containers = containers
         self.user_id = user_id
+        self.msg = None
         self.original_message = original_message
         self.container_input = TextInput(
             label="Enter container number.",
@@ -745,18 +745,12 @@ class ContainerSelectionModal(Modal, title="Select a Container"):
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
+            await interaction.response.defer()
             selected_index = int(self.container_input.value) - 1
             if selected_index < 0 or selected_index >= len(self.containers):
                 raise ValueError("Invalid selection")
 
             selected_container = self.containers[selected_index]
-
-            # Remove the selected container from the user's inventory
-            async with Session() as session:
-                success = await remove_inv_item(session, self.user_id, selected_container)
-                if not success:
-                    await interaction.response.send_message("Failed to remove the container from your inventory.", ephemeral=True)
-                    return
 
             # Create a new embed for configuring the hide
             embed = discord.Embed(
@@ -776,10 +770,66 @@ class ContainerSelectionModal(Modal, title="Select a Container"):
             await self.original_message.edit(embed=embed, view=view)
 
             # Notify the user that the container has been selected
-            await interaction.response.send_message(f"Container `{selected_container}` has been selected and removed from your inventory.", ephemeral=True)
+            interaction.client.msg = await interaction.followup.send(f"Container `{selected_container}` has been selected.", ephemeral=True)
 
         except ValueError:
-            await interaction.response.send_message("Invalid selection. Please enter a valid number.", ephemeral=True)
+            await interaction.followup.send("Invalid selection. Please enter a valid number.", ephemeral=True)
+        
+class PaginatedContainerView(View):
+    def __init__(self, containers, user_id, original_message, page=0, items_per_page=10):
+        super().__init__()
+        self.containers = containers
+        self.user_id = user_id
+        self.original_message = original_message
+        self.page = page
+        self.items_per_page = items_per_page
+
+        # Add navigation buttons
+        if self.page > 0:
+            self.add_item(Button(label="Previous", style=discord.ButtonStyle.primary, custom_id="previous_page"))
+        if (self.page + 1) * self.items_per_page < len(self.containers):
+            self.add_item(Button(label="Next", style=discord.ButtonStyle.primary, custom_id="next_page"))
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        # Ensure only the original user can interact with the buttons
+        return interaction.user.id == self.user_id
+
+    async def on_timeout(self):
+        # Disable buttons when the view times out
+        for child in self.children:
+            child.disabled = True
+        await self.original_message.edit(view=self)
+
+    @discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, custom_id="previous_page")
+    async def previous_page(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await self.update_embed(interaction, self.page - 1)
+
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.primary, custom_id="next_page")
+    async def next_page(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await self.update_embed(interaction, self.page + 1)
+
+    async def update_embed(self, interaction: discord.Interaction, new_page):
+        self.page = new_page
+        embed = self.create_embed()
+        view = PaginatedContainerView(self.containers, self.user_id, self.original_message, self.page)
+        await self.original_message.edit(embed=embed, view=view)
+
+    def create_embed(self):
+        embed = discord.Embed(
+            title="Select a Container for Your Hide",
+            description="Below is a list of containers in your inventory. Enter the number corresponding to the container you want to use.",
+            colour=0xad7e66
+        )
+        start_idx = self.page * self.items_per_page
+        end_idx = start_idx + self.items_per_page
+        for idx, container in enumerate(self.containers[start_idx:end_idx], start=start_idx + 1):
+            parts = re.findall(r'\d+|\.\d+|[A-Za-z]', container)
+            main_item = MAIN_INVENTORY.get(parts[0], "Unknown Item")
+            alt_items = [ALT_INVENTORY.get(part, "") for part in parts[1:]]
+            alt_items = [alt for alt in alt_items if alt]
+            item_name = f"{' '.join(alt_items)} {main_item}".strip()
+            embed.add_field(name=f"{idx}. {item_name}", value="", inline=False)
+        return embed
             
 class SetNameModal(Modal, title="Set Cacher Name"):
     selection = TextInput(label="Enter Cacher Name", placeholder="eg. BooZac (character limit: 15)")
