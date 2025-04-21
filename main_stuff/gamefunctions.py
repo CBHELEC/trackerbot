@@ -4,7 +4,6 @@ import typing
 from economy import *
 import re
 import string
-from discord import Embed
 import random
 
 async def generate_public_code(session) -> str:
@@ -13,12 +12,10 @@ async def generate_public_code(session) -> str:
     The code will start with 'TB' followed by a mix of letters and numbers.
     """
     while True:
-        # Generate a random code starting with 'TB' and followed by 6 alphanumeric characters
         public_code = "TB" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
         
-        # Check if the code already exists in the database
         result = await session.execute(select(Trackables).where(Trackables.public_code == public_code))
-        if not result.scalar():  # If no matching code is found, it's unique
+        if not result.scalar():  
             return public_code
 
 async def generate_private_code(session) -> str:
@@ -27,12 +24,10 @@ async def generate_private_code(session) -> str:
     The code will consist of 8 alphanumeric characters.
     """
     while True:
-        # Generate a random code with 8 alphanumeric characters
         private_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         
-        # Check if the code already exists in the database
         result = await session.execute(select(Trackables).where(Trackables.private_code == private_code))
-        if not result.scalar():  # If no matching code is found, it's unique
+        if not result.scalar():  
             return private_code
 
 class DeleteEmbedView(View):
@@ -44,7 +39,7 @@ class DeleteEmbedView(View):
         await interaction.message.delete()
 
 containersembed = discord.Embed(title="Containers",
-                      description="__Container Type__:\nPlastic Container [ID: **7**] (Price: **G$15**)\n3D printed Container [ID: **8**] (Price: **G$15**)\nDecoy Rock [ID: **9**] (Price: **G$30**)\nDecoy Electric Metal Plate (Only Comes In ***__S__***) [ID: **10**] (Price: **G$45**)\nBottle Cap Container (Only Comes In ***__XS__*** And ***__S__***) [ID: **11**] (Price: **G$20**)\nDecoy Bolt [ID: **12**] (Price: **G$10**)\nBison Tube (Only Comes in ***__XS__***, ***__S__***, And ***__M__***) [ID: **13**] (Price: **G$5**)\nAmmo Can (Only Comes in ***__M__***, ***__L__***, And ***__XL__***) [ID: **14**] (Price: **G$50**)\nPill Bottle (Only Comes in ***__XS__***, ***__S__***, And ***__M__***) [ID: **15**] (Price: **G$5**)\nMagnetic Container (Only Comes in ***__XS__*** And ***__S__***) [ID: **16**] (Price: **G$10**)\nMaze Container (Only Comes In ***__M__***) [ID: **22**] (Price: **G$55**)\n\n__Container Size__:\n***__XS__*** Container [ID: **.6**] (Price: **G$5**)\n***__S__*** Container [ID: **.7**] (Price: **G$10**)\n***__M__*** Container [ID: **.8**] (Price: **G$20**)\n***__L__*** Container [ID: **.9**] (Price: **G$40**)\n***__XL__*** Container [ID: **.10**] (Price: **G$80**)\n\n__Container Colour__:\nRed [ID: **.11**]\nOrange [ID: **.12**]\nYellow [ID: **.13**]\nGreen [ID: **.14**]\nBlue [ID: **.15**]\nPurple [ID: **.16**]\nBlack [ID: **.17**]\n\n__Add a log__ *(plain paper)*: +**G$1** [ID: **L**]",
+                      description="__Container Type__:\nPlastic Container [ID: **7**] (Price: **G$10**)\n3D printed Container [ID: **8**] (Price: **G$15**)\nFake Rock [ID: **9**] (Price: **G$15**)\nFake Electric Metal Plate (Only Comes In ***__S__***) [ID: **10**] (Price: **G$17**)\nBottle Cap Container (Only Comes In ***__XS__*** And ***__S__***) [ID: **11**] (Price: **G$15**)\nFake Bolt [ID: **12**] (Price: **G$7**)\nBison Tube (Only Comes in ***__XS__***, ***__S__***, And ***__M__***) [ID: **13**] (Price: **G$5**)\nAmmo Can (Only Comes in ***__M__***, ***__L__***, And ***__XL__***) [ID: **14**] (Price: **G$50**)\nPill Bottle (Only Comes in ***__XS__***, ***__S__***, And ***__M__***) [ID: **15**] (Price: **G$5**)\nMagnetic Container (Only Comes in ***__XS__*** And ***__S__***) [ID: **16**] (Price: **G$10**)\nFake Gum (Only Comes In __***XS***__ and __***S***__) [ID: **17**] (Price: **G$7**)\nFake Log (Only Comes In __***S***__ and __***M***__) [ID: **18**] (Price: **G$25**)\nFilm Canister (Only Comes In __***S***__  and __***M***__) [ID: **19**] (Price: **G$5**)\nFake Snail (Only Comes In __***XS***__ and __***S***__) [ID: **20**] (Price: **G$13**)\nFake Pinecone (Only Comes In __***S***__ and __***M***__) [ID: **21**] (Price: **G$15**)\nMaze Container (Only Comes In ***__M__***) [ID: **22**] (Price: **G$55**)\n\n__Container Size__:\n***__XS__*** Container [ID: **.6**] (Price: **G$5**)\n***__S__*** Container [ID: **.7**] (Price: **G$10**)\n***__M__*** Container [ID: **.8**] (Price: **G$20**)\n***__L__*** Container [ID: **.9**] (Price: **G$40**)\n***__XL__*** Container [ID: **.10**] (Price: **G$80**)\n\n__Container Colour__:\nRed [ID: **.11**]\nOrange [ID: **.12**]\nYellow [ID: **.13**]\nGreen [ID: **.14**]\nBlue [ID: **.15**]\nPurple [ID: **.16**]\nBlack [ID: **.17**]\nCamo [ID: **.18**] (+**G$5**)\n\n__Add a log__ *(plain paper)*: +**G$1** [ID: **L**]",
                       colour=0xad7e66)
 
 writingembed = discord.Embed(title="Writing Instruments", 
@@ -59,12 +54,16 @@ tbembed = discord.Embed(title="Trackables",
                       description="__Travel Bugs__:\n<:TBTAG_BASIC:1359163550697914538> Basic Tag [ID: **33**] (Price: **G$25**)\n<:TBTAG_TRACKER:1359166477986562138> Tracker Tag [ID: **34**] (Price: **G$30**)\n\n__Geocoins__:\n<:TBCOIN_LOGO_GOLD:1359172201726873894> GC Logo Coin Gold [ID: **35**] (Price: **G$50**)\n<:TBCOIN_LOGO_SILVER:1359172203433689218> GC Logo Coin Silver [ID: **36**] (Price: **G$45**)\n<:TBCOIN_TRACKER_GOLD:1359178687051730974> Tracker Coin Gold [ID: **37**] (Price: **G$60**)\n<:TBCOIN_SIGNAL_GOLD:1359182225853382858> Signal Coin Gold [ID: **38**] (Price: **G$55**)\n<:TBCOIN_DISCORD_SILVER:1359188642941374504> Discord Coin Silver [ID: **39**] (Price: **G$50**)\n<:TBCOIN_AMMOCAN_BRASS:1359192217750732850> Ammo Can Coin Brass [ID: **40**] (Price: **G$50**)\n<:TBCOIN_BOTSTART_ANCIENTSILVER:1359199275619192973> Game Start Coin Ancient Silver [ID: **41**] (Price: **G$50**)",
                       colour=0xad7e66)
 
+accessoryembed = discord.Embed(title="Container Accessories",
+                      description="__Container Restraints__:\nRope [ID: **42**] (Price: **G$20**)\nChain [ID: **43**] (Price: **G$35**)\nZip Tie [ID: **44**] (Price: **G$7**)\n\n__Logbooks__:\nPlain Paper [ID: **45**] (Price: **G$3**)\nNotepad [ID: **46**] (Price: **G$5**)\nNotebook [ID: **47**] (Price: **G$10**)",
+                      colour=0x6aaf9d)
+
 class ShopDropdown(Select):
     def __init__(self, author: typing.Union[discord.Member, discord.User]):
         self.author = author
         options = [
             discord.SelectOption(label="Writing Instruments", value="writing"),
-            discord.SelectOption(label="Logbooks", value="logbooks"),
+            discord.SelectOption(label="Container Accessories", value="accessoryembed"),
             discord.SelectOption(label="Containers", value="containers"),
             discord.SelectOption(label="Transport", value="transport"),
             discord.SelectOption(label="Trackables", value="trackables"),
@@ -74,7 +73,7 @@ class ShopDropdown(Select):
     async def callback(self, interaction: discord.Interaction):
         embeds = {
             "writing": writingembed,
-            "logbooks": discord.Embed(title="Logbooks", description="Coming soon...", colour=0xad7e66),
+            "accessoryembed": accessoryembed,
             "containers": containersembed,
             "transport": vehiclesembed,
             "trackables": tbembed,
@@ -121,14 +120,28 @@ class PurchaseModal(Modal, title="Purchase Items"):
                 try:
                     price = calculate_price(item_id)
                 except ValueError as e:
-                    await interaction.response.send_message(str(e), ephemeral=True)
+                    await interaction.followup.send(str(e), ephemeral=True)
                     return
 
                 if balance < total_price + price:
-                    await interaction.response.send_message(
+                    await interaction.followup.send(
                         f"You don't have enough money to buy all items. Current balance: G${balance}.", ephemeral=True
                     )
                     return
+
+                if item_id.split('.')[0] in SHOP_PRICES["containers"]:
+                    has_size = any(size in item_id for size in SHOP_PRICES["containers"]["sizes"].keys())
+                    if not has_size:
+                        await interaction.followup.send(
+                            f"Item ID `{item_id}` is invalid. Containers must have a size (e.g., `.6` for XS, `.7` for S).",
+                            ephemeral=True
+                        )
+                        return
+
+                if 'L' in item_id:
+                    if item_id.split('.')[0] not in SHOP_PRICES["containers"]:
+                        await interaction.followup.send(f"Item ID `{item_id}` is invalid. 'L' can only be used with containers.")
+                        return
 
                 total_price += price
                 purchased_items.append(item_id)
@@ -137,7 +150,12 @@ class PurchaseModal(Modal, title="Purchase Items"):
             await update_balance(session, user_id, new_balance)
             valid_ids = {33, 34, 35, 36, 37, 38, 39, 40, 41}
             for item_id in purchased_items:
-                if item_id in valid_ids:
+                originalitemid = item_id
+                if 'L' in item_id:
+                    item_id = item_id.replace('L','')
+                if '.' in item_id:
+                    item_id = item_id.replace('.','')
+                if int(item_id) in valid_ids:
                     public_code = await generate_public_code(session)
                     private_code = await generate_private_code(session)
                     current = await get_trackables_owned(session, user_id)
@@ -147,10 +165,18 @@ class PurchaseModal(Modal, title="Purchase Items"):
                     item = items_by_id.get(int(float(item_id)))
                     embed = discord.Embed(title="Thank you for your TB purchase!",
                       description=f"You purchased a {item['emoji']} {item['name']}.\nPublic Code: {public_code}, Private Code: {private_code}\n\nTo activate your TB, run </game activate_tb:1359120516627169318> and enter the private code in the appropriate field.",
-                      colour=0x00b0f4)
+                      colour=0xad7e66)
                     await interaction.user.send(embed=embed)
                 else:
-                    await add_inv_item(session, user_id, item_id)
+                    if int(item_id) == 30:
+                        for _ in range(5):
+                            await add_inv_item(session, user_id, "29")
+                    elif int(item_id) == 32:
+                        for _ in range(5):
+                            await add_inv_item(session, user_id, "31")
+                    else:
+                        item_id = originalitemid
+                        await add_inv_item(session, user_id, item_id)
 
             await interaction.followup.send(
                 f"You bought **{', '.join(purchased_items)}**. Total cost: **G${total_price}**. New balance: **G${new_balance}**.",
@@ -269,16 +295,21 @@ SHOP_PRICES = {
         "6": {"base": 30},  # Mechanical Pencil
     },
     "containers": {
-        "7": {"base": 15},  # Plastic Container
+        "7": {"base": 10},  # Plastic Container
         "8": {"base": 15},  # 3D Printed Container
-        "9": {"base": 30},  # Decoy Rock
-        "10": {"base": 45}, # Decoy Electric Metal Plate
-        "11": {"base": 20}, # Bottle Cap Container
-        "12": {"base": 10}, # Decoy Bolt
+        "9": {"base": 15},  # Decoy Rock
+        "10": {"base": 17}, # Decoy Electric Metal Plate
+        "11": {"base": 15}, # Bottle Cap Container
+        "12": {"base": 7}, # Decoy Bolt
         "13": {"base": 5},  # Bison Tube
         "14": {"base": 50}, # Ammo Can
         "15": {"base": 5},  # Pill Bottle
         "16": {"base": 20}, # Magnetic Container
+        "17": {"base": 7}, # Magnetic Container
+        "18": {"base": 25}, # Magnetic Container
+        "19": {"base": 5}, # Magnetic Container
+        "20": {"base": 13}, # Magnetic Container
+        "21": {"base": 15}, # Magnetic Container
         "22": {"base": 55}, # Maze Container
         "sizes": {
             ".6": 5,   # XS
@@ -294,7 +325,7 @@ SHOP_PRICES = {
             ".14": 0,  # Green
             ".15": 0,  # Blue
             ".16": 0,  # Purple
-            ".17": 0,   # Black
+            ".17": 0,  # Black
             ".18": 5   # Camo
         },
         "log": {
@@ -316,15 +347,15 @@ SHOP_PRICES = {
         "32": {"base": 45}   # Bus Tickets X5
     },
     "trackables": {
-        "33": {"base": 25},  # Taxi Ticket
-        "34": {"base": 30},  # Taxi Tickets X5
-        "35": {"base": 50},  # Bus Ticket
-        "36": {"base": 45},   # Bus Tickets X5
-        "37": {"base": 60},   # Bus Tickets X5
-        "38": {"base": 55},   # Bus Tickets X5
-        "39": {"base": 50},   # Bus Tickets X5
-        "40": {"base": 50},   # Bus Tickets X5
-        "41": {"base": 50}   # Bus Tickets X5
+        "33": {"base": 25},  # Basic TB Tag
+        "34": {"base": 30},  # Tracker TB Tag
+        "35": {"base": 50},  # GC Logo Coin Gold
+        "36": {"base": 45},  # GC Logo Coin Silver
+        "37": {"base": 60},  # Tracker Coin Gold
+        "38": {"base": 55},  # Signal Coin Gold
+        "39": {"base": 50},  # Discord Coin Silver
+        "40": {"base": 50},  # Ammo Can Coin Brass
+        "41": {"base": 50}   # Game Start Coin Ancient Silver
     }
 }
 
@@ -347,6 +378,11 @@ MAIN_INVENTORY = {
     "14": "Ammo Can",
     "15": "Pill Bottle",
     "16": "Magnetic Container",
+    "17": "Fake Gum",
+    "18": "Fake Log",
+    "19": "Film Canister",
+    "20": "Fake Snail",
+    "21": "Fake Pinecone",
     "22": "Maze Container",
     # Transport
     "23": "Bike",
@@ -393,6 +429,7 @@ ALT_INVENTORY = {
     ".15": "Blue",
     ".16": "Purple",
     ".17": "Black",
+    ".18": "Camo",
     # Logs
     "L": "Log (Plain Paper)",
 }
@@ -407,12 +444,10 @@ def calculate_price(item_id: str) -> int:
     Returns:
         int: The total price of the item.
     """
-    # Use regex to split the item ID while preserving periods and letters
     parts = re.findall(r'\d+|\.\d+|[A-Za-z]', item_id)
     category = None
     total_price = 0
 
-    # Determine the category
     if parts[0] in SHOP_PRICES["pens"]:
         category = "pens"
     elif parts[0] in SHOP_PRICES["containers"]:
@@ -431,25 +466,18 @@ def calculate_price(item_id: str) -> int:
     if not category:
         raise ValueError(f"Invalid item ID: {item_id}")
 
-    # Add base price
     if category == "tickets":
         total_price += SHOP_PRICES["tickets"][parts[0]]["base"]
     else:
         total_price += SHOP_PRICES[category][parts[0]]["base"]
 
-    # Process additional components
     for part in parts[1:]:
-        # Add color price (for pens and containers)
         if category in ["pens", "containers", "pencilWC"] and part in SHOP_PRICES[category].get("colors", {}):
-            # Check if the specific item supports colors
-            if parts[0] in SHOP_PRICES[category]["colors"]:
-                total_price += SHOP_PRICES[category]["colors"][part]
+            total_price += SHOP_PRICES[category]["colors"][part]
 
-        # Add size price (for containers)
         elif category == "containers" and part in SHOP_PRICES["containers"]["sizes"]:
             total_price += SHOP_PRICES["containers"]["sizes"][part]
 
-        # Add log price (for containers)
         elif category == "containers" and part in SHOP_PRICES["containers"]["log"]:
             total_price += SHOP_PRICES["containers"]["log"][part]
 
@@ -464,137 +492,295 @@ class HideConfigData:
         self.terrain = None
         self.lat = None
         self.lon = None
-        self.size = None
-
-class InputModal(Modal):
-    def __init__(self, title: str, field_name: str, hide_data: HideConfigData):
-        super().__init__(title=title)
-        self.field_name = field_name
-        self.hide_data = hide_data
-        self.input_field = TextInput(label=f"Enter {field_name}", placeholder="Type here", required=True)
-        self.add_item(self.input_field)
-
-    async def on_submit(self, interaction: discord.Interaction):
-        value = self.input_field.value
-        setattr(self.hide_data, self.field_name, value)
-        embed = HideConfigureSelect.create_embed(self.hide_data)
-        await interaction.response.edit_message(embed=embed)
-
-class DifficultySelect(Select):
-    def __init__(self, hide_data: HideConfigData):
-        self.hide_data = hide_data
-        options = [
-            discord.SelectOption(label=str(value), value=str(value))
-            for value in [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
-        ]
-        super().__init__(placeholder="Select difficulty (1-5)", options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        self.hide_data.difficulty = self.values[0]
-        await interaction.response.edit_message(content=f"Set difficulty to {self.hide_data.difficulty}/5", view=None)
-
-
-class TerrainSelect(Select):
-    def __init__(self, hide_data: HideConfigData):
-        self.hide_data = hide_data
-        options = [
-            discord.SelectOption(label=str(value), value=str(value))
-            for value in [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5]
-        ]
-        super().__init__(placeholder="Select terrain (1-5)", options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        self.hide_data.terrain = self.values[0]
-        await interaction.response.edit_message(content=f"Set terrain to {self.hide_data.terrain}/5", view=None)
+        self.container = None  # Store the selected container
         
-class SizeSelect(Select):
-    def __init__(self, hide_data: HideConfigData):
-        self.hide_data = hide_data
-        options = [
-            discord.SelectOption(label=str(value), value=str(value))
-            for value in ["Micro", "Small", "Regular", "Large", "Extra-Large"]
-        ]
-        super().__init__(placeholder="Select size", options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        self.hide_data.size = self.values[0]
-        await interaction.response.edit_message(content=f"Set size to {self.hide_data.size}", view=None)
-
 class HideConfigureSelect(Select):
-    def __init__(self, hide_data: HideConfigData):
+    def __init__(self, hide_data: HideConfigData, interaction: discord.Interaction, original_message: discord.Message):
         self.hide_data = hide_data
+        self.interaction = interaction
+        self.original_message = original_message  # Store the original message
         options = [
             discord.SelectOption(label="Name", value="name"),
             discord.SelectOption(label="Location", value="location"),
             discord.SelectOption(label="Description", value="description"),
             discord.SelectOption(label="Difficulty", value="difficulty"),
             discord.SelectOption(label="Terrain", value="terrain"),
-            discord.SelectOption(label="Size", value="size"),
             discord.SelectOption(label="Publish Hide", value="publish")
         ]
         super().__init__(placeholder="Select an option to configure...", options=options)
 
     async def callback(self, interaction: discord.Interaction):
         if self.values[0] in ["name", "description"]:
-            modal = InputModal(title=f"Enter {self.values[0]}", field_name=self.values[0], hide_data=self.hide_data)
-            await interaction.response.send_modal(modal)
+            modal = InputModal(
+                title=f"Enter {self.values[0]}",
+                field_name=self.values[0],
+                hide_data=self.hide_data,
+                interaction=interaction,
+                original_message=self.original_message
+            )
+            try:
+                await interaction.response.send_modal(modal)
+            except Exception as e:
+                print(f"Modal error: {e}")
         elif self.values[0] == "location":
-            await self.prompt_for_location(interaction)
+            view = View()
+            view.add_item(LocationSelect(self.hide_data, self.interaction, self.original_message))
+            await interaction.response.edit_message(content="Select a location:", view=view)
         elif self.values[0] == "difficulty":
             view = View()
-            view.add_item(DifficultySelect(self.hide_data))
-            await interaction.response.send_message("Select a difficulty level:", view=view, ephemeral=True)
+            view.add_item(DifficultySelect(self.hide_data, self.interaction, self.original_message))
+            await interaction.response.edit_message(content="Select a difficulty level:", view=view)
         elif self.values[0] == "terrain":
             view = View()
-            view.add_item(TerrainSelect(self.hide_data))
-            await interaction.response.send_message("Select a terrain level:", view=view, ephemeral=True)
-        elif self.values[0] == "size":
-            view = View()
-            view.add_item(SizeSelect(self.hide_data))
-            await interaction.response.send_message("Select a size level:", view=view, ephemeral=True)
+            view.add_item(TerrainSelect(self.hide_data, self.interaction, self.original_message))
+            await interaction.response.edit_message(content="Select a terrain level:", view=view)
         elif self.values[0] == "publish":
             await self.publish_hide(interaction)
 
-    async def prompt_for_location(self, interaction: discord.Interaction):
-        options = [discord.SelectOption(label=loc, value=loc) for loc in LOCATION_COORDS.keys()]
-        select = Select(placeholder="Choose a location", options=options)
+    async def update_embed(self):
+        embed = discord.Embed(
+            title="Configure Your Hide",
+            description="Use the dropdown below to configure your hide.",
+            colour=0xad7e66
+        )
+        embed.add_field(name="Name", value=self.hide_data.name or "Not set", inline=False)
+        embed.add_field(name="Location", value=self.hide_data.location or "Not set", inline=False)
+        embed.add_field(name="Description", value=self.hide_data.description or "Not set", inline=False)
+        embed.add_field(name="Difficulty", value=f"{self.hide_data.difficulty}/5" if self.hide_data.difficulty else "Not set", inline=True)
+        embed.add_field(name="Terrain", value=f"{self.hide_data.terrain}/5" if self.hide_data.terrain else "Not set", inline=True)
+        embed.add_field(name="Container", value=self.hide_data.container or "Not set", inline=False)
 
-        async def select_callback(interaction: discord.Interaction):
-            self.hide_data.location = select.values[0]
-            self.hide_data.lat, self.hide_data.lon = LOCATION_COORDS[select.values[0]]
-            await interaction.response.edit_message(content=f"Set hide location to {self.hide_data.location}", view=None)
-
-        select.callback = select_callback
         view = View()
-        view.add_item(select)
-        await interaction.response.send_message("Select a location:", view=view, ephemeral=True)
+        view.add_item(self)
+
+        # Edit the original message with the updated embed
+        await self.original_message.edit(embed=embed, view=view)
 
     async def publish_hide(self, interaction: discord.Interaction):
-        if all([self.hide_data.name, self.hide_data.location, self.hide_data.description, self.hide_data.difficulty, self.hide_data.terrain, self.hide_data.lat, self.hide_data.lon, self.hide_data.size]):
+        # Example implementation for publishing the hide
+        if not all([self.hide_data.name, self.hide_data.location, self.hide_data.description, self.hide_data.difficulty, self.hide_data.terrain, self.hide_data.container]):
+            await interaction.response.send_message(
+                "Please complete all fields (Name, Location, Description, Difficulty, Terrain, and Container) before publishing.",
+                ephemeral=True
+            )
+            return
 
-            async with Session() as session: 
-                cache_id = await get_next_gc_code(session)  
-                await add_hide(session, cache_id, interaction.user.id, self.hide_data.name, 
-                                self.hide_data.lat, self.hide_data.lon, self.hide_data.description, 
-                                self.hide_data.difficulty, self.hide_data.terrain, self.hide_data.size, self.hide_data.location)
+        # Generate a unique code for the hide
+        async with Session() as session:
+            hide_code = await get_next_gc_code(session)
 
-            await interaction.response.send_message(f"Geocache published successfully! ID: `{cache_id}`")
-        else:
-            await interaction.response.send_message("Please configure all fields before publishing.", ephemeral=True)
+        # Create a confirmation embed
+        embed = discord.Embed(
+            title="Hide Published!",
+            description=f"Your hide has been successfully published with the code: `{hide_code}`.",
+            colour=0x00ff00
+        )
+        embed.add_field(name="Name", value=self.hide_data.name, inline=False)
+        embed.add_field(name="Location", value=self.hide_data.location, inline=False)
+        embed.add_field(name="Description", value=self.hide_data.description, inline=False)
+        embed.add_field(name="Difficulty", value=f"{self.hide_data.difficulty}/5", inline=True)
+        embed.add_field(name="Terrain", value=f"{self.hide_data.terrain}/5", inline=True)
+        embed.add_field(name="Container", value=self.hide_data.container, inline=False)
+        
+        async with Session() as session:
+            await add_hide(session, hide_code, interaction.user.id, self.hide_data.name, self.hide_data.lat, self.hide_data.lon, self.hide_data.description, self.hide_data.difficulty, self.hide_data.terrain, self.hide_data.container, self.hide_data.location)
 
-    @staticmethod
-    def create_embed(hide_data: HideConfigData):
-        embed = Embed(title="Geocache Hide Configuration")
-        embed.add_field(name="Name", value=hide_data.name or "Not set", inline=False)
-        embed.add_field(name="Location", value=hide_data.location or "Not set", inline=False)
-        embed.add_field(name="Latitude", value=str(hide_data.lat) if hide_data.lat else "Not set", inline=False)
-        embed.add_field(name="Longitude", value=str(hide_data.lon) if hide_data.lon else "Not set", inline=False)
-        embed.add_field(name="Description", value=hide_data.description or "Not set", inline=False)
-        embed.add_field(name="Difficulty", value=hide_data.difficulty or "Not set", inline=False)
-        embed.add_field(name="Terrain", value=hide_data.terrain or "Not set", inline=False)
-        embed.add_field(name="Size", value=hide_data.size or "Not set", inline=False)
+        # Send the confirmation message
+        await interaction.response.edit_message(embed=embed, view=None)
+
+class LocationSelect(Select):
+    def __init__(self, hide_data: HideConfigData, interaction: discord.Interaction, original_message: discord.Message):
+        self.hide_data = hide_data
+        self.interaction = interaction
+        self.original_message = original_message  # Store the original message
+        options = [
+            discord.SelectOption(label=location, value=location) for location in LOCATION_COORDS.keys()
+        ]
+        super().__init__(placeholder="Select a location", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        selected_location = self.values[0]
+        self.hide_data.location = selected_location
+        self.hide_data.lat, self.hide_data.lon = LOCATION_COORDS[selected_location]
+
+        # Update the embed with the new location
+        embed = discord.Embed(
+            title="Configure Your Hide",
+            description="Use the dropdown below to configure your hide.",
+            colour=0xad7e66
+        )
+        embed.add_field(name="Name", value=self.hide_data.name or "Not set", inline=False)
+        embed.add_field(name="Location", value=self.hide_data.location or "Not set", inline=False)
+        embed.add_field(name="Description", value=self.hide_data.description or "Not set", inline=False)
+        embed.add_field(name="Difficulty", value=f"{self.hide_data.difficulty}/5" if self.hide_data.difficulty else "Not set", inline=True)
+        embed.add_field(name="Terrain", value=f"{self.hide_data.terrain}/5" if self.hide_data.terrain else "Not set", inline=True)
+        embed.add_field(name="Container", value=self.hide_data.container or "Not set", inline=False)
+
+        # Recreate the view with the dropdown
+        view = View()
+        view.add_item(HideConfigureSelect(self.hide_data, self.interaction, self.original_message))
+
+        # Update the original message with the new embed and view
+        await self.original_message.edit(embed=embed, view=view)
+
+        # Notify the user that the location has been set
+       # await interaction.response.send_message(f"Location set to: {selected_location}", ephemeral=True)
+
+class DifficultySelect(Select):
+    def __init__(self, hide_data: HideConfigData, interaction: discord.Interaction, original_message: discord.Message):
+        self.hide_data = hide_data
+        self.interaction = interaction
+        self.original_message = original_message  # Store the original message
+        options = [
+            discord.SelectOption(label=f"{i/2}", value=f"{i/2}") for i in range(2, 11)  # 0.5 to 5.0
+        ]
+        super().__init__(placeholder="Select difficulty (1.0-5.0)", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        self.hide_data.difficulty = float(self.values[0])  # Store as a float
+
+        # Update the original embed
+        await HideConfigureSelect(self.hide_data, self.interaction, self.original_message).update_embed()
+
+        # Notify the user that the difficulty has been set
+        #await interaction.response.send_message(f"Difficulty set to {self.hide_data.difficulty}/5.", ephemeral=True)
+
+
+class TerrainSelect(Select):
+    def __init__(self, hide_data: HideConfigData, interaction: discord.Interaction, original_message: discord.Message):
+        self.hide_data = hide_data
+        self.interaction = interaction
+        self.original_message = original_message  # Store the original message
+        options = [
+            discord.SelectOption(label=f"{i/2}", value=f"{i/2}") for i in range(2, 11)  # 0.5 to 5.0
+        ]
+        super().__init__(placeholder="Select terrain (1.0-5.0)", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        self.hide_data.terrain = (self.values[0])
+
+        # Update the embed with the new terrain
+        embed = discord.Embed(
+            title="Configure Your Hide",
+            description="Use the dropdown below to configure your hide.",
+            colour=0xad7e66
+        )
+        embed.add_field(name="Name", value=self.hide_data.name or "Not set", inline=False)
+        embed.add_field(name="Location", value=self.hide_data.location or "Not set", inline=False)
+        embed.add_field(name="Description", value=self.hide_data.description or "Not set", inline=False)
+        embed.add_field(name="Difficulty", value=f"{self.hide_data.difficulty}/5" if self.hide_data.difficulty else "Not set", inline=True)
+        embed.add_field(name="Terrain", value=f"{self.hide_data.terrain}/5" if self.hide_data.terrain else "Not set", inline=True)
+        embed.add_field(name="Container", value=self.hide_data.container or "Not set", inline=False)
+
+        # Recreate the view with the dropdown
+        view = View()
+        view.add_item(HideConfigureSelect(self.hide_data, self.interaction, self.original_message))
+
+        # Update the original message with the new embed and view
+        await self.original_message.edit(embed=embed, view=view)
+
+        # Notify the user that the terrain has been set
+       # await interaction.response.send_message(f"Terrain set to {self.hide_data.terrain}/5.", ephemeral=True)
+
+class InputModal(Modal):
+    def __init__(self, title: str, field_name: str, hide_data: HideConfigData, interaction: discord.Interaction, original_message: discord.Message):
+        super().__init__(title=title)
+        self.field_name = field_name
+        self.hide_data = hide_data
+        self.interaction = interaction
+        self.original_message = original_message  # Store the original message
+        self.input_field = TextInput(
+            label=f"Enter {field_name}",
+            placeholder=f"Enter the {field_name.lower()} here...",
+            required=True
+        )
+        self.add_item(self.input_field)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        setattr(self.hide_data, self.field_name, self.input_field.value)
+
+        # Update the original embed
+        await self.original_message.edit(embed=self.create_updated_embed())
+
+        # Acknowledge the interaction
+        await interaction.response.defer(ephemeral=True)
+
+    def create_updated_embed(self):
+        embed = discord.Embed(
+            title="Configure Your Hide",
+            description="Use the dropdown below to configure your hide.",
+            colour=0xad7e66
+        )
+        embed.add_field(name="Name", value=self.hide_data.name or "Not set", inline=False)
+        embed.add_field(name="Location", value=self.hide_data.location or "Not set", inline=False)
+        embed.add_field(name="Description", value=self.hide_data.description or "Not set", inline=False)
+        embed.add_field(name="Difficulty", value=f"{self.hide_data.difficulty}/5" if self.hide_data.difficulty else "Not set", inline=True)
+        embed.add_field(name="Terrain", value=f"{self.hide_data.terrain}/5" if self.hide_data.terrain else "Not set", inline=True)
+        embed.add_field(name="Container", value=self.hide_data.container or "Not set", inline=False)
         return embed
 
+class ContainerSelectionView(View):
+    def __init__(self, containers, user_id, original_message):
+        super().__init__()
+        self.containers = containers
+        self.user_id = user_id
+        self.original_message = original_message
+
+    @discord.ui.button(label="Select Container", style=discord.ButtonStyle.primary)
+    async def select_container(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(ContainerSelectionModal(self.containers, self.user_id, self.original_message))
+
+class ContainerSelectionModal(Modal, title="Select a Container"):
+    def __init__(self, containers, user_id, original_message):
+        super().__init__()
+        self.containers = containers
+        self.user_id = user_id
+        self.original_message = original_message
+        self.container_input = TextInput(
+            label="Enter container number.",
+            placeholder="E.g., 1",
+            required=True
+        )
+        self.add_item(self.container_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        try:
+            selected_index = int(self.container_input.value) - 1
+            if selected_index < 0 or selected_index >= len(self.containers):
+                raise ValueError("Invalid selection")
+
+            selected_container = self.containers[selected_index]
+
+            # Remove the selected container from the user's inventory
+            async with Session() as session:
+                success = await remove_inv_item(session, self.user_id, selected_container)
+                if not success:
+                    await interaction.response.send_message("Failed to remove the container from your inventory.", ephemeral=True)
+                    return
+
+            # Create a new embed for configuring the hide
+            embed = discord.Embed(
+                title="Configure Your Hide",
+                description="Now configure the details of your hide. Use the dropdown below to select what to configure.",
+                colour=0xad7e66
+            )
+            embed.add_field(name="Selected Container", value=selected_container, inline=False)
+
+            # Create a view for configuring the hide
+            hide_data = HideConfigData()
+            hide_data.container = selected_container  # Store the selected container
+            view = View()
+            view.add_item(HideConfigureSelect(hide_data, interaction, self.original_message))  # Pass original_message
+
+            # Edit the original message to show the new embed
+            await self.original_message.edit(embed=embed, view=view)
+
+            # Notify the user that the container has been selected
+            await interaction.response.send_message(f"Container `{selected_container}` has been selected and removed from your inventory.", ephemeral=True)
+
+        except ValueError:
+            await interaction.response.send_message("Invalid selection. Please enter a valid number.", ephemeral=True)
+            
 class SetNameModal(Modal, title="Set Cacher Name"):
     selection = TextInput(label="Enter Cacher Name", placeholder="eg. BooZac (character limit: 15)")
 
