@@ -1,3 +1,4 @@
+from collections import defaultdict
 import discord
 from economy import *
 from gamefunctions import *
@@ -98,7 +99,7 @@ class Economy(app_commands.Group):
             sent_message = await interaction.original_response()
             await asyncio.sleep(300)
             await sent_message.delete()
-
+            
     @app_commands.command()
     async def hide(self, interaction: discord.Interaction):
         """
@@ -114,8 +115,8 @@ class Economy(app_commands.Group):
                     f"It appears you haven't set your cacher name yet! Please press the button below to enter your name and start caching.",
                     ephemeral=True
                 )
-                original_message = await interaction.original_response()
-                await original_message.edit(view=CacherNameView(original_message))
+                original_message = await interaction.followup.send("Please enter your cacher name below.")  # Use followup here
+                await original_message.edit(view=CacherNameView(original_message))  # Now edit the message object
                 return
 
             # Retrieve the user's inventory
@@ -142,18 +143,44 @@ class Economy(app_commands.Group):
                 description="Below is a list of containers in your inventory. Enter the number corresponding to the container you want to use.",
                 colour=0xad7e66
             )
-            for idx, container in enumerate(containers, start=1):
+            
+            item_counts = defaultdict(int)
+            item_to_container = {}
+            
+            # Build counts and names
+            for container in containers:
                 parts = re.findall(r'\d+|\.\d+|[A-Za-z]', container)
                 main_item = MAIN_INVENTORY.get(parts[0], "Unknown Item")
                 alt_items = [ALT_INVENTORY.get(part, "") for part in parts[1:]]
                 alt_items = [alt for alt in alt_items if alt]
-                item_name = f"{' '.join(alt_items)} {main_item}".strip()
-                embed.add_field(name=f"{idx}. {item_name}", value="", inline=False)
+                item_name = f"{main_item} {' '.join(alt_items)}".strip()
 
-            # Create a view with a button to open the modal
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            view = ContainerSelectionView(containers, user_id, await interaction.original_response())
-            await interaction.edit_original_response(embed=embed, view=view)
+                if "Log" in item_name:
+                    item_name = item_name.replace("Log", "w/ Log")
+
+                item_counts[item_name] += 1
+                if item_name not in item_to_container:
+                    item_to_container[item_name] = container
+
+            # Final list of unique items to show (limit 25)
+            deduped_items = list(item_counts.items())[:25]
+
+            # Build the embed
+            for idx, (item_name, count) in enumerate(deduped_items, start=1):
+                display = f"{count}x {item_name}" if count > 1 else item_name
+                embed.add_field(name=f"{idx}. {display}", value="", inline=False)
+
+            channel = interaction.channel
+            await interaction.response.defer()
+            msg = await interaction.followup.send(".")
+            await msg.delete()
+            # Send the initial embed and store the message object
+            original_message = await channel.send(embed=embed)  # Store the actual message
+
+            # Create a view for container selection
+            view = ContainerSelectionView(deduped_items, item_to_container, user_id, original_message)
+            # Edit the message later when the view is ready
+            await original_message.edit(embed=embed, view=view)
         
     @app_commands.command()
     async def cache_info(self, interaction: discord.Interaction, cache_id: str):
