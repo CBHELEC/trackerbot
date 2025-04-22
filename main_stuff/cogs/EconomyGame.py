@@ -105,6 +105,7 @@ class Economy(app_commands.Group):
         """
         Create a geocache hide, allowing the user to select a container from their inventory.
         """
+        await interaction.response.defer()
         async with Session() as session:
             user_id = interaction.user.id
             user_database_settings = await get_db_settings(session, user_id)
@@ -170,12 +171,11 @@ class Economy(app_commands.Group):
                 display = f"{count}x {item_name}" if count > 1 else item_name
                 embed.add_field(name=f"{idx}. {display}", value="", inline=False)
 
-            channel = interaction.channel
-            await interaction.response.defer()
-            msg = await interaction.followup.send(".")
-            await msg.delete()
+          #  channel = interaction.channel
+          #  msg = await interaction.followup.send(".")
+          #  await msg.delete()
             # Send the initial embed and store the message object
-            original_message = await channel.send(embed=embed)  # Store the actual message
+            original_message = await interaction.followup.send(embed=embed)  # Store the actual message
 
             # Create a view for container selection
             view = ContainerSelectionView(deduped_items, item_to_container, user_id, original_message)
