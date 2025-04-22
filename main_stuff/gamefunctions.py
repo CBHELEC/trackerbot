@@ -6,6 +6,50 @@ import re
 import string
 import random
 
+def get_container_name(container_code):
+    parts = re.findall(r'\d+|\.\d+|[A-Za-z]', container_code)
+    
+    # Get the main item name from MAIN_INVENTORY
+    main_item_code = parts[0]
+    main_item = MAIN_INVENTORY.get(main_item_code, "Unknown Item")
+    
+    # Get additional items from ALT_INVENTORY
+    alt_items = [ALT_INVENTORY.get(part, "") for part in parts[1:]]
+    alt_items = [alt for alt in alt_items if alt]  # Filter out empty items
+    
+    # Combine the main item name and any additional attributes
+    container_name = f"{main_item} {' '.join(alt_items)}".strip()
+    
+    return container_name
+
+def get_container_id(container_name):
+    # Reverse lookup in MAIN_INVENTORY to get the base ID
+    for id, name in MAIN_INVENTORY.items():
+        if name == container_name:
+            return id  # Return the base ID
+
+    # If not found, try splitting the name into base name and additional attributes
+    parts = container_name.split()
+    
+    # Try to find the matching main item and return the base ID
+    for id, name in MAIN_INVENTORY.items():
+        if name.startswith(parts[0]):  # Match the main part of the name
+            base_id = id
+            break
+    else:
+        return None  # If no match is found, return None
+
+    # Now check for additional attributes in ALT_INVENTORY (like size, color, etc.)
+    alt_ids = []
+    for part in parts[1:]:  # Skip the main item name, process the rest (size, color, etc.)
+        for alt_id, alt_name in ALT_INVENTORY.items():
+            if alt_name.lower() == part.lower():  # Case-insensitive matching
+                alt_ids.append(alt_id)
+                break
+
+    # Combine the base ID and additional alt IDs (like .6, .11, etc.)
+    return base_id + ''.join(alt_ids)
+
 async def generate_public_code(session) -> str:
     """
     Generate a unique public code for a trackable.
@@ -581,9 +625,12 @@ class HideConfigureSelect(Select):
         embed.add_field(name="Terrain", value=f"{self.hide_data.terrain}/5", inline=True)
         embed.add_field(name="Container", value=self.hide_data.container, inline=False)
         
+        container_id = get_container_id(self.hide_data.container)
+        
         async with Session() as session:
             await add_hide(session, hide_code, interaction.user.id, self.hide_data.name, self.hide_data.lat, self.hide_data.lon, self.hide_data.description, self.hide_data.difficulty, self.hide_data.terrain, self.hide_data.container, self.hide_data.location)
-            await remove_inv_item(session, self.user_id, self.hide_data.container)
+            print(f"{self.hide_data.container} is the name and {container_id} is the id")
+            await remove_inv_item(session, interaction.user.id, container_id)
 
         await interaction.response.edit_message(embed=embed, view=None, content=None)
 
@@ -719,23 +766,24 @@ class InputModal(Modal):
         return embed
 
 class ContainerSelectionView(View):
-    def __init__(self, containers, user_id, original_message):
+    def __init__(self, deduped_items, item_to_container, user_id, original_message):
         super().__init__()
-        self.containers = containers
+        self.deduped_items = deduped_items  # Store the deduplicated list
+        self.item_to_container = item_to_container  # Store the item-to-container mapping
         self.user_id = user_id
         self.original_message = original_message
 
     @discord.ui.button(label="Select Container", style=discord.ButtonStyle.primary)
     async def select_container(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(ContainerSelectionModal(self.containers, self.user_id, self.original_message))
+        # Pass both deduped_items and item_to_container to the modal
+        await interaction.response.send_modal(ContainerSelectionModal(self.deduped_items, self.user_id, self.original_message))
 
 class ContainerSelectionModal(Modal, title="Select a Container"):
     def __init__(self, containers, user_id, original_message):
         super().__init__()
         self.containers = containers
         self.user_id = user_id
-        self.msg = None
-        self.original_message = original_message
+        self.original_message = original_message  # Store the message correctly
         self.container_input = TextInput(
             label="Enter container number.",
             placeholder="E.g., 1",
@@ -745,12 +793,12 @@ class ContainerSelectionModal(Modal, title="Select a Container"):
 
     async def on_submit(self, interaction: discord.Interaction):
         try:
-            await interaction.response.defer()
             selected_index = int(self.container_input.value) - 1
             if selected_index < 0 or selected_index >= len(self.containers):
                 raise ValueError("Invalid selection")
 
             selected_container = self.containers[selected_index]
+            selected_container = selected_container[0]
 
             # Create a new embed for configuring the hide
             embed = discord.Embed(
@@ -770,66 +818,10 @@ class ContainerSelectionModal(Modal, title="Select a Container"):
             await self.original_message.edit(embed=embed, view=view)
 
             # Notify the user that the container has been selected
-            interaction.client.msg = await interaction.followup.send(f"Container `{selected_container}` has been selected.", ephemeral=True)
+            await interaction.response.send_message(f"Container `{selected_container}` has been selected.", ephemeral=True)
 
         except ValueError:
-            await interaction.followup.send("Invalid selection. Please enter a valid number.", ephemeral=True)
-        
-class PaginatedContainerView(View):
-    def __init__(self, containers, user_id, original_message, page=0, items_per_page=10):
-        super().__init__()
-        self.containers = containers
-        self.user_id = user_id
-        self.original_message = original_message
-        self.page = page
-        self.items_per_page = items_per_page
-
-        # Add navigation buttons
-        if self.page > 0:
-            self.add_item(Button(label="Previous", style=discord.ButtonStyle.primary, custom_id="previous_page"))
-        if (self.page + 1) * self.items_per_page < len(self.containers):
-            self.add_item(Button(label="Next", style=discord.ButtonStyle.primary, custom_id="next_page"))
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        # Ensure only the original user can interact with the buttons
-        return interaction.user.id == self.user_id
-
-    async def on_timeout(self):
-        # Disable buttons when the view times out
-        for child in self.children:
-            child.disabled = True
-        await self.original_message.edit(view=self)
-
-    @discord.ui.button(label="Previous", style=discord.ButtonStyle.primary, custom_id="previous_page")
-    async def previous_page(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await self.update_embed(interaction, self.page - 1)
-
-    @discord.ui.button(label="Next", style=discord.ButtonStyle.primary, custom_id="next_page")
-    async def next_page(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await self.update_embed(interaction, self.page + 1)
-
-    async def update_embed(self, interaction: discord.Interaction, new_page):
-        self.page = new_page
-        embed = self.create_embed()
-        view = PaginatedContainerView(self.containers, self.user_id, self.original_message, self.page)
-        await self.original_message.edit(embed=embed, view=view)
-
-    def create_embed(self):
-        embed = discord.Embed(
-            title="Select a Container for Your Hide",
-            description="Below is a list of containers in your inventory. Enter the number corresponding to the container you want to use.",
-            colour=0xad7e66
-        )
-        start_idx = self.page * self.items_per_page
-        end_idx = start_idx + self.items_per_page
-        for idx, container in enumerate(self.containers[start_idx:end_idx], start=start_idx + 1):
-            parts = re.findall(r'\d+|\.\d+|[A-Za-z]', container)
-            main_item = MAIN_INVENTORY.get(parts[0], "Unknown Item")
-            alt_items = [ALT_INVENTORY.get(part, "") for part in parts[1:]]
-            alt_items = [alt for alt in alt_items if alt]
-            item_name = f"{' '.join(alt_items)} {main_item}".strip()
-            embed.add_field(name=f"{idx}. {item_name}", value="", inline=False)
-        return embed
+            await interaction.response.send_message("Invalid selection. Please enter a valid number.", ephemeral=True)
             
 class SetNameModal(Modal, title="Set Cacher Name"):
     selection = TextInput(label="Enter Cacher Name", placeholder="eg. BooZac (character limit: 15)")
