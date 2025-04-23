@@ -110,7 +110,6 @@ class Economy(app_commands.Group):
             user_id = interaction.user.id
             user_database_settings = await get_db_settings(session, user_id)
 
-            # Check if the user has set their cacher name
             if user_database_settings is None:
                 await interaction.response.send_message(
                     f"It appears you haven't set your cacher name yet! Please press the button below to enter your name and start caching.",
@@ -120,7 +119,6 @@ class Economy(app_commands.Group):
                 await original_message.edit(view=CacherNameView(original_message))  # Now edit the message object
                 return
 
-            # Retrieve the user's inventory
             inventory_items = await get_inventory(session, user_id)
             if not inventory_items:
                 await interaction.response.send_message(
@@ -129,7 +127,6 @@ class Economy(app_commands.Group):
                 )
                 return
 
-            # Filter containers from the inventory
             containers = [item for item in inventory_items if item.split('.')[0] in SHOP_PRICES["containers"]]
             if not containers:
                 await interaction.response.send_message(
@@ -138,17 +135,15 @@ class Economy(app_commands.Group):
                 )
                 return
 
-            # Create an embed listing all containers with numbers
             embed = discord.Embed(
                 title="Select a Container for Your Hide",
-                description="Below is a list of containers in your inventory. Enter the number corresponding to the container you want to use.",
+                description="Below is a list of containers in your inventory. Enter the number corresponding to the container you want to use. No log means one from your inventory will be picked later.",
                 colour=0xad7e66
             )
             
             item_counts = defaultdict(int)
             item_to_container = {}
             
-            # Build counts and names
             for container in containers:
                 parts = re.findall(r'\d+|\.\d+|[A-Za-z]', container)
                 main_item = MAIN_INVENTORY.get(parts[0], "Unknown Item")
@@ -158,28 +153,22 @@ class Economy(app_commands.Group):
 
                 if "Log" in item_name:
                     item_name = item_name.replace("Log", "w/ Log")
+                else:
+                    item_name = f"{item_name} (NO LOG)"
 
                 item_counts[item_name] += 1
                 if item_name not in item_to_container:
-                    item_to_container[item_name] = container
+                    item_to_container[item_name] = (item_name, container)
 
-            # Final list of unique items to show (limit 25)
             deduped_items = list(item_counts.items())[:25]
 
-            # Build the embed
             for idx, (item_name, count) in enumerate(deduped_items, start=1):
                 display = f"{count}x {item_name}" if count > 1 else item_name
                 embed.add_field(name=f"{idx}. {display}", value="", inline=False)
 
-          #  channel = interaction.channel
-          #  msg = await interaction.followup.send(".")
-          #  await msg.delete()
-            # Send the initial embed and store the message object
-            original_message = await interaction.followup.send(embed=embed)  # Store the actual message
+            original_message = await interaction.followup.send(embed=embed) 
 
-            # Create a view for container selection
             view = ContainerSelectionView(deduped_items, item_to_container, user_id, original_message)
-            # Edit the message later when the view is ready
             await original_message.edit(embed=embed, view=view)
         
     @app_commands.command()
@@ -607,7 +596,7 @@ class Game_Admin(app_commands.Group):
         if isinstance(error, app_commands.CheckFailure):
             await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
         else:
-            raise error        
+            raise error       
     
 eco_a_commands = Game_Admin(name="game_admin", description="Geocaching Game Admin Commands.")
 
