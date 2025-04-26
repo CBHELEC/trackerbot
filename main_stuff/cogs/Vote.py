@@ -24,8 +24,8 @@ class VoteChecker(commands.Cog):
     #    self.DBL_API_TOKEN = os.getenv("DBL_TOKEN")
     #    self.BOT_ID = os.getenv("DBL_ID")
 
-        self.DBL_API_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0IjoxLCJpZCI6IjEzMjIzMDU2NjI5NzMxMTY0ODYiLCJpYXQiOjE3NDU2OTQ1Mzd9.crs7nNF3pyTLh4aPAsqXB706tvaMOAPh-Xi2ra0Yqq4"
-        self.BOT_ID = "1322305662973116486"
+        self.DBL_API_TOKEN = "yikes i forgot to remove this before uploading"
+        self.BOT_ID = "yikes i forgot to remove this before uploading"
 
     @tasks.loop(minutes=1)
     async def check_votes(self):
