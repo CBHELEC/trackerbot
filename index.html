@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TrackerBot</title>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css"/>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f4f6f8;
+      color: #333;
+    }
+    header {
+      background-color: #111827;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+    nav a {
+      color: white;
+      margin-left: 1.5rem;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: #e0f2fe;
+    }
+    .hero h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    .badgebar, .statbar {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 2rem auto;
+      flex-wrap: wrap;
+    }
+    .badgebar img {
+      width: 60px;
+      height: 60px;
+    }
+    .stat {
+      background: white;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: center;
+      width: 150px;
+    }
+    .stat-title {
+      font-weight: bold;
+    }
+    .stat-value {
+      font-size: 1.4rem;
+      color: #007acc;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      padding: 2rem;
+    }
+    .feature {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .feature h3 {
+      margin-top: 0;
+    }
+    .datatable-container {
+      padding: 2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    footer {
+      background-color: #111827;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+    .discord-buttons {
+      text-align: center;
+      margin-top: 2rem;
+    }
+    .discord-buttons a {
+      background-color: #5865F2;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      margin: 0.5rem;
+      display: inline-block;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .discord-buttons a:hover {
+      background-color: #4752c4;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>TrackerBot</h1>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#features">Features</a>
+      <a href="#database">Trackables</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h2>Track Geocaches. Master the Grid.</h2>
+    <p>The ultimate Discord bot for geocaching. Create hides, earn badges, log stats, and explore a world of virtual geocaches—straight from your server.</p>
+    <div class="discord-buttons">
+      <a href="https://discord.gg/YOUR_COMMUNITY_LINK">Join the Community</a>
+      <a href="https://discord.com/api/oauth2/authorize?client_id=YOUR_BOT_ID&permissions=8&scope=bot%20applications.commands">Invite the Bot</a>
+    </div>
+  </section>
+
+  <section class="badgebar">
+    <img src="https://img.icons8.com/color/48/trophy.png" alt="Badge 1"/>
+    <img src="https://img.icons8.com/color/48/medal.png" alt="Badge 2"/>
+    <img src="https://img.icons8.com/color/48/star.png" alt="Badge 3"/>
+  </section>
+
+  <section class="statbar">
+    <div class="stat">
+      <span class="stat-title">Caches Found</span>
+      <span class="stat-value">172</span>
+    </div>
+    <div class="stat">
+      <span class="stat-title">Hides Placed</span>
+      <span class="stat-value">26</span>
+    </div>
+    <div class="stat">
+      <span class="stat-title">Grid Fills</span>
+      <span class="stat-value">8</span>
+    </div>
+  </section>
+
+  <section id="features" class="features">
+    <div class="feature">
+      <h3>📍 Hides & Finds</h3>
+      <p>Let users create virtual caches and log real finds with rich details.</p>
+    </div>
+    <div class="feature">
+      <h3>🗺️ D/T Grid Tracker</h3>
+      <p>Visualize and complete your Difficulty/Terrain 81-grid with stats.</p>
+    </div>
+    <div class="feature">
+      <h3>⚙️ Server Setup Tools</h3>
+      <p>Customize channel IDs, role access, and logging through commands.</p>
+    </div>
+    <div class="feature">
+      <h3>📊 Stats & Leaderboards</h3>
+      <p>Track who’s found the most, hidden the best, or climbed the ranks.</p>
+    </div>
+  </section>
+
+  <section id="database" class="datatable-container">
+    <h2 style="text-align: center;">📂 Public Trackables</h2>
+    <table id="trackable-database">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Location</th>
+          <th>Difficulty</th>
+          <th>Owner</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Old Town Cache</td><td>Everfield</td><td>2.5/3</td><td>User123</td></tr>
+        <tr><td>Frozen Hollow</td><td>Frozen Hollow</td><td>4/4</td><td>GeoMaster</td></tr>
+        <tr><td>Storm Peak</td><td>Storm Island</td><td>3/5</td><td>CacheWizard</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>
+    <p>&copy; 2025 TrackerBot | Built with ❤️ by cachers for cachers</p>
+  </footer>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script>
+    $(document).ready(function () {
+      $('#trackable-database').DataTable();
+    });
+  </script>
+</body>
+</html>
