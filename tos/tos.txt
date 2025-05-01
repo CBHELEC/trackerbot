@@ -1,0 +1,52 @@
+Last updated: May 1, 2025
+
+Introduction
+Welcome to Tracker! These Terms of Service ("Terms") are a binding agreement between you and the Tracker team ("we", "us", or "our"). These Terms govern your use of Tracker's Discord bot and related services (the "Services") and incorporate our Privacy Policy located at https://cbhelec.github.io/trackerbot/privacypolicy/.
+
+By using Tracker, you agree that:
+
+You are at least 13 years old.
+If you're of legal age in your country, you agree to these Terms.
+If you're under the age of majority, your legal guardian has agreed to these Terms on your behalf.
+If you disagree with any part of these Terms, please do not use the Services.
+
+Acceptable Use
+By using Tracker, you agree not to:
+
+Violate these Terms or any applicable laws or Discord’s Terms of Service (https://discord.com/terms)
+Harass, defraud, deceive, or abuse other users
+Attempt to gain unauthorized access to another user's account or data
+Exploit bugs, glitches, or unintended features to gain an advantage
+Use scripts, selfbots, or automation to interact with the bot
+Trade in-bot assets outside of approved methods
+
+We may suspend or permanently remove your access to Tracker at our discretion, with or without notice, if we believe you have violated these Terms.
+
+Automation Policy
+Tracker is intended for use by humans only. You may not use tools, software, or code to automate interaction with the bot in any way. This includes but is not limited to:
+
+Automated message sending to trigger bot events
+Automated item collection
+Automated market usage or sniping
+Use of selfbots or macro tools
+
+Violating this policy may result in account suspension or termination.
+
+Virtual Goods and Currency
+Tracker may contain virtual items or currencies. These are only usable within the Tracker system and have no real-world value. You may not buy, sell, trade, or exchange these items or currencies for real money, other digital currencies, or external services.
+Any attempt to trade virtual assets outside of Tracker may result in account suspension.
+
+Approved Services
+If we approve any third-party services or bots for trading or integration, they will be listed on our official site (https://cbhelec.github.io/trackerbot/). Using unapproved services for trading is a violation of these Terms.
+
+Refunds
+Tracker does not offer or support real-money purchases. As such, no refund policy is necessary or applicable.
+
+Service Availability
+We reserve the right to update, pause, or shut down Tracker at any time. There may be temporary service interruptions due to maintenance, outages, or other events. We will do our best to notify users in advance when possible.
+
+Changes to These Terms
+We may update these Terms of Service from time to time. If we make material changes, we will post them at https://cbhelec.github.io/trackerbot/tos/ or notify you via Discord. Your continued use of Tracker after any update means you accept the revised Terms.
+
+Contact Us
+If you have any questions or concerns about these Terms, you can contact us at trackerdiscordbot@gmail.com.
