@@ -126,13 +126,13 @@
 <header>
   <h1>TrackerBot</h1>
   <nav>
-    <a href="#">
+    <a href="#" class="nav-item">
       <img src="https://img.icons8.com/color/48/home.png" alt="Home" class="nav-icon"/>
     </a>
-    <a href="https://discord.com/oauth2/authorize?client_id=1322305662973116486">
+    <a href="https://discord.com/oauth2/authorize?client_id=1322305662973116486" class="nav-item">
       <img src="https://img.icons8.com/?size=48&id=64nKv4tDb3Qt&format=png&color=000000" alt="Invite" class="nav-icon"/>
     </a>
-    <a href="https://discord.gg/cAXp5DSMr4">
+    <a href="https://discord.gg/cAXp5DSMr4" class="nav-item">
       <img src="https://img.icons8.com/color/48/discord.png" alt="Discord" class="nav-icon"/>
     </a>
   </nav>
@@ -187,13 +187,11 @@
     nav {
       display: flex;
       justify-content: center;
-      gap: 1.5rem; /* Space between the icons */
-      width: 100%;
-      margin-top: 1rem;
+      gap: 2rem; /* Space between the icons */
     }
 
     nav a {
-      font-size: 0; /* Remove the text */
+      font-size: 0; /* Hide the text */
       justify-content: center;
       flex-direction: row; /* Keep icons in a row */
       align-items: center;
@@ -203,11 +201,6 @@
       width: 32px; /* Smaller icon size */
       height: 32px;
       margin: 0;
-    }
-
-    /* Hide text on mobile */
-    .nav-text {
-      display: none;
     }
   }
 </style>
