@@ -144,10 +144,17 @@
 <style>
   /* Default style - for PC */
   header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background-color: #111827;
+    color: white;
     padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 1.8rem;
   }
 
   nav {
@@ -170,8 +177,9 @@
   /* Mobile-specific styles */
   @media (max-width: 600px) {
     header {
-      flex-direction: column;
+      flex-direction: column; /* Stack items vertically */
       align-items: center;
+      padding: 1rem 0; /* Reduce padding on mobile */
     }
 
     header h1 {
@@ -182,7 +190,7 @@
     nav {
       display: flex;
       gap: 1rem;
-      justify-content: center;
+      justify-content: center; /* Align icons in center on mobile */
     }
 
     nav a {
@@ -197,6 +205,7 @@
     .nav-icon {
       width: 32px !important; /* Smaller icon size */
       height: 32px !important; /* Same height as width */
+      margin-right: 0 !important; /* Remove space between icons */
     }
   }
 </style>
