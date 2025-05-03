@@ -123,92 +123,92 @@
 </head>
 <body>
 
-<header>
-  <h1>TrackerBot</h1>
-  <nav>
-    <a href="#">
-      <img src="https://img.icons8.com/color/48/home.png" alt="Home" class="nav-icon"/>
-      <span class="nav-text">Home</span>
-    </a>
-    <a href="https://discord.com/oauth2/authorize?client_id=1322305662973116486">
-      <img src="https://img.icons8.com/?size=48&id=64nKv4tDb3Qt&format=png&color=000000" alt="Invite" class="nav-icon"/>
-      <span class="nav-text">Invite</span>
-    </a>
-    <a href="https://discord.gg/cAXp5DSMr4">
-      <img src="https://img.icons8.com/color/48/discord.png" alt="Discord" class="nav-icon"/>
-      <span class="nav-text">Discord</span>
-    </a>
-  </nav>
-</header>
-
-<style>
-  /* Default style - for PC */
-  header {
-    background-color: #111827;
-    color: white;
-    padding: 1rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  header h1 {
-    margin: 0;
-    font-size: 1.8rem;
-  }
-
-  nav {
-    display: flex;
-    gap: 1.5rem; /* This adds space between the icons and text */
-  }
-
-  nav a {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    color: white;
-    font-weight: 500;
-  }
-
-  nav a img {
-    margin-right: 8px; /* Space between icon and text */
-  }
-
-  /* Mobile-specific styles */
-  @media (max-width: 600px) {
+  <header>
+    <h1>TrackerBot</h1>
+    <nav>
+      <a href="#">
+        <img src="https://img.icons8.com/color/48/home.png" alt="Home" class="nav-icon"/> 
+        <span class="nav-text">Home</span>
+      </a>
+      <a href="https://discord.com/oauth2/authorize?client_id=1322305662973116486">
+        <img src="https://img.icons8.com/?size=48&id=64nKv4tDb3Qt&format=png&color=000000" alt="Invite" class="nav-icon"/>
+        <span class="nav-text">Invite</span>
+      </a>
+      <a href="https://discord.gg/cAXp5DSMr4">
+        <img src="https://img.icons8.com/color/48/discord.png" alt="Discord" class="nav-icon"/>
+        <span class="nav-text">Discord</span>
+      </a>
+    </nav>
+  </header>
+  
+  <style>
+    /* Default style - for PC */
     header {
-      flex-direction: column; /* Stack items vertically */
+      background-color: #111827;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
       align-items: center;
-      padding: 1rem 0; /* Reduce padding on mobile */
+      justify-content: space-between;
     }
-
+  
     header h1 {
-      margin-bottom: 1rem;
-      font-size: 1.5rem;
+      margin: 0;
+      font-size: 1.8rem;
     }
-
+  
     nav {
       display: flex;
-      gap: 1rem;
-      justify-content: center; /* Align icons in center on mobile */
+      gap: 1.5rem; /* Space between icons and text */
     }
-
+  
     nav a {
-      font-size: 0; /* Hide the text */
-      justify-content: center; /* Center icons */
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: white;
+      font-weight: 500;
     }
-
-    nav a .nav-text {
-      display: none; /* Hide text completely */
+  
+    nav a img {
+      margin-right: 8px; /* Space between icon and text */
     }
-
-    .nav-icon {
-      width: 32px !important; /* Smaller icon size */
-      height: 32px !important; /* Same height as width */
-      margin-right: 0 !important; /* Remove space between icons */
+  
+    /* Mobile-specific styles */
+    @media (max-width: 600px) {
+      header {
+        flex-direction: column; /* Stack header items vertically on mobile */
+        align-items: center;
+        padding: 1rem 0; /* Reduce padding on mobile */
+      }
+  
+      header h1 {
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+      }
+  
+      nav {
+        display: flex;
+        justify-content: center; /* Center the icons */
+        gap: 1rem;
+      }
+  
+      nav a {
+        font-size: 0; /* Hide the text (icons only) */
+        justify-content: center;
+      }
+  
+      .nav-text {
+        display: none; /* Hide text completely */
+      }
+  
+      .nav-icon {
+        width: 32px !important; /* Make icons smaller */
+        height: 32px !important; /* Same height as width */
+        margin-right: 0 !important; /* Remove space between icons */
+      }
     }
-  }
-</style>
+  </style>
 
   <section class="hero">
     <h2>Codes. Stats. Fun.</h2>
