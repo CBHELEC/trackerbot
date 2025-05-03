@@ -118,59 +118,82 @@
     .discord-buttons a:hover {
       background-color: #4752c4;
     }
-
-    @media (max-width: 600px) {
-  header {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  header h1 {
-    margin-bottom: 0.5rem;
-    font-size: 1.5rem;
-  }
-
-  nav {
-    display: flex;
-    gap: 1rem;
-  }
-
-  .nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: 0.75rem;
-  }
-
-  .nav-text {
-    display: none; /* Hide text on mobile */
-  }
-
-  .nav-icon {
-    width: 32px !important;
-    height: 32px !important;
-    margin: 0 !important;
-  }
-}
    
   </style>
 </head>
 <body>
 
+<header>
+  <h1>TrackerBot</h1>
   <nav>
-    <a href="#" class="nav-item">
+    <a href="#">
       <img src="https://img.icons8.com/color/48/home.png" alt="Home" class="nav-icon"/> 
-      <span class="nav-text">Home</span>
+      Home
     </a>
-    <a href="https://discord.com/oauth2/authorize?client_id=1322305662973116486" class="nav-item">
-      <img src="https://img.icons8.com/?size=48&id=64nKv4tDb3Qt&format=png&color=000000" alt="Invite" class="nav-icon"/>
-      <span class="nav-text">Invite</span>
+    <a href="https://discord.com/oauth2/authorize?client_id=1322305662973116486">
+      <img src="https://img.icons8.com/?size=75&id=64nKv4tDb3Qt&format=png&color=000000" alt="Invite" class="nav-icon"/>
+      Invite
     </a>
-    <a href="https://discord.gg/cAXp5DSMr4" class="nav-item">
+    <a href="https://discord.gg/cAXp5DSMr4">
       <img src="https://img.icons8.com/color/48/discord.png" alt="Discord" class="nav-icon"/>
-      <span class="nav-text">Discord</span>
+      Discord
     </a>
   </nav>
+</header>
+
+<style>
+  /* Keep the PC version as is */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+  }
+
+  nav a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: white;
+    font-weight: 500;
+  }
+
+  nav a img {
+    margin-right: 8px;
+  }
+
+  /* Mobile specific changes */
+  @media (max-width: 600px) {
+    header {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header h1 {
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+
+    nav {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    nav a {
+      font-size: 0; /* Hide the text */
+    }
+
+    .nav-icon {
+      width: 32px !important;
+      height: 32px !important;
+    }
+
+    nav a img {
+      margin-right: 0; /* Remove margin between icon and text */
+    }
+  }
+</style>
 
   <section class="hero">
     <h2>Codes. Stats. Fun.</h2>
