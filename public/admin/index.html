@@ -120,7 +120,14 @@
       }
     }
 
-    document.getElementById('saveBtn').addEventListener('click', saveStats);
+    document.getElementById('saveBtn').addEventListener('click', () => {
+  const newStats = {
+    tbs_shared: Number(document.getElementById('tbsShared').value) || 0,
+    codes_detected: Number(document.getElementById('codesDetected').value) || 0,
+    servers_joined: Number(document.getElementById('serversJoined').value) || 0,
+  };
+  saveStats(newStats);
+});
   </script>
 </body>
 </html>
