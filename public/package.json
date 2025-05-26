@@ -1,1 +1,8 @@
-@vercel/edge-config
+{
+  "name": "your-project-name",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@vercel/edge-config": "latest"
+  }
+}
