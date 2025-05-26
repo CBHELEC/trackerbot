@@ -250,32 +250,33 @@
 <section class="statbar">
   <div class="stat">
     <span class="stat-title">TBs Shared</span>
-    <span class="stat-value" id="tbs">...</span>
+    <span class="stat-value" data_key="tbs_shared">34</span>
   </div>
   <div class="stat">
     <span class="stat-title">Codes Detected</span>
-    <span class="stat-value" id="codes">...</span>
+    <span class="stat-value" data_key="codes_detected">1000+</span>
   </div>
   <div class="stat">
     <span class="stat-title">Servers Joined</span>
-    <span class="stat-value" id="servers">...</span>
+    <span class="stat-value" data_key="servers_joined">17</span>
   </div>
 </section>
 
-<script>
-  fetch('/api/stats')
-    .then(res => res.json())
-    .then(stats => {
-      if (stats.tbs_shared !== undefined)
-        document.querySelector('.stat-value.tbs').textContent = stats.tbs_shared;
+async function loadStats() {
+  try {
+    const res = await fetch('/api/get-stats');
+    if (!res.ok) throw new Error('Failed to load stats');
+    const stats = await res.json();
 
-      if (stats.codes_detected !== undefined)
-        document.querySelector('.stat-value.codes').textContent = stats.codes_detected;
+    document.querySelector('.stat-value[data-key="tbs_shared"]').textContent = stats.tbs_shared;
+    document.querySelector('.stat-value[data-key="codes_detected"]').textContent = stats.codes_detected;
+    document.querySelector('.stat-value[data-key="servers_joined"]').textContent = stats.servers_joined;
+  } catch (err) {
+    console.error(err);
+  }
+}
 
-      if (stats.servers_joined !== undefined)
-        document.querySelector('.stat-value.servers').textContent = stats.servers_joined;
-    });
-</script>
+loadStats();
   
 <section id="features" class="features">
   <div class="feature">
