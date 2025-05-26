@@ -118,7 +118,101 @@
     .discord-buttons a:hover {
       background-color: #4752c4;
     }
+    #admin-btn {
+      margin-top: 0.75rem;
+      background-color: #2563eb;
+      border: none;
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-size: 1rem;
+    }
+    #admin-btn:hover {
+      background-color: #1e40af;
+    }
    
+    /* Default style - for PC */
+    header {
+      background-color: #111827;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    nav {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: white;
+      font-weight: 500;
+    }
+
+    nav a img {
+      margin-right: 8px;
+    }
+
+    /* Mobile-specific styles */
+    @media (max-width: 300px) {
+      header {
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem 0;
+      }
+
+      header h1 {
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+      }
+
+      nav {
+        display: flex;
+        justify-content: center;
+        gap: 2rem; /* Space between the icons */
+      }
+
+      nav a {
+        font-size: 0; /* Hide the text */
+        justify-content: center;
+        flex-direction: row; /* Keep icons in a row */
+        align-items: center;
+      }
+
+      .nav-icon {
+        width: 32px; /* Smaller icon size */
+        height: 32px;
+        margin: 0;
+      }
+    }
+
+    .stat {
+      text-align: center; 
+      margin-bottom: 10px;
+    }
+
+    .stat-title {
+      display: block; 
+      font-weight: bold; 
+    }
+
+    .stat-value {
+      display: block; 
+      font-size: 1.2em; 
+    }
   </style>
 </head>
 <body>
@@ -138,148 +232,55 @@
   </nav>
 </header>
 
-<style>
-  /* Default style - for PC */
-  header {
-    background-color: #111827;
-    color: white;
-    padding: 1rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  header h1 {
-    margin: 0;
-    font-size: 1.8rem;
-  }
-
-  nav {
-    display: flex;
-    gap: 1.5rem;
-  }
-
-  nav a {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    color: white;
-    font-weight: 500;
-  }
-
-  nav a img {
-    margin-right: 8px;
-  }
-
-  /* Mobile-specific styles */
-  @media (max-width: 300px) {
-    header {
-      flex-direction: column;
-      align-items: center;
-      padding: 1rem 0;
-    }
-
-    header h1 {
-      margin-bottom: 1rem;
-      font-size: 1.5rem;
-    }
-
-    nav {
-      display: flex;
-      justify-content: center;
-      gap: 2rem; /* Space between the icons */
-    }
-
-    nav a {
-      font-size: 0; /* Hide the text */
-      justify-content: center;
-      flex-direction: row; /* Keep icons in a row */
-      align-items: center;
-    }
-
-    .nav-icon {
-      width: 32px; /* Smaller icon size */
-      height: 32px;
-      margin: 0;
-    }
-  }
-</style>
-
-  <section class="hero">
-    <h2>Codes. Stats. Fun.</h2>
-    <p>The ultimate Discord bot for Geocaching. Show off stats, share trackables and detect codes, straight from your server.</p>
-    <div class="discord-buttons">
-      <a href="https://discord.gg/cAXp5DSMr4">Join the Community</a>
-      <a href="https://discord.com/oauth2/authorize?client_id=1322305662973116486">Invite the Bot</a>
-    </div>
-  </section>
-
-  <section class="badgebar">
-    <img src="https://img.icons8.com/color/48/trophy.png" alt="Badge 1"/>
-    <img src="https://img.icons8.com/color/48/medal.png" alt="Badge 2"/>
-    <img src="https://img.icons8.com/color/48/star.png" alt="Badge 3"/>
-  </section>
-
-  <section class="statbar">
-    <div class="stat">
-      <span class="stat-title">TBs Shared</span>
-      <span class="stat-value">34</span>
-    </div>
-    <div class="stat">
-      <span class="stat-title">Codes Detected</span>
-      <span class="stat-value">1000+</span>
-    </div>
-    <div class="stat">
-      <span class="stat-title">Servers Joined</span>
-      <span class="stat-value">17</span>
-    </div>
-  </section>
-
-  <style>
-  .stat {
-    text-align: center; 
-    margin-bottom: 10px;
-  }
-
-  .stat-title {
-    display: block; 
-    font-weight: bold; 
-  }
-
-  .stat-value {
-    display: block; 
-    font-size: 1.2em; 
-  }
-</style>
-
-  <section id="features" class="features">
-    <div class="feature">
-      <h3>🔎 Code Detection</h3>
-      <p>Detect GC and TB codes, and send info about them.</p>
-    </div>
-    <div class="feature">
-      <h3>📍 Virtual Geocaching Game</h3>
-      <p>Let users create virtual caches and log finds, buy trackables and more! [COMING SOON]</p>
-    </div>
-    <div class="feature">
-      <h3>📊 Stat & Badge Bar</h3>
-      <p>Show off your stats, badges and more.</p>
-    </div>
-    <div class="feature">
-      <h3>⚙️ Custom Permissions</h3>
-      <p>Customize permissions to not let users use message commands.</p>
-    </div>
-  </section>
-
-<section style="text-align:center; padding:2rem;">
-  <h2>Admin Login</h2>
-  <input type="text" id="username" placeholder="Username" style="padding: 0.5rem; margin: 0.5rem;" /><br>
-  <input type="password" id="password" placeholder="Password" style="padding: 0.5rem; margin: 0.5rem;" /><br>
-  <button onclick="submitLogin()" style="padding: 0.75rem 1.5rem; margin-top: 1rem; background-color: #111827; color: white; border: none; border-radius: 6px; cursor: pointer;">
-    Login
-  </button>
+<section class="hero">
+  <h2>Codes. Stats. Fun.</h2>
+  <p>The ultimate Discord bot for Geocaching. Show off stats, share trackables and detect codes, straight from your server.</p>
+  <div class="discord-buttons">
+    <a href="https://discord.gg/cAXp5DSMr4">Join the Community</a>
+    <a href="https://discord.com/oauth2/authorize?client_id=1322305662973116486">Invite the Bot</a>
+  </div>
 </section>
-  
+
+<section class="badgebar">
+  <img src="https://img.icons8.com/color/48/trophy.png" alt="Badge 1"/>
+  <img src="https://img.icons8.com/color/48/medal.png" alt="Badge 2"/>
+  <img src="https://img.icons8.com/color/48/star.png" alt="Badge 3"/>
+</section>
+
+<section class="statbar">
+  <div class="stat">
+    <span class="stat-title">TBs Shared</span>
+    <span class="stat-value">34</span>
+  </div>
+  <div class="stat">
+    <span class="stat-title">Codes Detected</span>
+    <span class="stat-value">1000+</span>
+  </div>
+  <div class="stat">
+    <span class="stat-title">Servers Joined</span>
+    <span class="stat-value">17</span>
+  </div>
+</section>
+
+<section id="features" class="features">
+  <div class="feature">
+    <h3>🔎 Code Detection</h3>
+    <p>Detect GC and TB codes, and send info about them.</p>
+  </div>
+  <div class="feature">
+    <h3>📍 Virtual Geocaching Game</h3>
+    <p>Let users create virtual caches and log finds, buy trackables and more! [COMING SOON]</p>
+  </div>
+  <div class="feature">
+    <h3>📊 Stat & Badge Bar</h3>
+    <p>Show off your stats, badges and more.</p>
+  </div>
+  <div class="feature">
+    <h3>⚙️ Custom Permissions</h3>
+    <p>Customize permissions to not let users use message commands.</p>
+  </div>
+</section>
+
 <footer>
   <p>&copy; 2025 TrackerBot | Built with ❤️ by cachers for cachers</p>
   <p>
@@ -287,28 +288,33 @@
     <a href="https://cbhelec.github.io/trackerbot/privacypolicy" target="_blank" rel="noopener noreferrer" style="color: white;">Privacy Policy</a> |
     <a href="https://cbhelec.github.io/trackerbot/contactus" target="_blank" rel="noopener noreferrer" style="color: white;">Contact Us</a>
   </p>
+  <button id="admin-btn">Admin</button>
 </footer>
 
-  <script>
-function submitLogin() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  fetch('http://192.168.178.74:3000/api/login', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ username, password })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      alert("Logged in!");
-      // Show admin panel or allow config access
-    } else {
-      alert("Incorrect login.");
-    }
+<script>
+  document.getElementById('admin-btn').addEventListener('click', () => {
+    window.location.href = '/admin';
   });
-}
+
+  function submitLogin() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    fetch('http://192.168.178.74:3000/api/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ username, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("Logged in!");
+        // Show admin panel or allow config access
+      } else {
+        alert("Incorrect login.");
+      }
+    });
+  }
 </script>
 
 </body>
