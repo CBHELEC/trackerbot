@@ -7,8 +7,8 @@ export default function handler(req, res) {
   const { username, password } = req.body;
 
   if (
-    username === process.env.ADMIN_USERNAME &&
-    password === process.env.ADMIN_PASSWORD
+    username === process.env.ADMIN_USER &&
+    password === process.env.ADMIN_PASS
   ) {
     // Successful login — set a simple session cookie (for demo only)
     res.setHeader(
