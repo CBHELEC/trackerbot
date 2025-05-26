@@ -1,14 +1,25 @@
-import { writeFile } from 'fs/promises';
-import path from 'path';
+import { get, set } from '@vercel/edge-config';
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+export const config = {
+  runtime: 'edge',
+};
+
+export default async function handler(req) {
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
 
   try {
-    const filePath = path.resolve('./stats.json');
-    await writeFile(filePath, JSON.stringify(req.body, null, 2));
-    res.status(200).json({ success: true });
+    const data = await req.json();
+    await set('stats', data);
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 200,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    return new Response(JSON.stringify({ success: false, error: err.message }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 }
