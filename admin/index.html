@@ -1,3 +1,13 @@
+<script>
+  function isLoggedIn() {
+    return document.cookie.includes('admin-auth=1');
+  }
+
+  if (!isLoggedIn()) {
+    window.location.href = '/login.html'; // or show login modal
+  }
+</script>
+
 <form id="loginForm">
   <input name="username" placeholder="Username" required />
   <input name="password" type="password" placeholder="Password" required />
