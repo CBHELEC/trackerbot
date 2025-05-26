@@ -1,20 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin Panel</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+      background: #f7f7f7;
+      color: #333;
+    }
+
+    input {
+      padding: 0.5em;
+      margin-top: 0.25em;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 1em;
+    }
+
+    button {
+      padding: 0.6em 1.2em;
+      background: #444;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #222;
+    }
+
+    #adminContent {
+      margin-top: 2em;
+    }
+  </style>
 </head>
 <body>
+  <!-- LOGIN FORM -->
   <div id="loginForm">
+    <h2>Login to Admin Panel</h2>
     <form>
-      <input name="username" placeholder="Username" required />
-      <input name="password" type="password" placeholder="Password" required />
+      <input name="username" placeholder="Username" required /><br/><br/>
+      <input name="password" type="password" placeholder="Password" required /><br/><br/>
       <button type="submit">Login</button>
     </form>
   </div>
 
+  <!-- ADMIN CONTENT -->
   <div id="adminContent" style="display: none;">
-    <h1>Welcome to the Admin Panel</h1>
-    <!-- admin stuff here -->
+    <h1>Admin Panel</h1>
+
+    <label>
+      TBs Shared:
+      <input id="tbsShared" type="number" />
+    </label>
+
+    <label>
+      Codes Detected:
+      <input id="codesDetected" type="number" />
+    </label>
+
+    <label>
+      Servers Joined:
+      <input id="serversJoined" type="number" />
+    </label>
+
+    <button id="saveBtn">Save Stats</button>
   </div>
 
   <script>
@@ -39,13 +96,44 @@
       const result = await res.json();
 
       if (res.ok) {
-        // Login succeeded – show admin panel
         loginContainer.style.display = 'none';
         adminContent.style.display = 'block';
+        loadStats();
       } else {
         alert('Login failed: ' + result.message);
       }
     });
+
+    async function loadStats() {
+      const res = await fetch('/stats.json');
+      const stats = await res.json();
+
+      document.getElementById('tbsShared').value = stats.tbsShared ?? 0;
+      document.getElementById('codesDetected').value = stats.codesDetected ?? 0;
+      document.getElementById('serversJoined').value = stats.serversJoined ?? 0;
+    }
+
+    async function saveStats() {
+      const stats = {
+        tbsShared: parseInt(document.getElementById('tbsShared').value, 10),
+        codesDetected: parseInt(document.getElementById('codesDetected').value, 10),
+        serversJoined: parseInt(document.getElementById('serversJoined').value, 10),
+      };
+
+      const res = await fetch('/api/save-stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(stats),
+      });
+
+      if (res.ok) {
+        alert('Stats saved successfully!');
+      } else {
+        alert('Failed to save stats');
+      }
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', saveStats);
   </script>
 </body>
 </html>
