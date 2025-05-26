@@ -250,34 +250,18 @@
 <section class="statbar">
   <div class="stat">
     <span class="stat-title">TBs Shared</span>
-    <span class="stat-value" data_key="tbs_shared">34</span>
+    <span class="stat-value" data-key="tbs_shared">34</span>
   </div>
   <div class="stat">
     <span class="stat-title">Codes Detected</span>
-    <span class="stat-value" data_key="codes_detected">1000+</span>
+    <span class="stat-value" data-key="codes_detected">1000</span>
   </div>
   <div class="stat">
     <span class="stat-title">Servers Joined</span>
-    <span class="stat-value" data_key="servers_joined">17</span>
+    <span class="stat-value" data-key="servers_joined">17</span>
   </div>
 </section>
 
-async function loadStats() {
-  try {
-    const res = await fetch('/api/get-stats');
-    if (!res.ok) throw new Error('Failed to load stats');
-    const stats = await res.json();
-
-    document.querySelector('.stat-value[data-key="tbs_shared"]').textContent = stats.tbs_shared;
-    document.querySelector('.stat-value[data-key="codes_detected"]').textContent = stats.codes_detected;
-    document.querySelector('.stat-value[data-key="servers_joined"]').textContent = stats.servers_joined;
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-loadStats();
-  
 <section id="features" class="features">
   <div class="feature">
     <h3>🔎 Code Detection</h3>
@@ -300,37 +284,30 @@ loadStats();
 <footer>
   <p>&copy; 2025 TrackerBot | Built with ❤️ by cachers for cachers</p>
   <p>
-    <a href="https://cbhelec.github.io/trackerbot/tos" target="_blank" rel="noopener noreferrer" style="color: white;">Terms of Service</a> | 
-    <a href="https://cbhelec.github.io/trackerbot/privacypolicy" target="_blank" rel="noopener noreferrer" style="color: white;">Privacy Policy</a> |
-    <a href="https://cbhelec.github.io/trackerbot/contactus" target="_blank" rel="noopener noreferrer" style="color: white;">Contact Us</a>
+    <a href="https://cbhelec.github.io/trackerbot/tos" target="_blank" rel="noopener noreferrer" style="color: white;">Terms of Service</a> |
+    <a href="https://cbhelec.github.io/trackerbot/privacy" target="_blank" rel="noopener noreferrer" style="color: white;">Privacy Policy</a>
   </p>
-  <button id="admin-btn">Admin</button>
 </footer>
 
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
 <script>
-  document.getElementById('admin-btn').addEventListener('click', () => {
-    window.location.href = '/admin';
-  });
+  async function loadStats() {
+    try {
+      const res = await fetch('/api/get-stats');
+      if (!res.ok) throw new Error('Failed to load stats');
+      const stats = await res.json();
 
-  function submitLogin() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
-
-    fetch('/api/login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ username, password })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        alert("Logged in!");
-        // Show admin panel or allow config access
-      } else {
-        alert("Incorrect login.");
-      }
-    });
+      document.querySelector('.stat-value[data-key="tbs_shared"]').textContent = stats.tbs_shared;
+      document.querySelector('.stat-value[data-key="codes_detected"]').textContent = stats.codes_detected;
+      document.querySelector('.stat-value[data-key="servers_joined"]').textContent = stats.servers_joined;
+    } catch (err) {
+      console.error('Error loading stats:', err);
+    }
   }
+
+  document.addEventListener('DOMContentLoaded', loadStats);
 </script>
 
 </body>
