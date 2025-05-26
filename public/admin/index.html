@@ -111,15 +111,22 @@
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(newStats),
         });
+    
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error('Server error: ' + text);
+        }
+    
         const data = await res.json();
         if (!data.success) throw new Error('Failed to save stats');
+    
         alert('Stats saved!');
         loadStats(); // Refresh displayed stats
       } catch (err) {
         alert(err.message);
       }
     }
-
+    
     document.getElementById('saveBtn').addEventListener('click', () => {
   const newStats = {
     tbs_shared: Number(document.getElementById('tbsShared').value) || 0,
