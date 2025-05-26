@@ -250,18 +250,55 @@
 <section class="statbar">
   <div class="stat">
     <span class="stat-title">TBs Shared</span>
-    <span class="stat-value">34</span>
+    <span class="stat-value" id="stat-tbs">...</span>
   </div>
   <div class="stat">
     <span class="stat-title">Codes Detected</span>
-    <span class="stat-value">1000+</span>
+    <span class="stat-value" id="stat-codes">...</span>
   </div>
   <div class="stat">
     <span class="stat-title">Servers Joined</span>
-    <span class="stat-value">17</span>
+    <span class="stat-value" id="stat-servers">...</span>
   </div>
 </section>
 
+<script>
+  document.getElementById('admin-btn').addEventListener('click', () => {
+    window.location.href = '/admin';
+  });
+
+  function submitLogin() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    fetch('/api/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ username, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        alert("Logged in!");
+      } else {
+        alert("Incorrect login.");
+      }
+    });
+  }
+
+  // Fetch live stats
+  fetch('/api/stats')
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('stat-tbs').textContent = data.tbs_shared ?? '0';
+      document.getElementById('stat-codes').textContent = data.codes_detected ?? '0';
+      document.getElementById('stat-servers').textContent = data.servers_joined ?? '0';
+    })
+    .catch(err => {
+      console.error("Failed to fetch stats:", err);
+    });
+</script>
+  
 <section id="features" class="features">
   <div class="feature">
     <h3>🔎 Code Detection</h3>
