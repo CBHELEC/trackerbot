@@ -280,6 +280,27 @@
   </p>
 </footer>
 
+  <script>
+function submitLogin() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  fetch('http://192.168.178.74:3000/api/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ username, password })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("Logged in!");
+      // Show admin panel or allow config access
+    } else {
+      alert("Incorrect login.");
+    }
+  });
+}
+</script>
 
 </body>
 </html>
