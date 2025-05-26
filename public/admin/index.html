@@ -1,43 +1,51 @@
-<script>
-  function isLoggedIn() {
-    return document.cookie.includes('admin-auth=1');
-  }
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+</head>
+<body>
+  <div id="loginForm">
+    <form>
+      <input name="username" placeholder="Username" required />
+      <input name="password" type="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+  </div>
 
-  if (!isLoggedIn()) {
-    window.location.href = '/login.html'; // or show login modal
-  }
-</script>
+  <div id="adminContent" style="display: none;">
+    <h1>Welcome to the Admin Panel</h1>
+    <!-- admin stuff here -->
+  </div>
 
-<form id="loginForm">
-  <input name="username" placeholder="Username" required />
-  <input name="password" type="password" placeholder="Password" required />
-  <button type="submit">Login</button>
-</form>
+  <script>
+    const loginForm = document.querySelector('#loginForm form');
+    const adminContent = document.getElementById('adminContent');
+    const loginContainer = document.getElementById('loginForm');
 
-<script>
-  document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-    const form = e.target;
-    const data = {
-      username: form.username.value,
-      password: form.password.value,
-    };
+      const data = {
+        username: loginForm.username.value,
+        password: loginForm.password.value,
+      };
 
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
+        // Login succeeded – show admin panel
+        loginContainer.style.display = 'none';
+        adminContent.style.display = 'block';
+      } else {
+        alert('Login failed: ' + result.message);
+      }
     });
-
-    const result = await res.json();
-
-    if (res.ok) {
-      alert('Logged in!');
-      // Redirect or show admin content here
-      window.location.href = '/admin/dashboard.html'; // example
-    } else {
-      alert('Login failed: ' + result.message);
-    }
-  });
-</script>
+  </script>
+</body>
+</html>
