@@ -104,32 +104,19 @@
       }
     });
 
-    async function loadStats() {
-      const res = await fetch('/stats.json');
-      const stats = await res.json();
-
-      document.getElementById('tbsShared').value = stats.tbsShared ?? 0;
-      document.getElementById('codesDetected').value = stats.codesDetected ?? 0;
-      document.getElementById('serversJoined').value = stats.serversJoined ?? 0;
-    }
-
-    async function saveStats() {
-      const stats = {
-        tbsShared: parseInt(document.getElementById('tbsShared').value, 10),
-        codesDetected: parseInt(document.getElementById('codesDetected').value, 10),
-        serversJoined: parseInt(document.getElementById('serversJoined').value, 10),
-      };
-
-      const res = await fetch('/api/save-stats', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(stats),
-      });
-
-      if (res.ok) {
-        alert('Stats saved successfully!');
-      } else {
-        alert('Failed to save stats');
+    async function saveStats(newStats) {
+      try {
+        const res = await fetch('/api/save-stats', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(newStats),
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error('Failed to save stats');
+        alert('Stats saved!');
+        loadStats(); // Refresh displayed stats
+      } catch (err) {
+        alert(err.message);
       }
     }
 
