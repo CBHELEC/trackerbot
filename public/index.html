@@ -254,7 +254,7 @@
   </div>
   <div class="stat">
     <span class="stat-title">Codes Detected</span>
-    <span class="stat-value" data-key="codes_detected">1500+</span>
+    <span class="stat-value" data-key="codes_detected">1500</span>
   </div>
   <div class="stat">
     <span class="stat-title">Servers Joined</span>
@@ -300,7 +300,7 @@
       const stats = await res.json();
 
       document.querySelector('.stat-value[data-key="tbs_shared"]').textContent = stats.tbs_shared;
-      document.querySelector('.stat-value[data-key="codes_detected"]').textContent = stats.codes_detected;
+      document.querySelector('.stat-value[data-key="codes_detected"]').textContent = stats.codes_detected + '+';
       document.querySelector('.stat-value[data-key="servers_joined"]').textContent = stats.servers_joined;
     } catch (err) {
       console.error('Error loading stats:', err);
