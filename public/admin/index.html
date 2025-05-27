@@ -58,17 +58,17 @@
 
     <label>
       TBs Shared:
-      <input id="tbsShared" type="number" value="tbs_shared" />
+      <input id="tbsShared" type="number" />
     </label>
 
     <label>
       Codes Detected:
-      <input id="codesDetected" type="number" value="0" />
+      <input id="codesDetected" type="number" />
     </label>
 
     <label>
       Servers Joined:
-      <input id="serversJoined" type="number" value="0" />
+      <input id="serversJoined" type="number" />
     </label>
 
     <button id="saveBtn">Save Stats</button>
@@ -144,13 +144,9 @@
       if (!res.ok) throw new Error('Failed to load stats');
       const stats = await res.json();
 
-      document.querySelector('.stat-value[data-key="tbs_shared"]').textContent = stats.tbs_shared;
-      document.querySelector('.stat-value[data-key="codes_detected"]').textContent = stats.codes_detected + '+';
-      document.querySelector('.stat-value[data-key="servers_joined"]').textContent = stats.servers_joined;
-
-      document.getElementById('tbsShared').value = stats.tbs_shared;
-      document.getElementById('codesDetected').value = stats.codes_detected;
-      document.getElementById('serversJoined').value = stats.servers_joined;
+      document.getElementById('tbsShared').placeholder = stats.tbs_shared;
+      document.getElementById('codesDetected').placeholder = stats.codes_detected;
+      document.getElementById('serversJoined').placeholder = stats.servers_joined;
       
     } catch (err) {
       console.error('Error loading stats:', err);
