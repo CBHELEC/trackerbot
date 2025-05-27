@@ -1,7 +1,7 @@
-Last updated: May 1, 2025
+Last updated: May 27, 2025
 
 Introduction
-Welcome to Tracker! These Terms of Service ("Terms") are a binding agreement between you and the Tracker team ("we", "us", or "our"). These Terms govern your use of Tracker's Discord bot and related services (the "Services") and incorporate our Privacy Policy located at https://cbhelec.github.io/trackerbot/privacypolicy/.
+Welcome to Tracker! These Terms of Service ("Terms") are a binding agreement between you and the Tracker team ("we", "us", or "our"). These Terms govern your use of Tracker's Discord bot and related services (the "Services") and incorporate our Privacy Policy located at https://trackerbot.xyz/privacy.
 
 By using Tracker, you agree that:
 
@@ -37,7 +37,7 @@ Tracker may contain virtual items or currencies. These are only usable within th
 Any attempt to trade virtual assets outside of Tracker may result in account suspension.
 
 Approved Services
-If we approve any third-party services or bots for trading or integration, they will be listed on our official site (https://cbhelec.github.io/trackerbot/). Using unapproved services for trading is a violation of these Terms.
+If we approve any third-party services or bots for trading or integration, they will be listed on our official site (https://trackerbot.xyz). Using unapproved services for trading is a violation of these Terms.
 
 Refunds
 Tracker does not offer or support real-money purchases. As such, no refund policy is necessary or applicable.
@@ -46,7 +46,7 @@ Service Availability
 We reserve the right to update, pause, or shut down Tracker at any time. There may be temporary service interruptions due to maintenance, outages, or other events. We will do our best to notify users in advance when possible.
 
 Changes to These Terms
-We may update these Terms of Service from time to time. If we make material changes, we will post them at https://cbhelec.github.io/trackerbot/tos/ or notify you via Discord. Your continued use of Tracker after any update means you accept the revised Terms.
+We may update these Terms of Service from time to time. If we make material changes, we will post them at https://trackerbot.xyz/tos or notify you via Discord. Your continued use of Tracker after any update means you accept the revised Terms.
 
 Contact Us
-If you have any questions or concerns about these Terms, you can contact us at trackerdiscordbot@gmail.com.
+If you have any questions or concerns about these Terms, you can contact us at support@trackerbot.xyz.
