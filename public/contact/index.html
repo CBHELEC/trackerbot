@@ -220,6 +220,21 @@
       display: block; 
       font-size: 1.2em; 
     }
+
+    #flex-container {
+   display:flex;
+   flex-direction:column;
+
+   /* fallback height */
+   min-height:100vh;
+
+   /* new small viewport height for modern browsers */
+   min-height:100svh;
+}
+#flex-container > footer {
+   margin-top:auto;
+}
+    
   </style>
 </head>
 <body>
