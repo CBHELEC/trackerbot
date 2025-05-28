@@ -8,7 +8,7 @@
     body {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      background: #f4f6f8;
+      background: #e0f2fe;
       color: #333;
     }
     main {
@@ -42,8 +42,13 @@
     }
     .hero {
       text-align: center;
-      padding: 4rem 2rem;
+      padding: 2rem;
       background: #e0f2fe;
+	  display: flex;
+	  flex-direction: column;
+	  align-items: center;
+	  justify-content: center;
+	  flex: 1;
     }
     .hero h2 {
       font-size: 2.5rem;
@@ -52,7 +57,7 @@
     .hero p {
       font-size: 1.2rem;
       max-width: 600px;
-      margin: auto;
+      margin: 1rem 0;
     }
     .badgebar, .statbar {
       display: flex;
@@ -107,12 +112,13 @@
       color: white;
       text-align: center;
       padding: 1rem;
-      position: absolute;
       bottom: 0;
     }
     .discord-buttons {
-      text-align: center;
-      margin-top: 2rem;
+      display: flex;
+	  flex-direction: column;
+	  gap: 0rem;
+      margin-top: 1.5rem;
     }
     .discord-buttons a {
       background-color: #5865F2;
@@ -233,14 +239,19 @@
    /* new small viewport height for modern browsers */
    min-height:100svh;
 }
+	  
 #flex-container > footer {
    margin-top:auto;
 }
     
   </style>
+	
+	
 </head>
 <body>
 
+<div id="flex-container">
+	
 <header>
   <h1>Tracker Bot</h1>
   <nav>
@@ -267,7 +278,6 @@
   </div>
 </section>
 
-<div class="thefooter">
 <footer>
   <p>&copy; 2025 Tracker Bot | Built with ❤️ by cachers for cachers</p>
   <p><em>Tracker is an independent project and is not affiliated with or endorsed by Groundspeak, Inc. or Geocaching.com.</em></p>
@@ -277,6 +287,9 @@
     <a href="https://trackerbot.xyz/contact" target="_self" rel="noopener noreferrer" style="color: white;"><strong>Contact Us</strong></a>
   </p>
 </footer>
-</div>
+	
+	</div>
   
+	</body>
+	
 </html>
