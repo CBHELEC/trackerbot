@@ -10,7 +10,6 @@ class Message(commands.Cog):
     DELETE_TIME_DELAY = 5
     def __init__(self, bot):
         self.bot = bot
-        self._last_member = None
 
 # SAY
     @app_commands.command()

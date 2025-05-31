@@ -5,14 +5,13 @@ from google_images_search import GoogleImagesSearch
 from googleapiclient.discovery import build
 import discord
 from discord import app_commands
-from database import get_guild_settings, get_log_channel
 import os
 import psutil
 from pathlib import Path
 from datetime import datetime
 
-from dotenv import load_dotenv
-load_dotenv(".env")
+from database import get_guild_settings, get_log_channel
+
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 GOOGLE_CX_ID = os.getenv('GOOGLE_SEARCH_ID')
 GOOGLE_NORMAL_API_KEY = os.getenv('GOOGLE_SEARCH_API_KEY')
