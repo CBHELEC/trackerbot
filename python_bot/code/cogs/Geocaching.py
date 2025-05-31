@@ -12,12 +12,6 @@ from urllib.parse import quote
 class Geocaching(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self._last_member = None
-    
-    from dotenv import load_dotenv
-    load_dotenv(".env")
-    EMAIL = os.getenv('EMAIL')
-    PASSWORD = os.getenv('PASSWORD')
     
 # FTF
     @app_commands.command()

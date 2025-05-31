@@ -11,7 +11,6 @@ class Message(commands.Cog):
     DELETE_TIME_DELAY = 5
     def __init__(self, bot):
         self.bot = bot
-        self._last_member = None
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Only let commands run if the Server Owner or Admin has enabled them."""

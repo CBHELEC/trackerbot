@@ -1,0 +1,12 @@
+beautifulsoup4
+pycaching
+discord.py
+sqlalchemy
+requests
+bitarray
+aiofiles
+google-images-search
+giphy-client
+aiosqlite
+num2words
+aiohttp

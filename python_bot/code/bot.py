@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv(".env")
+
 import discord
 from discord.ext import commands, tasks
 import os
@@ -7,12 +10,11 @@ from datetime import datetime
 import traceback
 import sys
 from discord import app_commands
+
 from functions import *
 import ezcord
 from discord.ext.ipc import ClientPayload, Server
 
-from dotenv import load_dotenv
-load_dotenv(".env")
 TOKEN = os.getenv('TOKEN')
 TRACKER_TOKEN = os.getenv('TRACKER_OFFICIAL_TOKEN')
 BOTLISTME_API = os.getenv('BOTLISTME_API')
@@ -114,14 +116,7 @@ async def on_ready():
     await bot.change_presence(
         activity=discord.CustomActivity(f"Invite Me! | {len(bot.guilds)} Servers"))
     update_presence.start()
-        
-#    async with aiohttp.ClientSession() as session:
-#        await session.post(
-#        "https://api.botlist.me/api/v1/bots/1322305662973116486/stats",
-#        headers={"Authorization": "owo", "Content-Type": "application/json"},
-#        json={"server_count": 13}
-#        )
-        
+
 last_server_count = 4
 @tasks.loop(minutes=5)
 async def update_presence():
@@ -182,7 +177,7 @@ async def on_error(event, *args, **kwargs):
 
 warnings.filterwarnings('ignore') 
 bot.remove_command('help') 
-    
+
 async def load_extensions():
     initial_extensions = []
 
@@ -199,4 +194,3 @@ async def load_extensions():
 if __name__ == '__main__':
     asyncio.run(load_extensions())
     bot.run(TOKEN)
-  #  bot.run(TRACKER_TOKEN)
