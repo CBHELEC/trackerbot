@@ -13,14 +13,12 @@ from discord import app_commands
 
 from functions import *
 
-TOKEN = os.getenv("1BOT_TOKEN_2")
-TRACKER_TOKEN = os.getenv("TRACKER_OFFICIAL_TOKEN")
-BOTLISTME_API = os.getenv("BOTLISTME_API")
+TOKEN = os.getenv("BOT_TOKEN")
 
 intents = discord.Intents.all()
 
 bot = commands.Bot(
-    command_prefix='!',
+    command_prefix=BOT_PREFIX,
     intents=intents
 )
 

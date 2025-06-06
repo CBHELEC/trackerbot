@@ -141,7 +141,7 @@ class Listeners(commands.Cog):
                 return
 
         elif message.webhook_id:
-            if message.channel.id == 1365079297919811725:
+            if message.channel.id == TOPGG_LOG_ID:
                 if message.embeds:
                     embed = message.embeds[0]
                     voter_match = re.search(r"<@(\d+)> Voted for <@(\d+)>!", embed.description or "")

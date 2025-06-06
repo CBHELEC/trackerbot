@@ -12,16 +12,20 @@ from datetime import datetime
 
 from database import get_guild_settings, get_log_channel
 
+BOT_PREFIX = "%"  # '!'
+
+GEOCACHING_USERNAME = os.getenv("GEOCACHING_USERNAME")
+GEOCACHING_PASSWORD = os.getenv("GEOCACHING_PASSWORD")
+
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 GOOGLE_CX_ID = os.getenv('GOOGLE_SEARCH_ID')
 GOOGLE_NORMAL_API_KEY = os.getenv('GOOGLE_SEARCH_API_KEY')
-GOOGLE_NORMAL_SEARCH_ID = os.getenv('GOOGLE_SEARCH_NORMAL_ID')
-EMAIL = os.getenv('EMAIL')
-PASSWORD = os.getenv('PASSWORD')
+GOOGLE_NORMAL_SEARCH_ID = os.getenv("GOOGLE_SEARCH_NORMAL_ID")
+BOTLISTME_API = os.getenv("BOTLISTME_API")
 
 YOUCANTDOTHIS = discord.Embed(title="<:denied:1336100920039313448> | You can't do this!",
                       colour=0xff0000)
-YOUCANTDOTHIS.set_footer(text="!dev_cmds | !perm_cmds for info.")
+YOUCANTDOTHIS.set_footer(text=f"{BOT_PREFIX}dev_cmds | {BOT_PREFIX}perm_cmds for info.")
 
 NOPERMISSIONS = discord.Embed(title="<:denied:1336100920039313448> | I don't have permission to do this!",
                       colour=0xff0000)
@@ -32,16 +36,17 @@ RANDOMERROR = discord.Embed(title="<:denied:1336100920039313448> | An error occu
 YOUCANTUSETHIS = discord.Embed(title="<:denied:1336100920039313448> | You can't use this!",
                       colour=0xff0000)
 
-GOD_LOG_ID = 1341819097591185479 
-LOG_CHANNEL_ID = True
-DEV_USER_ID = 820297275448098817
+GOD_LOG_ID = 1378160179262259341  # 1341819097591185479
+ERROR_LOG_ID = 1378160179262259341  # 1341107185777643573
+TOPGG_LOG_ID = 1365079297919811725
+DEV_USER_ID = 374283134243700747  # 820297275448098817
 
 def is_mod():
     async def predicate(interaction: discord.Interaction):
         settings = get_guild_settings(interaction.guild.id)
         mod_role_ids = {int(role) for role in settings.mod_role_ids.split(",") if role}
 
-        if interaction.user.id == 820297275448098817 or any(role.id in mod_role_ids for role in interaction.user.roles):
+        if interaction.user.id == DEV_USER_ID or any(role.id in mod_role_ids for role in interaction.user.roles):
             return True
 
         return False
@@ -53,7 +58,7 @@ def is_perm():
         settings = get_guild_settings(interaction.guild.id)
         perm_role_ids = {int(role) for role in settings.perm_role_ids.split(",") if role} 
 
-        if interaction.user.id == 820297275448098817 or any(role.id in perm_role_ids for role in interaction.user.roles):
+        if interaction.user.id == DEV_USER_ID or any(role.id in perm_role_ids for role in interaction.user.roles):
             return True
         
         return False
@@ -66,7 +71,7 @@ def is_perm_mod():
         mod_role_ids = {int(role) for role in settings.mod_role_ids.split(",") if role}
         perm_role_ids = {int(role) for role in settings.perm_role_ids.split(",") if role}
 
-        if interaction.user.id == 820297275448098817 or \
+        if interaction.user.id == DEV_USER_ID or \
            any(role.id in mod_role_ids for role in interaction.user.roles) or \
            any(role.id in perm_role_ids for role in interaction.user.roles):
             return True
@@ -76,37 +81,29 @@ def is_perm_mod():
     return app_commands.check(predicate)
 
 def is_dev():
-    async def predicate(interaction: discord.Interaction):
-        dev_id = 820297275448098817
-        
-        if interaction.user.id != dev_id:  
-            return False  
-        
-        return True
-    
-    return app_commands.check(predicate)
+    return app_commands.check(lambda interaction: interaction.user.id == DEV_USER_ID)
 
 async def log_message(guild: discord.Guild, bot: discord.Client, command_name: str, message: str):
     """Logs a message to the guild's log channel and the global log channel."""
     log_channel = get_log_channel(guild, bot)  
-    global_log_channel = bot.get_channel(1341819097591185479)  
+    global_log_channel = bot.get_channel(GOD_LOG_ID)  
 
     if log_channel:
         await log_channel.send(f"{command_name} | {message}") 
 
     if global_log_channel:
         await global_log_channel.send(f"God Log - Guild: {guild.name}, ID: {guild.id} | {command_name} | {message}") 
-        
+
 async def master_log_message(guild: discord.Guild, bot: discord.Client, command_name: str, message: str):
     """Logs a message to the guild's log channel and the global log channel."""
-    master_log_channel = bot.get_channel(1341819097591185479)  
+    master_log_channel = bot.get_channel(GOD_LOG_ID)  
 
     if master_log_channel:
         await master_log_channel.send(f"{guild.name} ({guild.id}) | {command_name} | {message}") 
-        
+
 async def log_error(guild: discord.Guild, bot: discord.Client, command_name: str, message: str):
     """Logs a message to the error channel."""
-    log_channel = bot.get_channel(1341107185777643573)
+    log_channel = bot.get_channel(ERROR_LOG_ID)
 
     if log_channel:
         await log_channel.send(f"Error Log - Guild: {guild.name}, ID: {guild.id} | {command_name} | {message}") 
@@ -263,9 +260,9 @@ class ImageSearchView(discord.ui.View):
                     await modal_interaction.response.send_message("Please enter a valid number.", ephemeral=True)
 
         await interaction.response.send_modal(JumpModal())
-        
+
 gis = GoogleImagesSearch(GOOGLE_API_KEY, GOOGLE_CX_ID)
-    
+
 def google_search(query):
     service = build("customsearch", "v1", developerKey=GOOGLE_NORMAL_API_KEY)
     res = service.cse().list(q=query, cx=GOOGLE_NORMAL_SEARCH_ID).execute()
@@ -349,7 +346,7 @@ class GoogleSearchView(discord.ui.View):
                     await modal_interaction.response.send_message("Please enter a valid number.", ephemeral=True)
 
         await interaction.response.send_modal(JumpModal())
-        
+
 class BadgeInfoView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=300)
@@ -370,7 +367,7 @@ class BadgeInfoView(discord.ui.View):
     async def belt_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """Handles the Belt button click."""
         await interaction.response.edit_message(embed=self.belt_embed, view=BadgeInfoView())
-        
+
 STAR_EMOJIS = {"💀"}  
 REACTION_THRESHOLD = 3 
 SKULLBOARD_DATA_FILE = "skullboarded_messages.json"  
@@ -417,7 +414,7 @@ last_poll_date = load_poll_date()
 def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
     final_message = []
     geocaching = pycaching.login(
-        EMAIL, PASSWORD
+        GEOCACHING_USERNAME, GEOCACHING_PASSWORD
     )
     for code in geocache_codes:
         try:
@@ -504,7 +501,7 @@ def get_formatted_cpu_usage():
         return f"<:cpu:1363599094395834430> | CPU: **{cpu_percent}% @ {cpu_temp:.1f}°C**"
     else:
         return f"<:cpu:1363599094395834430> | CPU: **{cpu_percent}%**"
-    
+
 def get_formatted_storage_usage():
     disk = psutil.disk_usage('/')
     used_gb = disk.used / 1024 / 1024 / 1024
@@ -512,7 +509,7 @@ def get_formatted_storage_usage():
     return f"<:ssd:1363600388959506585> | Storage: **{used_gb:.1f} / {total_gb:.1f} GB**"
 
 async def get_current_vote_streak_topgg(interaction):
-    channel = interaction.client.get_channel(1365079297919811725)
+    channel = interaction.client.get_channel(TOPGG_LOG_ID)
     if not isinstance(channel, discord.TextChannel):
         return None
 
@@ -526,7 +523,7 @@ async def get_current_vote_streak_topgg(interaction):
     return None
 
 async def find_latest_topgg_vote(bot, interaction):
-    channel_id = 1365079297919811725
+    channel_id = TOPGG_LOG_ID
     channel = bot.get_channel(channel_id) 
     
     if channel is None:

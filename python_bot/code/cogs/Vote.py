@@ -122,7 +122,7 @@ class VoteChecker(commands.Cog):
 
     @tasks.loop(minutes=3)
     async def check_vote_reminders_tgg(self):
-        channel_id = 1365079297919811725
+        channel_id = TOPGG_LOG_ID
         channel = self.bot.get_channel(channel_id)
 
         if not channel:
@@ -139,7 +139,7 @@ class VoteChecker(commands.Cog):
                 return
             else:
                 user1 = await self.bot.fetch_user(int(user_id))
-                channel_id = 1365079297919811725
+                channel_id = TOPGG_LOG_ID
                 channel = self.bot.get_channel(channel_id) 
                 
                 if channel is None:

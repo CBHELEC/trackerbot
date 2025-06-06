@@ -44,10 +44,10 @@ class Verification(app_commands.Group):
         embed.add_field(name="Staff Only:",
                         value="</verify approve:1327423499089874956> - Approve a verification request.\n</verify deny:1327423499089874956> - Deny a verification request.\n</verify unverified:1327423499089874956> - Sends a list of unverified members.",
                         inline=False)
-        
+
         await interaction.response.send_message(embed=embed)
 
-# VERIFY VERIFY
+    # VERIFY VERIFY
     @app_commands.command(name="verify", description="Verify your Geocaching profile.")
     @app_commands.describe(gc_username="The username of your Geocaching account")
     async def verify(self, interaction: discord.Interaction, gc_username: str):
@@ -93,7 +93,7 @@ class Verification(app_commands.Group):
             await interaction.response.send_message("You are already verified. If your nickname is NOT your Geocaching username, please contact Staff.", ephemeral=True)
             await self.bot.get_channel(1368992082680610826).send(f"{interaction.user.mention} tried to use /verify {gc_username} but they're already verified.")
 
-# VERIFY APPROVE
+    # VERIFY APPROVE
     @app_commands.command(name="approve", description="Approve a verification request.")
     @app_commands.describe(verification_id="The ID of the verification request to approve.")
     @is_moderator()
@@ -126,7 +126,7 @@ class Verification(app_commands.Group):
                     message = await channel.fetch_message(message_id)
                     await message.delete()
                 except Exception as e:
-                    await self.bot.get_channel(1341107185777643573).send(f"Error deleting message: {e}")
+                    await log_error(guild, self.bot, "verify", f"Error deleting message: {e}")
 
                 cursor.execute("DELETE FROM verifications WHERE id = ?", (verification_id,))
                 conn.commit()
@@ -135,7 +135,7 @@ class Verification(app_commands.Group):
                 await interaction.followup.send("The user is no longer in the server.", ephemeral=True)
         else:
             await interaction.followup.send("Invalid verification ID.", ephemeral=True)
-            
+
     @approve.error
     async def approve_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CheckFailure):
@@ -143,7 +143,7 @@ class Verification(app_commands.Group):
         else:
             raise error  
 
-# VERIFY DENY
+    # VERIFY DENY
     @app_commands.command(name="deny", description="Deny a verification request.")
     @app_commands.describe(verification_id="The ID of the verification request to deny.", reason="The reason for denial.")
     @is_moderator()
@@ -170,7 +170,7 @@ class Verification(app_commands.Group):
                     message = await channel.fetch_message(message_id)
                     await message.delete()
                 except Exception as e:
-                    await self.bot.get_channel(1341107185777643573).send(f"Error deleting message: {e}")
+                    await log_error(interaction.guild, self.bot, "verify", f"Error deleting message: {e}")
 
                 cursor.execute("DELETE FROM verifications WHERE id = ?", (verification_id,))
                 conn.commit()
@@ -179,15 +179,15 @@ class Verification(app_commands.Group):
                 await interaction.followup.send("The user is no longer in the server.", ephemeral=True)
         else:
             await interaction.followup.send("Invalid verification ID.", ephemeral=True)
-            
+
     @deny.error
     async def deny_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CheckFailure):
             return
         else:
             raise error 
-            
-# VERIFY MUGGLE
+
+    # VERIFY MUGGLE
     @app_commands.command(name="muggle", description="Assign yourself the Muggle role.")
     async def muggle(self, interaction: discord.Interaction):
         if 1368979168972378262 not in [role.id for role in interaction.user.roles]:
@@ -204,8 +204,8 @@ class Verification(app_commands.Group):
                 await interaction.response.send_message("Muggle role not found. Please contact an admin.", ephemeral=True)
         else:
             await interaction.response.send_message("You are already verified and cannot assign yourself the Muggle role.", ephemeral=True)
-            
-# VERIFY BYPASS
+
+    # VERIFY BYPASS
     @app_commands.command(name="bypass", description="You do not want to show your nickname. Verify via this.")
     async def quickverify(self, interaction: discord.Interaction):
         if 1368979168972378262 not in [role.id for role in interaction.user.roles]:
@@ -222,7 +222,7 @@ class Verification(app_commands.Group):
         else:
             await interaction.response.send_message("You are already verified.", ephemeral=True)
 
-# UNVERIFIED
+    # UNVERIFIED
     @app_commands.command()
     @is_moderator()
     async def unverified(self, interaction: discord.Interaction):
@@ -238,12 +238,12 @@ class Verification(app_commands.Group):
             title="Unverified Users",
             colour=0xad7e66
         )
-        
+
         for user in missing_role_users:
             embed.add_field(name=user.name, value=user.mention, inline=False)
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
-        
+
     @unverified.error
     async def unverified_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CheckFailure):
@@ -251,7 +251,7 @@ class Verification(app_commands.Group):
         else:
             raise error 
 
-# VERIFY MANUAL
+    # VERIFY MANUAL
     @app_commands.command()
     @is_moderator()
     @app_commands.describe(user="The user to verify", gc_name="The Geocaching username of the user")
