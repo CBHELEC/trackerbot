@@ -453,17 +453,19 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
             author = cache.author
             pmo = cache.pm_only
             cache_type = cache.type
-            state = cache.state
             status = cache.status
 
             if status == 0:
-                prefix = None
+                prefix = ""
             elif status == 1:
                 prefix = "<:Disabled:1369009017552371902>"
             elif status == 2:
                 prefix = "<:Archive:1369015619231420497>"
+            elif status == 3:
+                raise Exception(f"found an unpublished cache: {code}")
+            elif status == 4:
+                prefix = ":lock:"
 
-                # emoji_name = f"{cache_type.name if cache_type.name != 'lost_and_found_event' else 'community_celebration'}{'-disabled' if (not state) else ''}"
             emoji_name = f"{cache_type.name if cache_type.name != 'lost_and_found_event' else 'community_celebration'}"
 
             script_dir = os.path.dirname(__file__)
@@ -472,7 +474,7 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
                 data = json.load(file)
                 emoji_text = data.get(emoji_name, {}).get("emoji", None)
 
-            emoji_text = f"{prefix if prefix else ''}{emoji_text}"
+            emoji_text = f"{prefix}{emoji_text}"
 
             final_message.append(f"""{'<:Premium:1368989525405335552>' if pmo else ''}{emoji_text} [{code}](<https://coord.info/{code}>) - {name} | {author}
 :light_blue_heart: {fps} | :mag_right: D{difficulty} - T{terrain} :mountain_snow: | <:tub:1327698135710957609> {size.value.capitalize()}""")
