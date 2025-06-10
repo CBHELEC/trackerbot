@@ -427,8 +427,8 @@ def find_gc_tb_codes(s: str) -> tuple[bool, list[str], list[str]]:
     gc_matches = re.findall(r'(?<!:)\b(GC[A-Z0-9]+)\b', s, re.IGNORECASE)
     tb_matches = re.findall(r'(?<!:)\b(TB[A-Z0-9]+)\b', s, re.IGNORECASE)
 
-    gc_codes = [item.upper() for item in gc_matches if item.upper() not in GC_BLACKLIST]
-    tb_codes = [item.upper() for item in tb_matches if item.upper() not in TB_BLACKLIST]
+    gc_codes = {item.upper() for item in gc_matches if item.upper() not in GC_BLACKLIST}
+    tb_codes = {item.upper() for item in tb_matches if item.upper() not in TB_BLACKLIST}
 
     if len(gc_codes) == 0 and len(tb_codes) == 0:
         return False, [], []
