@@ -102,26 +102,12 @@ class Listeners(commands.Cog):
             save_skullboarded_messages(skullboarded_messages) 
             
     @commands.Cog.listener()
-    async def on_message(self, message): 
-      #  if message.author.bot:
-        #    return
-
+    async def on_message(self, message: discord.Message):
         global last_poll_date
 
-        clean_content = re.sub(r'[^A-Za-z0-9\s]', '', message.content)
+        succ, gc_codes, tb_codes = find_gc_tb_codes(message.content)
 
-        matches = re.findall(r'\bGC\w*\b', clean_content, re.IGNORECASE)
-        match = re.findall(r'\bTB\w*\b', clean_content, re.IGNORECASE)
-
-        gc_codes = [item.upper() for item in matches]
-        tb_codes = [item.upper() for item in match]
-
-        if any(code in gcblacklist for code in gc_codes):
-            return 
-        if any(code in tbblacklist for code in tb_codes):
-            return  
-
-        if matches or match:
+        if succ:
             if message.author.bot:
                 return
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
@@ -135,7 +121,7 @@ class Listeners(commands.Cog):
 
                 if last_poll_date != today:
                     last_poll_date = today
-                    save_poll_date(str(today))
+                    save_poll_date(today)
                     await message.channel.send(f"It's poll time! <@&1369003389576417300>")
             else:
                 return

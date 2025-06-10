@@ -68,22 +68,10 @@ class Geocaching(commands.Cog):
     async def gc_info(self, interaction: discord.Interaction, gc_code: str):
         """Sends info about a GC code."""
         await interaction.response.defer()
-        clean_content = re.sub(r'[^A-Za-z0-9\s]', '', gc_code)
-        matches = re.findall(r'\bGC\w*\b', clean_content, re.IGNORECASE)
-        match = re.findall(r'\bTB\w*\b', clean_content, re.IGNORECASE)
 
-        gc_codes = [item.upper() for item in matches]
-        tb_codes = [item.upper() for item in match]
+        succ, gc_codes, tb_codes = find_gc_tb_codes(gc_code)
 
-        gcblacklist = ["GC", "GCHQ"]
-        tbblacklist = ["TB", "TBF", "TBH", "TBS"]
-
-        if any(code in gcblacklist for code in gc_codes):
-            return 
-        if any(code in tbblacklist for code in tb_codes):
-            return  
-
-        if matches or match:
+        if succ:
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
             await interaction.followup.send(finalmessage)
         

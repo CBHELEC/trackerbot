@@ -1,3 +1,4 @@
+import re
 import pycaching
 import json
 import operator
@@ -8,7 +9,7 @@ from discord import app_commands
 import os
 import psutil
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, date
 
 from database import get_guild_settings, get_log_channel
 
@@ -389,26 +390,50 @@ def save_skullboarded_messages(message_ids):
 
 skullboarded_messages = load_skullboarded_messages()
 
-gcblacklist = ["GC", "GCHQ"]
-tbblacklist = ["TB", "TBF", "TBH", "TBS"]
+GC_BLACKLIST = ["GC", "GCHQ", "GCC"]
+TB_BLACKLIST = ["TB", "TBF", "TBH", "TBS"]
 
 POLL_JSON_FILE = "poll_dates.json"
 
-def load_poll_date():
+def load_poll_date() -> date:
     """Load the last poll date from a JSON file."""
     try:
         with open(POLL_JSON_FILE, "r") as f:
             data = json.load(f)
-            return data.get("last_poll_date", None)
+            if "last_poll_date" in data:
+                return date.fromisoformat(data["last_poll_date"])
+            return None
     except FileNotFoundError:
-        return None 
+        return None
 
-def save_poll_date(date):
+def save_poll_date(date: date):
     """Save the current poll date to a JSON file."""
     with open(POLL_JSON_FILE, "w") as f:
-        json.dump({"last_poll_date": date}, f)
+        json.dump({"last_poll_date": date.isoformat()}, f)
 
 last_poll_date = load_poll_date()
+
+def find_gc_tb_codes(s: str) -> tuple[bool, list[str], list[str]]:
+    """Find GC and TB codes in a string.
+
+    Args:
+        s (str): string to find gc and tb codes in
+
+    Returns:
+        tuple[bool, list[str], list[str]]: a tuple of whether codes were found, the gc code list, and the tb code list
+    """
+    # clean_content = re.sub(r'[^A-Za-z0-9\s]', '', s)
+
+    gc_matches = re.findall(r'(?<!:)\b(GC[A-Z0-9]+)\b', s, re.IGNORECASE)
+    tb_matches = re.findall(r'(?<!:)\b(TB[A-Z0-9]+)\b', s, re.IGNORECASE)
+
+    gc_codes = [item.upper() for item in gc_matches if item.upper() not in GC_BLACKLIST]
+    tb_codes = [item.upper() for item in tb_matches if item.upper() not in TB_BLACKLIST]
+
+    if len(gc_codes) == 0 and len(tb_codes) == 0:
+        return False, [], []
+
+    return True, gc_codes, tb_codes
 
 g_obj = pycaching.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
 
