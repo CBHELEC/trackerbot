@@ -410,15 +410,14 @@ def save_poll_date(date):
 
 last_poll_date = load_poll_date()
 
+g_obj = pycaching.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
 
 def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
+    global g_obj
     final_message = []
-    geocaching = pycaching.login(
-        GEOCACHING_USERNAME, GEOCACHING_PASSWORD
-    )
     for code in geocache_codes:
         try:
-            cache = geocaching.get_cache(code)
+            cache = g_obj.get_cache(code)
             cache.load_quick()
 
             name = cache.name
@@ -459,7 +458,7 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
 
     for trackable in tb_codes:
         try:
-            tb = geocaching.get_trackable(trackable)
+            tb = g_obj.get_trackable(trackable)
             tb.load()
 
             name = tb.name
