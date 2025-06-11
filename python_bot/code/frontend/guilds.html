@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='guilds.css') }}">
+</head>
+<body>
+    <div class="top-bar">
+        <div class="text">
+            <h1>Tracker Dashboard</h1>
+            <p>Select a server to get started.</p>
+        </div>
+
+        <div class="user" id="userBox">
+            <p>
+                <img 
+                    src="https://cdn.discordapp.com/avatars/{{user_id}}/{{avatar_hash}}.webp?size=256" 
+                    class="user-avatar-icon"
+                    style="width: 25px; vertical-align: middle;"
+                    alt="user avatar">
+                <strong>{{global_name}}</strong>
+                <img 
+                    src="{{ url_for('static', path='arrow.svg') }}" 
+                    class="user-arrow"
+                    style="width: 25px; vertical-align: middle; margin-left: 5px;"
+                    alt="arrow">
+            </p>
+            <div class="dropdown" style="display: none;">
+                <a href="/logout" class="logout-button">
+                    <img src="{{ url_for('static', path='logout.svg') }}" alt="Logout" style="width: 20px; vertical-align: middle; margin-right: 8px;">
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        {% for guild in guilds_with_bot %}
+            <a href="{{ guild.url }}" class="link">
+                <div class="item">
+                    <img class="title" src="{{ guild.icon or '/static/default-icon.png' }}" alt="{{ guild.name }} icon">
+                    {%- set maxlen = 18 -%}
+                    {%- if guild.name|length > maxlen -%}
+                        <span class="guild-name"><b>{{ guild.name[:maxlen-5].rstrip() ~ '...' }}</b></span>
+                    {%- else -%}
+                        <span class="guild-name"><b>{{ guild.name }}</b></span>
+                    {%- endif -%}
+                    <span class="guild-symbol">&gt;</span>
+                </div>
+            </a>
+        {% endfor %}
+        {% for guild in guilds_without_bot %}
+            <a href="{{ guild.url }}" class="link grayed-out">
+                <div class="item">
+                
+                    <img class="title" src="{{ guild.icon or '/static/default-icon.png' }}" alt="{{ guild.name }} icon">
+                    {%- set maxlen = 18 -%}
+                    {%- if guild.name|length > maxlen -%}
+                        <span class="guild-name"><b>{{ guild.name[:maxlen-5].rstrip() ~ '...' }}</b></span>
+                    {%- else -%}
+                        <span class="guild-name"><b>{{ guild.name }}</b></span>
+                    {%- endif -%}
+                    <span class="guild-symbol">+</span>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</body>
+
+<script>
+const userBox = document.getElementById('userBox');
+const arrow = userBox.querySelector('.user-arrow');
+const dropdown = userBox.querySelector('.dropdown');
+const container = document.querySelector('.container');
+
+let dropdownOpen = false;
+
+userBox.addEventListener('click', function (e) {
+    // Prevent toggling when clicking inside the dropdown
+    if (dropdown.contains(e.target)) return;
+
+    dropdownOpen = !dropdownOpen;
+
+    if (dropdownOpen) {
+        arrow.classList.add('rotated');
+        dropdown.style.display = 'block';
+        userBox.classList.add('disabled');
+        container.classList.add('disabled');
+        // Make all clickable guilds look grayed out and unclickable
+        document.querySelectorAll('.container .link:not(.grayed-out)').forEach(link => {
+            link.classList.add('dropdown-active');
+            link.style.pointerEvents = 'none';
+            // Change > to +
+            const symbol = link.querySelector('.guild-symbol');
+            if (symbol && symbol.textContent.trim() === '>') {
+                symbol.textContent = '+';
+            }
+        });
+        // Also make grayed-out (+) guilds unclickable and unhoverable
+        document.querySelectorAll('.container .link.grayed-out').forEach(link => {
+            link.style.pointerEvents = 'none';
+            link.style.cursor = 'default';
+        });
+        document.addEventListener('click', outsideClick);
+    } else {
+        closeDropdown();
+    }
+});
+
+function outsideClick(e) {
+    if (!userBox.contains(e.target)) {
+        closeDropdown();
+    }
+}
+
+function closeDropdown() {
+    dropdown.style.display = 'none';
+    arrow.classList.remove('rotated');
+    userBox.classList.remove('disabled');
+    container.classList.remove('disabled');
+    // Restore clickable guilds
+    document.querySelectorAll('.container .link.dropdown-active').forEach(link => {
+        link.classList.remove('dropdown-active');
+        link.style.pointerEvents = '';
+        // Change + back to >
+        const symbol = link.querySelector('.guild-symbol');
+        if (symbol && symbol.textContent.trim() === '+') {
+            symbol.textContent = '>';
+        }
+    });
+    // Restore grayed-out (+) guilds to be hoverable/clickable if needed
+    document.querySelectorAll('.container .link.grayed-out').forEach(link => {
+        link.style.pointerEvents = '';
+        link.style.cursor = '';
+    });
+    dropdownOpen = false;
+    document.removeEventListener('click', outsideClick);
+}
+</script>
+
+</html>
