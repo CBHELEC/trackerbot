@@ -11,7 +11,7 @@ from functions import *
 
 from dotenv import load_dotenv
 load_dotenv(".env")
-TOKEN = os.getenv('1BOT_TOKEN_2')
+TOKEN = os.getenv('TOKEN')
 TRACKER_TOKEN = os.getenv('TRACKER_OFFICIAL_TOKEN')
 BOTLISTME_API = os.getenv('BOTLISTME_API')
 
@@ -36,7 +36,7 @@ async def on_ready():
 #    async with aiohttp.ClientSession() as session:
 #        await session.post(
 #        "https://api.botlist.me/api/v1/bots/1322305662973116486/stats",
-#        headers={"Authorization": "wqTQ5DoZPNCCci03G36skV_VELMtwh", "Content-Type": "application/json"},
+#        headers={"Authorization": "owo", "Content-Type": "application/json"},
 #        json={"server_count": 13}
 #        )
         
@@ -118,5 +118,5 @@ async def load_extensions():
 
 if __name__ == '__main__':
     asyncio.run(load_extensions())
-    bot.run(TOKEN)
+    bot.run("uwu")
   #  bot.run(TRACKER_TOKEN)

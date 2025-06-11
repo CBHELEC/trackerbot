@@ -7,7 +7,6 @@ from functions import *
 from discord import app_commands
 import asyncio
 import re
-from bot import bot
 from datetime import datetime, timedelta
 from discord.ui import View, Button, Modal, TextInput
 
@@ -649,7 +648,7 @@ class Game_Admin(app_commands.Group):
             await update_balance(session, user_id, newbal)
 
         await interaction.response.send_message(f"Added G${amount} to {user.mention} ({user.name})'s balance, which is now G${newbal}.")
-        await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) added G${amount} to {user.mention} ({user.name})'s balance, which is now G${newbal}.")    
+ #       await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) added G${amount} to {user.mention} ({user.name})'s balance, which is now G${newbal}.")    
         await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) added G${amount} to {user.mention} ({user.name})'s balance, which is now G${newbal}.")
 
 eco_a_commands = Game_Admin(name="game_admin", description="Geocaching Game Admin Commands.")

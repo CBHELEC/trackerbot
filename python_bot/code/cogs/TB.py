@@ -480,22 +480,36 @@ class TBDatabase(app_commands.Group):
                 await interaction.response.send_message("The database is, for some reason, empty.", ephemeral=True)
                 return
 
-            codes = ", ".join([entry[0] for entry in trackables])
+            codes = [entry[0] for entry in trackables]
+            chunks = []
+            current_chunk = ""
 
+            for code in codes:
+                if len(current_chunk) + len(code) + 2 > 2000: 
+                    chunks.append(current_chunk.rstrip(", "))
+                    current_chunk = ""
+                current_chunk += f"{code}, "
+
+            if current_chunk:
+                chunks.append(current_chunk.rstrip(", "))
+                
             try:
-                await interaction.user.send(codes)
+                for chunk in chunks:
+                    await interaction.user.send(chunk)
                 await interaction.response.send_message("The TB codes have been sent to your DMs.", ephemeral=True)
             except discord.Forbidden:
                 await interaction.response.send_message(
                     "I couldn't send you a DM. Please make sure your DMs are open and try again.",
                     ephemeral=True
                 )
+
         except Exception as e:
             await interaction.response.send_message(
-                f"An error occurred while retrieving the TB codes. Please ask an Administrator to check the logs.",
+                "An error occurred while retrieving the TB codes. Please ask an Administrator to check the logs.",
                 ephemeral=True
             )
-            await log_error(interaction.guild, bot, interaction.command.name, 
+            await log_error(
+                interaction.guild, bot, interaction.command.name,
                 f"{interaction.user.mention} ({interaction.user.name}) used `bulkview`. Error: {e}"
             )
     
