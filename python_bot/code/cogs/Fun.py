@@ -15,6 +15,7 @@ import owoencode
 import owodecode
 from discord.ext import commands
 import re
+from discord.app_commands import CheckFailure
 
 class Fun(app_commands.Group):
     """Fun Commands!"""
@@ -36,6 +37,24 @@ class Fun(app_commands.Group):
       #      return False
         
        # return True
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """Only let commands run if the Server Owner or Admin has enabled them."""
+        setting = get_guild_settings(interaction.guild.id)
+        fun_status = int(setting.fun_set) if hasattr(setting, 'fun_set') else 1
+        if fun_status == 0:
+            raise CheckFailure("COMMANDS_DISABLED_BY_ADMIN")
+        return True
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        if isinstance(error, CheckFailure) and str(error) == "COMMANDS_DISABLED_BY_ADMIN":
+            msg = "This command set has been disabled by the Server Owner or an Admin. Please contact them for more info."
+            if not interaction.response.is_done():
+                await interaction.response.send_message(msg, ephemeral=True)
+            else:
+                await interaction.followup.send(msg, ephemeral=True)
+            return
+        raise error
     
 # DECODE_OWO CONTEXT
     async def decode_owo(self, interaction: discord.Interaction, message: discord.Message):
