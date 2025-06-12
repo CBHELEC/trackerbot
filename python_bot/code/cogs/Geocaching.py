@@ -62,7 +62,7 @@ class Geocaching(commands.Cog):
     async def badgebar(self, interaction: discord.Interaction, gc_user: str = None, dc_user: discord.Member = None):
         """Sends a badgebar image."""
         user = gc_user if gc_user else dc_user.display_name if dc_user else interaction.user.display_name
-        user = user.replace(" ", "%20")
+        user = quote(user)
         await interaction.response.send_message(f"https://cdn2.project-gc.com/BadgeBar/{user}.png")
         
 # GC_INFO

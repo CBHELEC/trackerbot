@@ -216,6 +216,18 @@ class Dev(commands.Cog):
         await interaction.response.send_message("meme time fuckers")
         for i in range(amount):
             await interaction.channel.send(f"wassup fucker {user.mention}, you have been memed")
+
+    @app_commands.command(name="test", description="Test command for development purposes.")
+    @is_dev()
+    async def test(self, interaction: discord.Interaction):
+        # Fetch all global commands
+        commands = await interaction.client.tree.fetch()
+        # Find your command by name
+        for cmd in commands:
+            if cmd.name == "test":
+                await interaction.response.send_message(f"ID: {cmd.id}", ephemeral=True)
+                return
+        await interaction.response.send_message("Command ID not found.", ephemeral=True)
         
 async def setup(bot):
     await bot.add_cog(Dev(bot))
