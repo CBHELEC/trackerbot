@@ -78,7 +78,7 @@ class Debug(app_commands.Group):
         super().__init__(name="debug", description="Developer Debug Commands.")
         self.bot = bot
 
-        self.conn2 = sqlite3.connect('votes.db')
+        self.conn2 = sqlite3.connect(DATA_DIR / 'votes.db')
         self.c = self.conn2.cursor()
         self.c.execute(''' 
             CREATE TABLE IF NOT EXISTS dbl_votes ( 
@@ -376,27 +376,24 @@ class Debug(app_commands.Group):
             "datetime": datetime,
         }
         # Dynamically add all subdirectories to sys.path
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        base_dir = Path(__file__).parent.parent.resolve()
         for root, dirs, files in os.walk(base_dir):
             if "__pycache__" in root:
                 continue
             if root not in sys.path:
                 sys.path.append(root)
         # Import all .py files as modules and add their globals to env
-        for root, dirs, files in os.walk(base_dir):
-            for file in files:
-                if file.endswith(".py") and not file.startswith("__"):
-                    mod_name = file[:-3]
-                    mod_path = os.path.join(root, file)
-                    try:
-                        spec = importlib.util.spec_from_file_location(mod_name, mod_path)
-                        mod = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(mod)
-                        for k, v in vars(mod).items():
-                            if not k.startswith("__"):
-                                env[k] = v
-                    except Exception:
-                        pass  # Ignore import errors for now
+        for file in base_dir.rglob("*.py"):
+            if file.is_file() and not file.name.startswith("__"):
+                try:
+                    spec = importlib.util.spec_from_file_location(file.stem, file)
+                    mod = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(mod)
+                    for k, v in vars(mod).items():
+                        if not k.startswith("__"):
+                            env[k] = v
+                except Exception:
+                    pass  # Ignore import errors for now
         code = code.strip("` ")
         if code.startswith("py\n"):
             code = code[3:]

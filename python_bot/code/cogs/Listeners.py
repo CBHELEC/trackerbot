@@ -60,7 +60,7 @@ async def send_vote_reward_topgg(self, user_id, new_streak, voted_at):
 class Listeners(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.conn2 = sqlite3.connect('votes.db')
+        self.conn2 = sqlite3.connect(DATA_DIR / 'votes.db')
         self.c = self.conn2.cursor()
 
     @commands.Cog.listener()

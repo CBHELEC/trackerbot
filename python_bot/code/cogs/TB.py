@@ -9,9 +9,7 @@ from datetime import datetime
 import asyncio
 from logger import log
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(BASE_DIR, "trackables.db")
-conn1 = sqlite3.connect(db_path)
+conn1 = sqlite3.connect(DATA_DIR / "trackables.db")
 cursor1 = conn1.cursor()
 
 cursor1.execute("""

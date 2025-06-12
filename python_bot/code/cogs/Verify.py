@@ -6,7 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 
 # VERIFY
-conn = sqlite3.connect("verifications.db")
+conn = sqlite3.connect(DATA_DIR / "verifications.db")
 cursor = conn.cursor()
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS verifications (

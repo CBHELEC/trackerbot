@@ -1,13 +1,12 @@
 from sqlalchemy import Column, BigInteger, Integer, String, Float, DateTime, text
 from sqlalchemy.orm import declarative_base
-import os
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.future import select
 from datetime import datetime
+from pathlib import Path
 
 # Database Path
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_URL = f"sqlite+aiosqlite:///{os.path.join(BASE_DIR, 'economygame.db')}"
+DATABASE_URL = f"sqlite+aiosqlite:///{Path(__file__).parent.resolve() / 'data' / 'economygame.db'}"
 
 Base = declarative_base()
 

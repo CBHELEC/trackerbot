@@ -13,7 +13,7 @@ class VoteChecker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.conn2 = sqlite3.connect('votes.db')
+        self.conn2 = sqlite3.connect(DATA_DIR / 'votes.db')
         self.c = self.conn2.cursor()
         self.c.execute(''' 
             CREATE TABLE IF NOT EXISTS dbl_votes ( 
@@ -22,7 +22,7 @@ class VoteChecker(commands.Cog):
                 vote_streak INTEGER DEFAULT 1, 
                 reminded INTEGER DEFAULT 0,
                 total_votes INTEGER DEFAULT 1
-            ) 
+            )
         ''')
         self.conn2.commit()
         self.c.execute(''' 

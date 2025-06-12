@@ -1,10 +1,9 @@
 import aiofiles
 import datetime
-import os
+from pathlib import Path
 
-LOG_FILE_PATH = "logs/bot.log"
-
-os.makedirs(os.path.dirname(LOG_FILE_PATH), exist_ok=True)
+LOG_FILE_PATH = Path("logs/bot.log")
+LOG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 async def log(interaction, log: str):
     timestamp = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")

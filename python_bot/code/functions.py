@@ -42,6 +42,9 @@ ERROR_LOG_ID = 1378160179262259341  # 1341107185777643573
 TOPGG_LOG_ID = 1365079297919811725
 DEV_USER_ID = 374283134243700747  # 820297275448098817
 
+CODE_DIR = Path(__file__).parent
+DATA_DIR = CODE_DIR / "data"
+
 def is_mod():
     async def predicate(interaction: discord.Interaction):
         settings = get_guild_settings(interaction.guild.id)
@@ -413,6 +416,13 @@ def save_poll_date(date: date):
 
 last_poll_date = load_poll_date()
 
+with (DATA_DIR / 'name-icon.json').open("r", encoding="utf-8") as file:
+    emoji_names: dict[str, dict[str, str]] = json.load(file)
+
+def get_emoji_from_name(emoji_name: str) -> str:
+    global emoji_names
+    return emoji_names.get(emoji_name, {}).get("emoji", "")
+
 def find_gc_tb_codes(s: str) -> tuple[bool, list[str], list[str]]:
     """Find GC and TB codes in a string.
 
@@ -467,13 +477,7 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
                 prefix = ":lock:"
 
             emoji_name = f"{cache_type.name if cache_type.name != 'lost_and_found_event' else 'community_celebration'}"
-
-            script_dir = os.path.dirname(__file__)
-            file_path = os.path.join(script_dir, "name-icon.json")
-            with open(file_path, "r", encoding="utf-8") as file:
-                data = json.load(file)
-                emoji_text = data.get(emoji_name, {}).get("emoji", None)
-
+            get_emoji_from_name(emoji_name)
             emoji_text = f"{prefix}{emoji_text}"
 
             final_message.append(f"""{'<:Premium:1368989525405335552>' if pmo else ''}{emoji_text} [{code}](<https://coord.info/{code}>) - {name} | {author}

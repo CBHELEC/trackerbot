@@ -99,8 +99,7 @@ bot.remove_command('help')
 async def load_extensions():
     initial_extensions = []
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    for filename in os.listdir(f"{script_dir}/cogs"):
+    for filename in os.listdir(CODE_DIR / "cogs"):
         if filename.endswith('.py'):
             initial_extensions.append("cogs." + filename[:-3])
 

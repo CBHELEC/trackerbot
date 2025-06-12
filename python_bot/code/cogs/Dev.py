@@ -192,22 +192,21 @@ class Dev(commands.Cog):
             await message.delete()
         else:
             return   
-    
+
 # RELOAD    
     @app_commands.command(name="reload", description="Reloads all cogs.")
     @is_dev()
     async def reload(self, interaction: discord.Interaction):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        for filename in os.listdir(script_dir):
-            if filename.endswith(".py"):
-                try:
-                    await self.bot.unload_extension(f"cogs.{filename[:-3]}")
-                    await self.bot.load_extension(f"cogs.{filename[:-3]}")
-                except Exception as e:
-                    print(f"Failed to reload {filename}: {e}")
+        script_dir = Path(__file__).parent.resolve()
+        for file in script_dir.glob("*.py"):
+            try:
+                await self.bot.unload_extension(f"cogs.{file.stem}")
+                await self.bot.load_extension(f"cogs.{file.stem}")
+            except Exception as e:
+                print(f"Failed to reload {file.name}: {e}")
         await interaction.response.send_message("Cogs reloaded!")
         await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) reloaded all cogs.")
-    
+
 # meme mode
     @app_commands.command(name="meme_mode", description="Memes the memers.")
     @is_dev()

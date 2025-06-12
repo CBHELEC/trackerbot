@@ -1,10 +1,9 @@
 from sqlalchemy import create_engine, Column, BigInteger, Boolean, String
 from sqlalchemy.orm import declarative_base, sessionmaker
-import os
+from pathlib import Path
 
 # Database Path
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'bot_settings.db')}"
+DATABASE_URL = f"sqlite:///{Path(__file__).parent.resolve() / 'data' / 'bot_settings.db'}"
 
 Base = declarative_base()
 
