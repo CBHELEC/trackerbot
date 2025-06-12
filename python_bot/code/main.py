@@ -19,8 +19,8 @@ CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 REDIRECT_URI = os.getenv('REDIRECT_URI')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-LOGIN_URL = "https://discord.com/oauth2/authorize?client_id=1343643062030827560&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fcallback&scope=identify+guilds"
-INVITE_LINK = "https://discord.com/oauth2/authorize?client_id=1322305662973116486"
+LOGIN_URL = f"https://discord.com/oauth2/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fcallback&scope=identify+guilds"
+INVITE_LINK = f"https://discord.com/oauth2/authorize?client_id={CLIENT_ID}"
 
 @asynccontextmanager
 async def on_startup(app: FastAPI):
@@ -33,8 +33,8 @@ async def on_startup(app: FastAPI):
     await api.close()
 
 app = FastAPI(lifespan=on_startup)
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
-templates = Jinja2Templates(directory="frontend")
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "frontend/static"), name="static")
+templates = Jinja2Templates(directory=Path(__file__).parent / "frontend")
 
 ipc = Client(secret_key=SECRET_KEY)
 api = DiscordAuth(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
@@ -150,16 +150,21 @@ async def server(request: Request, guild_id: int):
     if setting:
         feature_txt = setting.skullboard_channel_id
         selected_roles = setting.perm_role_ids.split(",") if setting.perm_role_ids else []
-        detection_status = int(setting.detection_status) if hasattr(setting, 'detection_status') else 1
-        link_embed_status = int(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else 1
+        detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
+        link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
         message_set = int(setting.message_set) if hasattr(setting, 'message_set') else 1
         tb_set = int(setting.tb_set) if hasattr(setting, 'tb_set') else 1
-        fun_set = int(setting.fun_Set) if hasattr(setting, 'fun_Set') else 1
+        fun_set = int(setting.fun_set) if hasattr(setting, 'fun_set') else 1
         game_set = int(setting.game_set) if hasattr(setting, 'game_set') else 1
     else:
         feature_txt = "Feature is not set."
         selected_roles = []
-        detection_status = 1
+        detection_status = True
+        link_embed_status = True
+        message_set = 1
+        tb_set = 1
+        fun_set = 1
+        game_set = 1
 
     session_id = request.cookies.get("session_id")
     session = await db.get_session(session_id)

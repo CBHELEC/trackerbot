@@ -105,16 +105,19 @@ class Listeners(commands.Cog):
     async def on_message(self, message: discord.Message):
         global last_poll_date
         
+        if message.author.id == self.bot.user.id:
+            return
+        
         setting = get_guild_settings(message.guild.id)
-        detection_status = int(setting.detection_status) if hasattr(setting, 'detection_status') else 1
-        link_embed_status = int(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else 1
+        detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
+        link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
 
         succ, gc_codes, tb_codes = find_gc_tb_codes(message.content)
 
         if succ:
             if message.author.bot:
                 return
-            if detection_status == 0:
+            if not detection_status:
                 return
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
             await message.reply(finalmessage)
@@ -165,7 +168,7 @@ class Listeners(commands.Cog):
         elif "https://www.geocaching.com/" in message.content or "https://www.coord.info/" in message.content or "https://coord.info/" in message.content or "https://geocaching.com/" in message.content:
             if message.author.bot:
                 return
-            if link_embed_status == 0:
+            if not link_embed_status:
                 return
             await asyncio.sleep(2)
             await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>", delete_after=5)
