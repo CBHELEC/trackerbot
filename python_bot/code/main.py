@@ -1,4 +1,4 @@
-from datetime import datetime
+import os
 import discord
 import ezcord
 import uvicorn
@@ -10,12 +10,15 @@ from starlette.templating import Jinja2Templates
 from contextlib import asynccontextmanager
 from backend import DiscordAuth, db, feature_db
 from database import *
-from dashboardbot import bot
+from datetime import datetime
 
-# Hier die Daten aus dem Developer-Portal einfügen
-CLIENT_ID = 1343643062030827560
-CLIENT_SECRET = "OOcxVPMJV48vdwCq9AhJkW-uEyEtWbDD"
-REDIRECT_URI = "http://localhost:8000/callback"
+from dotenv import load_dotenv
+load_dotenv(".env")
+CLIENT_ID = os.getenv('CLIENT_ID')
+CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+REDIRECT_URI = os.getenv('REDIRECT_URI')
+SECRET_KEY = os.getenv('SECRET_KEY')
+
 LOGIN_URL = "https://discord.com/oauth2/authorize?client_id=1343643062030827560&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fcallback&scope=identify+guilds"
 INVITE_LINK = "https://discord.com/oauth2/authorize?client_id=1322305662973116486"
 
@@ -28,13 +31,12 @@ async def on_startup(app: FastAPI):
     yield
 
     await api.close()
-    # Hier kann noch selbst eine Methode, die je nach Datenbank variiert, hinzugefügt werden, um die Datenbank zu "schließen"
 
 app = FastAPI(lifespan=on_startup)
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 templates = Jinja2Templates(directory="frontend")
 
-ipc = Client(secret_key="keks")
+ipc = Client(secret_key=SECRET_KEY)
 api = DiscordAuth(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
 
 
@@ -147,7 +149,6 @@ async def server(request: Request, guild_id: int):
     setting = get_guild_settings(guild_id)
     if setting:
         feature_txt = setting.skullboard_channel_id
-        # Get selected permission roles as a list of IDs (strings)
         selected_roles = setting.perm_role_ids.split(",") if setting.perm_role_ids else []
         detection_status = int(setting.detection_status) if hasattr(setting, 'detection_status') else 1
         link_embed_status = int(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else 1
@@ -156,11 +157,10 @@ async def server(request: Request, guild_id: int):
         fun_set = int(setting.fun_Set) if hasattr(setting, 'fun_Set') else 1
         game_set = int(setting.game_set) if hasattr(setting, 'game_set') else 1
     else:
-        feature_txt = "Das Feature ist nicht set"
+        feature_txt = "Feature is not set."
         selected_roles = []
         detection_status = 1
 
-    # Additional User stuff
     session_id = request.cookies.get("session_id")
     session = await db.get_session(session_id)
     if not session_id or not session:
@@ -169,16 +169,12 @@ async def server(request: Request, guild_id: int):
     token, refresh_token, token_expires_at = session
     user = await api.get_user(token)
 
-    # Fetch guild icon hash
     icon_hash = (await ipc.request("guild_icon_hash", guild_id=guild_id)).response["guild_icon_hash"]
     guild_icon_url = f"https://cdn.discordapp.com/icons/{guild_id}/{icon_hash}.png?size=1024" if icon_hash else ezcord.random_avatar()
-    print(f"Guild Icon URL: {guild_icon_url}")
 
-    # Fetch categories and channels from the bot via IPC
     categories_resp = await ipc.request("guild_categories", guild_id=guild_id)
     categories = categories_resp.response["categories"] if categories_resp and "categories" in categories_resp.response else []
 
-    # Fetch all roles from the bot via IPC
     roles_resp = await ipc.request("guild_roles", guild_id=guild_id)
     roles = []
     if roles_resp and roles_resp.response and "roles" in roles_resp.response:
@@ -216,9 +212,8 @@ async def set_channel(guild_id: int, channel_id: str, session_id: str = Cookie(N
 
     perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
     if not perms.response.get("perms"):
-        return {"error": "Du hast keinen Zugriff auf diesen Server"}
+        return {"error": "You do not have access to this server"}
 
-    # Handle 'none' as disabling the feature
     if channel_id == "none":
         update_guild_settings(guild_id, skullboard_status=False, skullboard_channel_id=None)
     else:
@@ -233,9 +228,8 @@ async def set_perm(guild_id: int, role_id: str, session_id: str = Cookie(None)):
 
     perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
     if not perms.response.get("perms"):
-        return {"error": "Du hast keinen Zugriff auf diesen Server"}
+        return {"error": "You do not have access to this server"}
 
-    # This endpoint is now deprecated and should not be used.
     return RedirectResponse(url=f"/server/{guild_id}")
 
 @app.post("/server/{guild_id}/settings/set_perm_roles")
@@ -246,10 +240,9 @@ async def set_perm_roles(guild_id: int, request: Request, session_id: str = Cook
 
     perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
     if not perms.response.get("perms"):
-        return JSONResponse({"error": "Du hast keinen Zugriff auf diesen Server"}, status_code=403)
+        return JSONResponse({"error": "You do not have access to this server"}, status_code=403)
 
     role_ids = body.get("role_ids", [])
-    # Store as comma-separated string
     update_guild_settings(guild_id, perm_role_ids=",".join(role_ids))
     return JSONResponse({"success": True})
 
@@ -261,7 +254,7 @@ async def set_channel(guild_id: int, status: int, session_id: str = Cookie(None)
 
     perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
     if not perms.response.get("perms"):
-        return {"error": "Du hast keinen Zugriff auf diesen Server"}
+        return {"error": "You do not have access to this server"}
 
     update_guild_settings(guild_id, detection_status=bool(status))
     return RedirectResponse(url=f"/server/{guild_id}")
@@ -274,7 +267,7 @@ async def set_channel(guild_id: int, status: int, session_id: str = Cookie(None)
 
     perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
     if not perms.response.get("perms"):
-        return {"error": "Du hast keinen Zugriff auf diesen Server"}
+        return {"error": "You do not have access to this server"}
 
     update_guild_settings(guild_id, link_embed_status=bool(status))
     return RedirectResponse(url=f"/server/{guild_id}")
@@ -287,7 +280,7 @@ async def set_channel(guild_id: int, set: str, status: int, session_id: str = Co
 
     perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
     if not perms.response.get("perms"):
-        return {"error": "Du hast keinen Zugriff auf diesen Server"}
+        return {"error": "You do not have access to this server"}
     print(f"Set: {set}, Status: {status}")
     update_guild_settings(guild_id, **{set: bool(status)})
     return RedirectResponse(url=f"/server/{guild_id}")
