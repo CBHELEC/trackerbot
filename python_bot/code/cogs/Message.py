@@ -5,11 +5,30 @@ from bot import bot
 from discord.ext import commands
 import re
 from logger import log
+from discord.app_commands import CheckFailure
 
 class Message(commands.Cog):
     DELETE_TIME_DELAY = 5
     def __init__(self, bot):
         self.bot = bot
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """Only let commands run if the Server Owner or Admin has enabled them."""
+        setting = get_guild_settings(interaction.guild.id)
+        fun_status = int(setting.message_set) if hasattr(setting, 'message_set') else 1
+        if fun_status == 0:
+            raise CheckFailure("M_COMMANDS_DISABLED_BY_ADMIN")
+        return True
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        if isinstance(error, CheckFailure) and str(error) == "M_COMMANDS_DISABLED_BY_ADMIN":
+            msg = "This command set has been disabled by the Server Owner or an Admin. Please contact them for more info."
+            if not interaction.response.is_done():
+                await interaction.response.send_message(msg, ephemeral=True)
+            else:
+                await interaction.followup.send(msg, ephemeral=True)
+            return
+        raise error
 
 # SAY
     @app_commands.command()

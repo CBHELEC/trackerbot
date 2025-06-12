@@ -10,17 +10,97 @@ from datetime import datetime
 import traceback
 import sys
 from discord import app_commands
+import ezcord
+from discord.ext.ipc import ClientPayload, Server
 
 from functions import *
 
 TOKEN = os.getenv("BOT_TOKEN")
 
-intents = discord.Intents.all()
+class Bot(ezcord.Bot):
+    def __init__(self):
+        intents = discord.Intents.all()
+        intents.members = True
 
-bot = commands.Bot(
-    command_prefix=BOT_PREFIX,
-    intents=intents
-)
+        super().__init__(command_prefix=BOT_PREFIX, intents=intents)
+        self.ipc = Server(self, secret_key="keks")
+
+    @Server.route()
+    async def guild_count(self, _):
+        return str(len(self.guilds))
+
+    @Server.route()
+    async def bot_guilds(self, _):
+        guild_ids = [str(guild.id) for guild in self.guilds]
+        return {"data": guild_ids}
+
+    @Server.route()
+    async def guild_stats(self, data: ClientPayload):
+        guild = self.get_guild(data.guild_id)
+        if not guild:
+            return {
+                "member_count": 69,
+                "name": "Unknown"
+            }
+
+        return {
+            "member_count": guild.member_count,
+            "name": guild.name,
+        }
+    
+    @Server.route()
+    async def guild_icon_hash(self, data: ClientPayload):
+        guild = self.get_guild(data.guild_id)
+        if not guild:
+            print("oh noes gwuild has nwot been fwound uwu >:e")
+            return {"guild_icon_hash": None}
+
+        icon_hash = guild.icon.key if guild.icon else None 
+        print(f"owo yay gwuild icon has been fwound: {icon_hash}")
+        return {"guild_icon_hash": icon_hash}
+
+    @Server.route()
+    async def check_perms(self, data: ClientPayload):
+        guild = self.get_guild(data.guild_id)
+        if not guild:
+            return {"perms": False}
+
+        member = guild.get_member(int(data.user_id))
+        if not member or not member.guild_permissions.administrator:
+            return {"perms": False}
+
+        return {"perms": True}
+    
+    @Server.route()
+    async def guild_channels(self, data: ClientPayload):
+        guild = self.get_guild(data.guild_id)
+        if not guild:
+            return {"channels": []}
+        return {"channels": [channel.name for channel in guild.text_channels]}
+
+    @Server.route()
+    async def guild_categories(self, data: ClientPayload):
+        guild = self.get_guild(data.guild_id)
+        if not guild:
+            return {"categories": []}
+        categories = []
+        for category in guild.categories:
+            channels = [{"id": ch.id, "name": ch.name} for ch in category.channels]
+            categories.append({"name": category.name, "channels": channels})
+        return {"categories": categories}
+    
+    @Server.route()
+    async def guild_roles(self, data: ClientPayload):
+        guild = self.get_guild(data.guild_id)
+        if not guild:
+            return {"roles": []}
+        roles = [{"id": str(role.id), "name": role.name} for role in guild.roles if not role.is_default()]
+        return {"roles": roles}
+
+    async def on_ipc_error(self, endpoint: str, exc: Exception) -> None:
+        raise exc
+
+bot = Bot()
 
 bot.start_time = datetime.now()
 
@@ -28,7 +108,9 @@ bot.start_time = datetime.now()
 async def on_ready():
     print(f'Logged in as {bot.user}')
     print('------------------------')
-    # await bot.tree.sync()
+    # await bot.tree.sync()]
+    await bot.ipc.start()
+    print(f'IPC Server Started')
     await bot.change_presence(
         activity=discord.CustomActivity(f"Invite Me! | {len(bot.guilds)} Servers"))
     update_presence.start()
@@ -51,9 +133,7 @@ async def log_unhandled_error(bot, title: str, error_text: str):
             suffix = "\n```"
             max_error_len = 2000 - len(prefix) - len(suffix)
             chunks = [error_text[i:i+max_error_len] for i in range(0, len(error_text), max_error_len)]
-            # Send the first chunk with the title
             await channel.send(f"{prefix}{chunks[0]}{suffix}")
-            # Send any additional chunks as follow-ups
             for chunk in chunks[1:]:
                 await channel.send(f"```py\n{chunk}\n```")
     except Exception as e:

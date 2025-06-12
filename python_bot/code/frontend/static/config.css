@@ -1,0 +1,386 @@
+strong {
+    color: #ea461e;
+}
+
+.text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.user {
+    border-radius: 25px;
+    text-align: right;
+    cursor: pointer;
+    position: relative;
+    transition: opacity 0.2s ease;
+}
+
+.user.disabled > p {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.user-arrow {
+    transform: rotate(90deg);
+    transition: transform 0.2s ease;
+    margin-right: 10px;
+}
+
+.user-arrow.rotated {
+    transform: rotate(270deg);
+}
+
+.user-avatar-icon {
+    border-radius: 50%;
+    margin-left: 10px;
+}
+
+.dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 0;
+    margin-top: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+    z-index: 2000;
+    overflow: hidden;
+}
+
+.logout-button {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    background-color: #fff;
+    padding: 12px 16px;
+    border-radius: 0;
+    border: none;
+    font-weight: bold;
+    color: #222;
+    gap: 10px;
+    width: 100%;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.logout-button:hover {
+    background-color: #f2f2f2;
+    color: #ea461e;
+}
+
+.guilds-button {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    background-color: #fff;
+    padding: 12px 16px;
+    border-radius: 0;
+    border: none;
+    font-weight: bold;
+    color: #222;
+    gap: 10px;
+    width: 100%;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.guilds-button:hover {
+    background-color: #f2f2f2;
+    color: #ea461e;
+}
+
+.user:hover {
+    transform: scale(1.05);
+    box-shadow: 0 .2rem .5rem rgba(0,0,0,0.3), 0 1rem .5rem rgba(0,0,0,0.22)
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-content: flex-start;
+    flex-wrap: wrap;
+    margin: 2rem 2% 3rem;
+}
+
+.container.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.item {
+    margin: .85rem;
+    width: 400px;
+    min-width: 300px;
+    height: 100px;
+    border-radius: .75rem;
+    font-size: 18px;
+    overflow: hidden;
+    background-color: #3a4242;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.2rem;
+    padding: 0 1.2rem;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 .2rem .5rem rgba(0,0,0,0.3), 0 1rem .5rem rgba(0,0,0,0.22)
+}
+
+.grayed-out {
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.grayed-out:hover {
+    opacity: 0.75;
+}
+
+.section-title {
+    font-size: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+.grayed-out .item {
+    opacity: 0.5;
+    pointer-events: none; /* disable clicks on servers without the bot if you want */
+}
+
+.grayed-out .item:hover {
+    opacity: 0.5; /* Keep opacity consistent on hover */
+    transform: none; /* Disable scaling hover */
+    box-shadow: none;
+    cursor: default;
+}
+
+.link.grayed-out {
+    opacity: 0.5;
+    pointer-events: auto;
+    transition: opacity 0.3s ease;
+}
+.link.grayed-out:hover {
+    opacity: 0.75;
+    cursor: pointer;
+}
+.container .link.grayed-out .item {
+    /* Optionally, further gray out the card itself */
+    filter: grayscale(0.7);
+    background-color: #2c2f33;
+}
+
+.item img.title {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    margin: 0;
+    padding: 0;
+    object-fit: cover;
+    background-color: #555;
+    flex-shrink: 0;
+}
+
+@media (max-width: 500px) {
+    .item {
+        width: 95vw;
+        min-width: unset;
+        padding: 0 0.5rem;
+    }
+    .item .guild-name {
+        max-width: 60px;
+    }
+    .item .guild-symbol {
+        right: 0.5rem;
+    }
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f7fa;
+    color: #333;
+    padding: 2rem;
+    max-width: 800px;
+    margin: auto;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+h2 {
+    margin: 0.5rem 0;
+    color: #555;
+}
+
+.button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    margin: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+}
+
+.button:hover {
+    background-color: #2980b9;
+}
+
+.link {
+    text-decoration: none;
+}
+
+form {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    margin: 1.5rem 0;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+select {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-bottom: 1rem;
+}
+
+input[type="submit"] {
+    background-color: #2ecc71;
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+input[type="submit"]:hover {
+    background-color: #27ae60;
+}
+
+.top-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.dashboard-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    position: relative;
+    z-index: 1001;
+}
+
+.settings-container {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    margin: 1.5rem 0;
+}
+
+.settings-container.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+.settings-container.disabled input,
+.settings-container.disabled select,
+.settings-container.disabled button,
+.settings-container.disabled label {
+    background-color: #f0f0f0 !important;
+    color: #888 !important;
+    cursor: not-allowed !important;
+    border-color: #ddd !important;
+}
+
+.choices__list--multiple .choices__item {
+    border: 1px solid black !important;
+}
+
+.settings-toggle-row {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    margin: 2rem 0 0 0;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 70px;
+    border: 1px solid #ececec;
+}
+.toggle-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #222;
+    letter-spacing: 0.01em;
+}
+.toggle-buttons {
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+}
+.toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f5f7fa;
+    border: 2px solid #d1d1d1;
+    border-radius: 8px;
+    padding: 0.5rem 1.2rem 0.5rem 0.9rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.18s, border 0.18s, color 0.18s;
+    min-width: 90px;
+    outline: none;
+}
+.toggle-btn img.toggle-icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 0.2rem;
+}
+.toggle-btn.active {
+    background: #eafbe7;
+    border-color: #3ec46d;
+    color: #1a7a36;
+    font-weight: 700;
+}
+.toggle-btn.active img.toggle-icon {
+    filter: drop-shadow(0 0 2px #3ec46d);
+}
+.toggle-btn:not(.active):hover {
+    background: #f0f0f0;
+    border-color: #bbb;
+}
+.toggle-btn:last-child.active {
+    background: #ffeaea;
+    border-color: #e74c3c;
+    color: #a12a1a;
+}
+.toggle-btn:last-child.active img.toggle-icon {
+    filter: drop-shadow(0 0 2px #e74c3c);
+}

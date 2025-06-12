@@ -1,3 +1,4 @@
+from urllib.parse import quote
 import discord
 from discord import app_commands
 from functions import *
@@ -78,7 +79,7 @@ class Verification(app_commands.Group):
                     conn.commit()
 
                     verification_id = cursor.lastrowid
-                    await message.edit(content=f"{interaction.user.mention} has requested verification for username: {gc_username}. Verification ID: {verification_id}.")
+                    await message.edit(content=f"{interaction.user.mention} has requested verification for username: {gc_username}. Verification ID: {verification_id}.\nProfile Link: https://www.geocaching.com/p/?u={quote(gc_username)}")
                     await interaction.response.send_message(
                         "Your request has been submitted for review. Your verification ID is `{}`. A member of staff will review it soon.".format(verification_id),
                         ephemeral=True
@@ -257,7 +258,9 @@ class Verification(app_commands.Group):
     @app_commands.describe(user="The user to verify", gc_name="The Geocaching username of the user")
     async def manual(self, interaction: discord.Interaction, user: discord.Member, gc_name: str):
         """Manually verify a user."""
-        if 1368979168972378262 not in [role.id for role in interaction.user.roles]:
+        if 1368979168972378262 in [role.id for role in interaction.user.roles]:
+            await interaction.response.send_message("That user already verified.", ephemeral=True)
+        else:
             role1 = interaction.guild.get_role(1368979168972378262)
             if role1:
                 await user.add_roles(role1)
@@ -266,8 +269,6 @@ class Verification(app_commands.Group):
                 await self.bot.get_channel(1368992082680610826).send(f"{interaction.user.mention} ({interaction.user.name}) has manually verified {user.mention} with username {gc_name}.")
             else:
                 await interaction.response.send_message("Verification role not found. Please contact an admin.", ephemeral=True)
-        else:
-            await interaction.response.send_message("That user already verified.", ephemeral=True)
 
     @manual.error
     async def manual_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):

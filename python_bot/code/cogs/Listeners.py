@@ -104,14 +104,20 @@ class Listeners(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         global last_poll_date
+        
+        setting = get_guild_settings(message.guild.id)
+        detection_status = int(setting.detection_status) if hasattr(setting, 'detection_status') else 1
+        link_embed_status = int(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else 1
 
         succ, gc_codes, tb_codes = find_gc_tb_codes(message.content)
 
         if succ:
             if message.author.bot:
                 return
+            if detection_status == 0:
+                return
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
-            await message.channel.send(finalmessage)
+            await message.reply(finalmessage)
             
         elif message.poll:
             if message.guild.id != 1368978029056888943:
@@ -156,12 +162,17 @@ class Listeners(commands.Cog):
             else:
                 return
 
-        elif "https://www.geocaching.com/" in message.content:
+        elif "https://www.geocaching.com/" in message.content or "https://www.coord.info/" in message.content or "https://coord.info/" in message.content or "https://geocaching.com/" in message.content:
             if message.author.bot:
                 return
+            if link_embed_status == 0:
+                return
             await asyncio.sleep(2)
-            await message.reply("Heya, I cleared the embed from your message since it doesnt show any extra info! <:happy_tracker:1329914691656614042>")
+            await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>", delete_after=5)
             await message.edit(suppress=True)
+
+        elif "good bot" in message.content.lower():
+            await message.reply("<:happy_tracker:1329914691656614042>")
 
         else:
             return
