@@ -19,6 +19,10 @@ class GuildSettings(Base):
     skullboard_channel_id = Column(BigInteger, nullable=True)
     detection_status = Column(Boolean, default="1")
     link_embed_status = Column(Boolean, default="1")
+    message_set = Column(String, default="1")
+    tb_set = Column(String, default="1")
+    fun_set = Column(String, default="1")
+    game_set = Column(String, default="1")
 
 # Database setup
 engine = create_engine(DATABASE_URL, echo=False)

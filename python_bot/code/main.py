@@ -151,6 +151,10 @@ async def server(request: Request, guild_id: int):
         selected_roles = setting.perm_role_ids.split(",") if setting.perm_role_ids else []
         detection_status = int(setting.detection_status) if hasattr(setting, 'detection_status') else 1
         link_embed_status = int(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else 1
+        message_set = int(setting.message_set) if hasattr(setting, 'message_set') else 1
+        tb_set = int(setting.tb_set) if hasattr(setting, 'tb_set') else 1
+        fun_set = int(setting.fun_Set) if hasattr(setting, 'fun_Set') else 1
+        game_set = int(setting.game_set) if hasattr(setting, 'game_set') else 1
     else:
         feature_txt = "Das Feature ist nicht set"
         selected_roles = []
@@ -197,24 +201,12 @@ async def server(request: Request, guild_id: int):
             "guild_icon_url": guild_icon_url,
             "detection_status": detection_status,
             "embed_status": link_embed_status,
+            "message_set": message_set,
+            "tb_set": tb_set,
+            "fun_set": fun_set,
+            "game_set": game_set,
         },
     )
-
-
-@app.get("/server/{guild_id}/settings/{feature}")
-async def change_settings(guild_id: int, feature: str, session_id: str = Cookie(None)):
-    user_id = await db.get_user_id(session_id)
-    if not session_id or not user_id:
-        raise HTTPException(status_code=401, detail="no auth")
-
-    perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
-
-    if perms.response["perms"]:
-        await feature_db.set_setting(guild_id, feature)
-        return RedirectResponse(url="/server/" + str(guild_id))
-
-    else:
-        return {"error": "Du hast keinen Zugriff auf diesen Server"}
 
 @app.get("/server/{guild_id}/settings/set_channel/{channel_id}")
 async def set_channel(guild_id: int, channel_id: str, session_id: str = Cookie(None)):
@@ -285,6 +277,19 @@ async def set_channel(guild_id: int, status: int, session_id: str = Cookie(None)
         return {"error": "Du hast keinen Zugriff auf diesen Server"}
 
     update_guild_settings(guild_id, link_embed_status=bool(status))
+    return RedirectResponse(url=f"/server/{guild_id}")
+
+@app.get("/server/{guild_id}/settings/toggle_set/{set}/{status}")
+async def set_channel(guild_id: int, set: str, status: int, session_id: str = Cookie(None)):
+    user_id = await db.get_user_id(session_id)
+    if not session_id or not user_id:
+        raise HTTPException(status_code=401, detail="no auth")
+
+    perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
+    if not perms.response.get("perms"):
+        return {"error": "Du hast keinen Zugriff auf diesen Server"}
+    print(f"Set: {set}, Status: {status}")
+    update_guild_settings(guild_id, **{set: bool(status)})
     return RedirectResponse(url=f"/server/{guild_id}")
 
 @app.get("/logout")

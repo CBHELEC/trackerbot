@@ -198,6 +198,5 @@ async def load_extensions():
 
 if __name__ == '__main__':
     asyncio.run(load_extensions())
-    bot.run('somehow my env broke so yikes')
-  #  bot.run(TOKEN)
+    bot.run(TOKEN)
   #  bot.run(TRACKER_TOKEN)

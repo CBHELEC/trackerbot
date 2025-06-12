@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Dashboard</title>
+    <title>Tracker Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', path='choices.min.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='config.css') }}">
 </head>
@@ -95,6 +95,31 @@
                 </div>
             </div>
         </div>
+
+        <div class="settings-toggle-row">
+            <div class="toggle-block">
+                <span class="toggle-label">Message Commands</span>
+                <div class="toggle-buttons">
+                    <button id="message-enable" class="toggle-btn {% if message_set %}active{% endif %}">
+                        <img src="{{ url_for('static', path='tick.png') }}" alt="Enable" class="toggle-icon"> Enable
+                    </button>
+                    <button id="message-disable" class="toggle-btn {% if not message_set %}active{% endif %}">
+                        <img src="{{ url_for('static', path='cross.png') }}" alt="Disable" class="toggle-icon"> Disable
+                    </button>
+                </div>
+            </div>
+            <div class="toggle-block">
+                <span class="toggle-label">Fun Commands</span>
+                <div class="toggle-buttons">
+                    <button id="fun-enable" class="toggle-btn {% if fun_Set %}active{% endif %}">
+                        <img src="{{ url_for('static', path='tick.png') }}" alt="Enable" class="toggle-icon"> Enable
+                    </button>
+                    <button id="fun-disable" class="toggle-btn {% if not fun_Set %}active{% endif %}">
+                        <img src="{{ url_for('static', path='cross.png') }}" alt="Disable" class="toggle-icon"> Disable
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
@@ -150,6 +175,8 @@
         });
     };
 
+    
+
     // Detection toggle logic
     const EenableBtn = document.getElementById('embed-enable');
     const EdisableBtn = document.getElementById('embed-disable');
@@ -164,6 +191,42 @@
             e.preventDefault();
             if (!EdisableBtn.classList.contains('active')) {
                 window.location.href = `/server/{{ id }}/settings/toggle_embed/0`;
+            }
+        });
+    }
+
+    // Message toggle logic
+    const messageEnableBtn = document.getElementById('message-enable');
+    const messageDisableBtn = document.getElementById('message-disable');
+    if (messageEnableBtn && messageDisableBtn) {
+        messageEnableBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!messageEnableBtn.classList.contains('active')) {
+                window.location.href = `/server/{{ id }}/settings/toggle_set/message_set/1`;
+            }
+        });
+        messageDisableBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!messageDisableBtn.classList.contains('active')) {
+                window.location.href = `/server/{{ id }}/settings/toggle_set/message_set/0`;
+            }
+        });
+    }
+
+    // Fun Command Set toggle logic
+    const funEnableBtn = document.getElementById('fun-enable');
+    const funDisableBtn = document.getElementById('fun-disable');
+    if (funEnableBtn && funDisableBtn) {
+        funEnableBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!funEnableBtn.classList.contains('active')) {
+                window.location.href = `/server/{{ id }}/settings/toggle_set/fun_set/1`;
+            }
+        });
+        funDisableBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!funDisableBtn.classList.contains('active')) {
+                window.location.href = `/server/{{ id }}/settings/toggle_set/fun_set/0`;
             }
         });
     }
