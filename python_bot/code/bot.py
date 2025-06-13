@@ -1,19 +1,18 @@
-from dotenv import load_dotenv
-load_dotenv(".env")
-
 import discord
-from discord.ext import commands, tasks
+import traceback
+import sys
 import os
 import asyncio
 import warnings
-from datetime import datetime
-import traceback
-import sys
-from discord import app_commands
-
-from functions import *
 import ezcord
+from discord.ext import commands, tasks
+from datetime import datetime
+from discord import app_commands
+from functions import *
 from discord.ext.ipc import ClientPayload, Server
+
+from dotenv import load_dotenv
+load_dotenv(".env")
 
 TOKEN = os.getenv('TOKEN')
 TRACKER_TOKEN = os.getenv('TRACKER_OFFICIAL_TOKEN')
