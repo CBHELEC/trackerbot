@@ -35,6 +35,7 @@ YOUCANTUSETHIS = discord.Embed(title="<:denied:1336100920039313448> | You can't 
 GOD_LOG_ID = 1341819097591185479 
 LOG_CHANNEL_ID = True
 DEV_USER_ID = 820297275448098817
+ERROR_LOG_ID = 1341107185777643573
 
 def is_mod():
     async def predicate(interaction: discord.Interaction):

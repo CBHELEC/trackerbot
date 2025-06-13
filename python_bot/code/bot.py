@@ -130,7 +130,7 @@ async def update_presence():
 
 async def log_unhandled_error(bot, title: str, error_text: str):
     try:
-        channel = await bot.fetch_channel(1341107185777643573)
+        channel = await bot.fetch_channel(ERROR_LOG_ID)
         if channel:
             prefix = f"❌ **{title}**\n```py\n"
             suffix = "\n```"
