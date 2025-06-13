@@ -37,6 +37,9 @@ LOG_CHANNEL_ID = True
 DEV_USER_ID = 820297275448098817
 ERROR_LOG_ID = 1341107185777643573
 
+CODE_DIR = Path(__file__).parent
+DATA_DIR = CODE_DIR / "data"
+
 def is_mod():
     async def predicate(interaction: discord.Interaction):
         settings = get_guild_settings(interaction.guild.id)

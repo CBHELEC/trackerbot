@@ -10,11 +10,12 @@ from datetime import datetime
 from discord import app_commands
 from functions import *
 from discord.ext.ipc import ClientPayload, Server
+from pathlib import Path
 
 from dotenv import load_dotenv
-load_dotenv(".env")
+load_dotenv(Path(__file__).parent / ".env")
 
-TOKEN = os.getenv('TOKEN')
+TOKEN = os.getenv("TOKEN")
 TRACKER_TOKEN = os.getenv('TRACKER_OFFICIAL_TOKEN')
 BOTLISTME_API = os.getenv('BOTLISTME_API')
 SECRET_KEY = os.getenv('SECRET_KEY')

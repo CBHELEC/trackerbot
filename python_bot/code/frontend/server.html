@@ -111,10 +111,10 @@
             <div class="toggle-block">
                 <span class="toggle-label">Fun Commands</span>
                 <div class="toggle-buttons">
-                    <button id="fun-enable" class="toggle-btn {% if fun_Set %}active{% endif %}">
+                    <button id="fun-enable" class="toggle-btn {% if fun_set %}active{% endif %}">
                         <img src="{{ url_for('static', path='tick.png') }}" alt="Enable" class="toggle-icon"> Enable
                     </button>
-                    <button id="fun-disable" class="toggle-btn {% if not fun_Set %}active{% endif %}">
+                    <button id="fun-disable" class="toggle-btn {% if not fun_set %}active{% endif %}">
                         <img src="{{ url_for('static', path='cross.png') }}" alt="Disable" class="toggle-icon"> Disable
                     </button>
                 </div>
