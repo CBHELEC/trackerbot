@@ -18,6 +18,7 @@ from discord.ext.ipc import ClientPayload, Server
 TOKEN = os.getenv('TOKEN')
 TRACKER_TOKEN = os.getenv('TRACKER_OFFICIAL_TOKEN')
 BOTLISTME_API = os.getenv('BOTLISTME_API')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 class Bot(ezcord.Bot):
     def __init__(self):
@@ -25,7 +26,7 @@ class Bot(ezcord.Bot):
         intents.members = True
 
         super().__init__(intents=intents)
-        self.ipc = Server(self, secret_key="keks")
+        self.ipc = Server(self, secret_key=SECRET_KEY)
 
     @Server.route()
     async def guild_count(self, _):
