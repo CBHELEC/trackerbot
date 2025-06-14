@@ -78,7 +78,7 @@ class Debug(app_commands.Group):
         super().__init__(name="debug", description="Developer Debug Commands.")
         self.bot = bot
 
-        self.conn2 = sqlite3.connect('votes.db')
+        self.conn2 = sqlite3.connect(f'{DATA_DIR}/votes.db')
         self.c = self.conn2.cursor()
         self.c.execute(''' 
             CREATE TABLE IF NOT EXISTS dbl_votes ( 

@@ -13,7 +13,7 @@ class VoteChecker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.conn2 = sqlite3.connect('votes.db')
+        self.conn2 = sqlite3.connect(f'{DATA_DIR}/votes.db')
         self.c = self.conn2.cursor()
         self.c.execute(''' 
             CREATE TABLE IF NOT EXISTS dbl_votes ( 
@@ -33,7 +33,9 @@ class VoteChecker(commands.Cog):
         ''')
         self.conn2.commit()
 
-        self.DBL_API_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0IjoxLCJpZCI6IjEzMjIzMDU2NjI5NzMxMTY0ODYiLCJpYXQiOjE3NDU2OTQ1Mzd9.crs7nNF3pyTLh4aPAsqXB706tvaMOAPh-Xi2ra0Yqq4"
+        from dotenv import load_dotenv
+        load_dotenv(Path(__file__).parent / ".env")
+        self.DBL_API_TOKEN = os.getenv("DBL_TOKEN")
         self.BOT_ID = "1322305662973116486"
 
         self.reminded_users = load_reminded_users()

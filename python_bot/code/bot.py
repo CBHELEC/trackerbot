@@ -149,6 +149,10 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
     if isinstance(error, app_commands.CheckFailure):
         if interaction.command.name == "unverified":
             return
+        if str(error) == "COMMANDS_DISABLED_BY_ADMIN":
+            return
+        if str(error) == "M_COMMANDS_DISABLED_BY_ADMIN":
+            return
         try:
             await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
         except discord.InteractionResponded:

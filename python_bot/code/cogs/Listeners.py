@@ -60,7 +60,7 @@ async def send_vote_reward_topgg(self, user_id, new_streak, voted_at):
 class Listeners(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.conn2 = sqlite3.connect('votes.db')
+        self.conn2 = sqlite3.connect(f'{DATA_DIR}/votes.db')
         self.c = self.conn2.cursor()
 
     @commands.Cog.listener()
@@ -121,6 +121,9 @@ class Listeners(commands.Cog):
         if any(code in tbblacklist for code in tb_codes):
             return  
 
+        if not message.guild:
+            return
+        
         setting = get_guild_settings(message.guild.id)
         detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
         link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True

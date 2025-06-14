@@ -7,9 +7,10 @@ import re
 from logger import log
 from discord.app_commands import CheckFailure
 
-class Message(commands.Cog):
+class Message(app_commands.Group):
     DELETE_TIME_DELAY = 5
     def __init__(self, bot):
+        super().__init__(name="message", description="Message Commands.")
         self.bot = bot
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -188,4 +189,4 @@ class Message(commands.Cog):
         await log(interaction, f"I edited message {origMessage.id} (content: '{origMessage.content}') in {interaction.channel.id} to '{newmessage}'")
             
 async def setup(bot):
-    await bot.add_cog(Message(bot))
+    bot.tree.add_command(Message(bot))
