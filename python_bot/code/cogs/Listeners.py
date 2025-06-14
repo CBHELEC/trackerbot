@@ -123,12 +123,30 @@ class Listeners(commands.Cog):
         
         setting = get_guild_settings(after.guild.id)
         detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
+        link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
 
         if matches or match:
             if not detection_status:
                 return
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
             await after.reply(finalmessage)
+
+        elif "https://www.geocaching.com/" in after.content or "https://www.coord.info/" in after.content or "https://coord.info/" in after.content or "https://geocaching.com/" in after.content:
+            if after.author.bot:
+                return
+            if not link_embed_status:
+                return
+            if not after.embeds:
+                return
+            await asyncio.sleep(2)
+            await after.reply("Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>", delete_after=5)
+            await after.edit(suppress=True)
+
+        elif "good bot" in after.content.lower():
+            await after.reply("<:happy_tracker:1329914691656614042>")
+
+        else:
+            return
 
         await self.bot.process_commands(after)
 
@@ -161,7 +179,7 @@ class Listeners(commands.Cog):
                 return
             if not detection_status:
                 return
-            
+
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
             await message.reply(finalmessage)
             
