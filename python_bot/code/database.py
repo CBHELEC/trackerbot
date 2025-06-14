@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, Column, BigInteger, Boolean, String
 from sqlalchemy.orm import declarative_base, sessionmaker
 from functions import *
 
-DATABASE_URL = f"sqlite:///{os.path.join(DATA_DIR, 'bot_settings.db')}"
+DATABASE_URL = f"sqlite:///{Path(__file__).parent.resolve() / 'data' / 'bot_settings.db'}"
 
 Base = declarative_base()
 
