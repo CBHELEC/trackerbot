@@ -553,3 +553,16 @@ def save_reminded_users(cache):
     with open(REMINDER_FILE, "w") as f:
         # Convert datetime objects to ISO strings
         json.dump({str(k): v.isoformat() for k, v in cache.items()}, f, indent=2)
+
+def get_command_counts(bot):
+    pc = {c.qualified_name for c in bot.commands}
+    sc = set()
+
+    def collect(cmds):
+        for c in cmds:
+            sc.add(c.qualified_name)
+            if hasattr(c, "commands"):
+                collect(c.commands)
+
+    collect(bot.tree.get_commands())
+    return len(pc | sc), len(pc), len(sc)

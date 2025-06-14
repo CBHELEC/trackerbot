@@ -151,6 +151,16 @@ class Other(commands.Cog):
                             description="- Say, react, edit, delete, reply\n- FoxFil\n\nYou can use these commands if you have a role allowed via /setperm.\nTrying to use these commands without permissions results in a 'You can't do this!' error.",
                             colour=0xf50000)
         await ctx.send(embed=embed)
+
+# ABOUT ME
+    @commands.hybrid_command()
+    async def about(self, ctx):
+        """About the bot, and the Dev team."""
+        total, prefix, slash = get_command_counts(self.bot)
+        embed = discord.Embed(title="About Me",
+                            description=f"Yo! I'm Tracker, the ultimate Discord bot for Geocachers, made by Geocachers. Here's a bit about me...\nI'm made by a small team of Developers and Helpers. These people are:\n- CBH (me!, Lead Developer & Founder),\n- democat (Assistant Developer),\n- mikaboo055 (Tester & Helper),\n- echoperson (Tester & Helper),\n- fisk (Bugfixer & Tester),\n- FoxFil (Development Helper, yall can thank him for code detection)\nWe have worked hard to make this bot and grow it to how it is now, and your support means the world to us.\nHere's some info about me, the bot:\n- I am in **{len(self.bot.guilds)}** servers,\n- I have **{total}** commands,\n- I am written in Python, more specifically with the discord.py library,\n- My prefix is **!**, but I mainly use slash (**/**) commands,\n- My website is [trackerbot.xyz](<https://trackerbot.xyz>).",
+                            colour=0xad7e66)
+        await ctx.send(embed=embed)
         
 async def setup(bot):
     await bot.add_cog(Other(bot))
