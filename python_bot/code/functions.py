@@ -9,9 +9,10 @@ import os
 import psutil
 from pathlib import Path
 from datetime import datetime
-
 from database import get_guild_settings, get_log_channel
 
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent / ".env")
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 GOOGLE_CX_ID = os.getenv('GOOGLE_SEARCH_ID')
 GOOGLE_NORMAL_API_KEY = os.getenv('GOOGLE_SEARCH_API_KEY')
@@ -377,7 +378,7 @@ class BadgeInfoView(discord.ui.View):
         
 STAR_EMOJIS = {"💀"}  
 REACTION_THRESHOLD = 3 
-SKULLBOARD_DATA_FILE = "skullboarded_messages.json"  
+SKULLBOARD_DATA_FILE = f"{DATA_DIR}/skullboarded_messages.json"  
 
 def load_skullboarded_messages():
     try:
@@ -396,10 +397,7 @@ def save_skullboarded_messages(message_ids):
 
 skullboarded_messages = load_skullboarded_messages()
 
-gcblacklist = ["GC", "GCHQ"]
-tbblacklist = ["TB", "TBF", "TBH", "TBS"]
-
-POLL_JSON_FILE = "poll_dates.json"
+POLL_JSON_FILE = f"{DATA_DIR}/poll_dates.json"
 
 def load_poll_date():
     """Load the last poll date from a JSON file."""
@@ -450,7 +448,7 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
             emoji_name = f"{cache_type.name if cache_type.name != 'lost_and_found_event' else 'community_celebration'}"
 
             script_dir = os.path.dirname(__file__)
-            file_path = os.path.join(script_dir, "name-icon.json")
+            file_path = os.path.join(DATA_DIR, "name-icon.json")
             with open(file_path, "r", encoding="utf-8") as file:
                 data = json.load(file)
                 emoji_text = data.get(emoji_name, {}).get("emoji", None)
@@ -542,7 +540,7 @@ async def find_latest_topgg_vote(bot, interaction):
 
     return None
 
-REMINDER_FILE = Path("reminded_users.json")
+REMINDER_FILE = Path(f"{DATA_DIR}/reminded_users.json")
 def load_reminded_users():
     if REMINDER_FILE.exists():
         with open(REMINDER_FILE, "r") as f:

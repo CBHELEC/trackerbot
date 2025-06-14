@@ -102,19 +102,47 @@ class Listeners(commands.Cog):
             save_skullboarded_messages(skullboarded_messages) 
             
     @commands.Cog.listener()
-    async def on_message(self, message): 
-      #  if message.author.bot:
-        #    return
+    async def on_message_edit(self, before, after):
+        if after.author.bot:
+            return
+        if not after.guild:
+            return
+        
+        clean_content = re.sub(r'[^A-Za-z0-9\s]', '', after.content)
+        matches = re.findall(r'\bGC\w{0,5}\b', clean_content, re.IGNORECASE)
+        match = re.findall(r'\bTB\w{0,5}\b', clean_content, re.IGNORECASE)
+        gc_codes = [item.upper() for item in matches]
+        tb_codes = [item.upper() for item in match]
+        gcblacklist = ["GC", "GCHQ", "GCFAQ"]
+        tbblacklist = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
 
+        if any(code in gcblacklist for code in gc_codes):
+            return 
+        if any(code in tbblacklist for code in tb_codes):
+            return  
+        
+        setting = get_guild_settings(after.guild.id)
+        detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
+
+        if matches or match:
+            if not detection_status:
+                return
+            finalmessage = get_cache_basic_info(gc_codes, tb_codes)
+            await after.reply(finalmessage)
+
+        await self.bot.process_commands(after)
+
+    @commands.Cog.listener()
+    async def on_message(self, message): 
         global last_poll_date
 
         clean_content = re.sub(r'[^A-Za-z0-9\s]', '', message.content)
-
-        matches = re.findall(r'\bGC\w*\b', clean_content, re.IGNORECASE)
-        match = re.findall(r'\bTB\w*\b', clean_content, re.IGNORECASE)
-
+        matches = re.findall(r'\bGC\w{0,5}\b', clean_content, re.IGNORECASE)
+        match = re.findall(r'\bTB\w{0,5}\b', clean_content, re.IGNORECASE)
         gc_codes = [item.upper() for item in matches]
         tb_codes = [item.upper() for item in match]
+        gcblacklist = ["GC", "GCHQ", "GCFAQ"]
+        tbblacklist = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
 
         if any(code in gcblacklist for code in gc_codes):
             return 
@@ -133,6 +161,7 @@ class Listeners(commands.Cog):
                 return
             if not detection_status:
                 return
+            
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
             await message.reply(finalmessage)
             
