@@ -108,11 +108,13 @@ class Listeners(commands.Cog):
         if not after.guild:
             return
         
-        clean_content = re.sub(r'[^A-Za-z0-9\s]', '', after.content)
-        matches = re.findall(r'\bGC\w{0,5}\b', clean_content, re.IGNORECASE)
-        match = re.findall(r'\bTB\w{0,5}\b', clean_content, re.IGNORECASE)
-        gc_codes = [item.upper() for item in matches]
-        tb_codes = [item.upper() for item in match]
+        content = after.content
+        gc_matches = re.findall(r'\bGC[0-9A-Z]{1,5}\b', content, re.IGNORECASE)
+        gc_matches += re.findall(r'geocache/GC[0-9A-Z]{1,5}', content, re.IGNORECASE)
+        tb_matches = re.findall(r'\bTB[0-9A-Z]{1,5}\b', content, re.IGNORECASE)
+        tb_matches += re.findall(r'/track/TB[0-9A-Z]{1,5}', content, re.IGNORECASE)
+        gc_codes = list(set(code[-7:].upper() for code in gc_matches))
+        tb_codes = list(set(code[-7:].upper() for code in tb_matches))
         gcblacklist = ["GC", "GCHQ", "GCFAQ"]
         tbblacklist = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
 
@@ -125,13 +127,16 @@ class Listeners(commands.Cog):
         detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
         link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
 
-        if matches or match:
+        if before.embeds and not after.embeds:
+            return
+
+        if gc_matches or tb_matches:
             if not detection_status:
                 return
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
             await after.reply(finalmessage)
 
-        elif "https://www.geocaching.com/" in after.content or "https://www.coord.info/" in after.content or "https://coord.info/" in after.content or "https://geocaching.com/" in after.content:
+        elif "https://www.geocaching.com" in after.content or "https://www.coord.info" in after.content or "https://coord.info" in after.content or "https://geocaching.com" in after.content:
             if after.author.bot:
                 return
             if not link_embed_status:
@@ -154,11 +159,15 @@ class Listeners(commands.Cog):
     async def on_message(self, message): 
         global last_poll_date
 
-        clean_content = re.sub(r'[^A-Za-z0-9\s]', '', message.content)
-        matches = re.findall(r'\bGC\w{0,5}\b', clean_content, re.IGNORECASE)
-        match = re.findall(r'\bTB\w{0,5}\b', clean_content, re.IGNORECASE)
-        gc_codes = [item.upper() for item in matches]
-        tb_codes = [item.upper() for item in match]
+        content = message.content
+        gc_matches = re.findall(r'\bGC[0-9A-Z]{1,5}\b', content, re.IGNORECASE)
+        gc_matches_l = re.findall(r'geocache/GC[0-9A-Z]{1,5}', content, re.IGNORECASE)
+        tb_matches = re.findall(r'\bTB[0-9A-Z]{1,5}\b', content, re.IGNORECASE)
+        tb_matches_l = re.findall(r'/track/TB[0-9A-Z]{1,5}', content, re.IGNORECASE)
+        gc_codes = list(set(code[-7:].upper() for code in gc_matches))
+        tb_codes = list(set(code[-7:].upper() for code in tb_matches))
+        gc_codes_l = list(set(code[-7:].upper() for code in gc_matches_l))
+        tb_codes_l = list(set(code[-7:].upper() for code in tb_matches_l))
         gcblacklist = ["GC", "GCHQ", "GCFAQ"]
         tbblacklist = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
 
@@ -167,6 +176,11 @@ class Listeners(commands.Cog):
         if any(code in tbblacklist for code in tb_codes):
             return  
 
+        if any(code in gcblacklist for code in gc_codes_l):
+            return 
+        if any(code in tbblacklist for code in tb_codes_l):
+            return 
+
         if not message.guild:
             return
         
@@ -174,11 +188,14 @@ class Listeners(commands.Cog):
         detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
         link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
 
-        if matches or match:
+        if gc_codes or tb_codes or gc_codes_l or tb_codes_l:
             if message.author.bot:
                 return
             if not detection_status:
                 return
+            if gc_codes_l or tb_codes_l:
+                await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>", delete_after=5)
+                await message.edit(suppress=True)
 
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
             await message.reply(finalmessage)
@@ -226,7 +243,7 @@ class Listeners(commands.Cog):
             else:
                 return
 
-        elif "https://www.geocaching.com/" in message.content or "https://www.coord.info/" in message.content or "https://coord.info/" in message.content or "https://geocaching.com/" in message.content:
+        elif "https://www.geocaching.com" in message.content or "https://www.coord.info" in message.content or "https://coord.info" in message.content or "https://geocaching.com" in message.content:
             if message.author.bot:
                 return
             if not link_embed_status:
