@@ -185,8 +185,12 @@ class Listeners(commands.Cog):
             return
         
         setting = get_guild_settings(message.guild.id)
-        detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
-        link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
+        if setting:
+            detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
+            link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
+        else:
+            link_embed_status = True
+            detection_status = True
 
         if gc_codes or tb_codes or gc_codes_l or tb_codes_l:
             if message.author.bot:
