@@ -1,15 +1,15 @@
 import discord
-from discord import app_commands
-from discord.ext import commands
+import asyncio
 import sqlite3
-from functions import *
-from bs4 import BeautifulSoup
 import requests
 import re
 from bot import bot
 from datetime import datetime
-import asyncio
+from functions import *
+from bs4 import BeautifulSoup
 from logger import log
+from discord import app_commands
+from discord.ext import commands
 
 conn1 = sqlite3.connect(f'{DATA_DIR}/trackables.db')
 cursor1 = conn1.cursor()

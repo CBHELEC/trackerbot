@@ -1,9 +1,9 @@
-from urllib.parse import quote
 import discord
-from discord import app_commands
-from functions import *
 import sqlite3
 import requests
+from discord import app_commands
+from functions import *
+from urllib.parse import quote
 from bs4 import BeautifulSoup
 
 # VERIFY

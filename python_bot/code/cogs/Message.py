@@ -1,9 +1,9 @@
 import discord
+import re
 from discord import app_commands
 from functions import *
 from bot import bot
 from discord.ext import commands
-import re
 from logger import log
 from discord.app_commands import CheckFailure
 

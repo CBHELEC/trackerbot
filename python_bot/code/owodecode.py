@@ -1,6 +1,5 @@
 import bitarray
 
-
 def decode(s):
     letterMapping = {'u': '1', 'o': '0'}
     ba = bitarray.bitarray()
