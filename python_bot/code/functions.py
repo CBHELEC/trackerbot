@@ -4,6 +4,7 @@ import operator
 import os
 import psutil
 import discord
+import re
 from google_images_search import GoogleImagesSearch
 from googleapiclient.discovery import build
 from discord import app_commands
@@ -415,15 +416,47 @@ def save_poll_date(date):
 
 last_poll_date = load_poll_date()
 
+GC_BLACKLIST = ["GC", "GCHQ", "GCFAQ"]
+TB_BLACKLIST = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
+
+
+with (DATA_DIR / 'name-icon.json').open("r", encoding="utf-8") as file:
+    emoji_names: dict[str, dict[str, str]] = json.load(file)
+
+def get_emoji_from_name(emoji_name: str) -> str:
+    global emoji_names
+    return emoji_names.get(emoji_name, {}).get("emoji", "")
+
+def find_gc_tb_codes(s: str) -> tuple[bool, list[str], list[str]]:
+    """Find GC and TB codes in a string.
+
+    Args:
+        s (str): string to find gc and tb codes in
+
+    Returns:
+        tuple[bool, list[str], list[str]]: a tuple of whether codes were found, the gc code list, and the tb code list
+    """
+    # clean_content = re.sub(r'[^A-Za-z0-9\s]', '', s)
+
+    gc_matches = re.findall(r'(?<!:)\b(GC[A-Z0-9]+)\b', s, re.IGNORECASE)
+    tb_matches = re.findall(r'(?<!:)\b(TB[A-Z0-9]+)\b', s, re.IGNORECASE)
+
+    gc_codes = {item.upper() for item in gc_matches if item.upper() not in GC_BLACKLIST}
+    tb_codes = {item.upper() for item in tb_matches if item.upper() not in TB_BLACKLIST}
+
+    if len(gc_codes) == 0 and len(tb_codes) == 0:
+        return False, [], []
+
+    return True, gc_codes, tb_codes
+
+g_obj = pycaching.login(EMAIL, PASSWORD)
 
 def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
+    global g_obj
     final_message = []
-    geocaching = pycaching.login(
-        EMAIL, PASSWORD
-    )
     for code in geocache_codes:
         try:
-            cache = geocaching.get_cache(code)
+            cache = g_obj.get_cache(code)
             cache.load_quick()
 
             name = cache.name
@@ -434,26 +467,22 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
             author = cache.author
             pmo = cache.pm_only
             cache_type = cache.type
-            state = cache.state
             status = cache.status
 
             if status == 0:
-                prefix = None
+                prefix = ""
             elif status == 1:
                 prefix = "<:Disabled:1369009017552371902>"
             elif status == 2:
                 prefix = "<:Archive:1369015619231420497>"
+            elif status == 3:
+                raise Exception(f"found an unpublished cache: {code}")
+            elif status == 4:
+                prefix = ":lock:"
 
-                # emoji_name = f"{cache_type.name if cache_type.name != 'lost_and_found_event' else 'community_celebration'}{'-disabled' if (not state) else ''}"
             emoji_name = f"{cache_type.name if cache_type.name != 'lost_and_found_event' else 'community_celebration'}"
-
-            script_dir = os.path.dirname(__file__)
-            file_path = os.path.join(DATA_DIR, "name-icon.json")
-            with open(file_path, "r", encoding="utf-8") as file:
-                data = json.load(file)
-                emoji_text = data.get(emoji_name, {}).get("emoji", None)
-
-            emoji_text = f"{prefix if prefix else ''}{emoji_text}"
+            emoji_text_a = get_emoji_from_name(emoji_name)
+            emoji_text = f"{prefix}{emoji_text_a}"
 
             final_message.append(f"""{'<:Premium:1368989525405335552>' if pmo else ''}{emoji_text} [{code}](<https://coord.info/{code}>) - {name} | {author}
 :light_blue_heart: {fps} | :mag_right: D{difficulty} - T{terrain} :mountain_snow: | <:tub:1327698135710957609> {size.value.capitalize()}""")
@@ -464,7 +493,7 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
 
     for trackable in tb_codes:
         try:
-            tb = geocaching.get_trackable(trackable)
+            tb = g_obj.get_trackable(trackable)
             tb.load()
 
             name = tb.name

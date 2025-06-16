@@ -87,75 +87,50 @@ class TBDatabase(app_commands.Group):
     @app_commands.describe(code="The PRIVATE code of the TB you want to add")
     async def add(self, interaction: discord.Interaction, code: str):
         """Adds a TB to the public database."""
+        code = code.upper()
         if code.lower().startswith("tb"):
             await interaction.response.send_message(f"Please try again with the private code (this can be found on the TB itself) as the code, instead of `{code}`. If you believe this to be an error, please contact staff.")
             await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb add` but entered the public code instead of the private one: `{code}`.")
         else:
-            headers = {
-                "User-Agent": "GCDiscordBot/1.0 (+https://discord.gg/EKn8z23KkC)"
-            }
+            return
 
-            url = f"https://www.geocaching.com/track/details.aspx?tracker={code}"
-
+        try:
+            tb = g_obj.get_trackable(code)
             try:
-                response = requests.get(url, headers=headers, timeout=(5, 10))
-                response.raise_for_status()
+                tb.load()
+            except:
+                await interaction.response.send_message(f"The TB code you entered (`{code}`) was not valid or is not activated. Please try again with a valid, activated TB code.")
+                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add` but the TB code was not valid or unactivated.")
+                return
+            
+            cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
+            existing_entry = cursor1.fetchone()
+            if existing_entry:
+                await interaction.response.send_message(f"This TB code (`{code}`) is already in the database.")
+                return
 
-                soup = BeautifulSoup(response.text, "html.parser")
+            user_id = interaction.user.id
+            cursor1.execute("""
+                INSERT INTO trackables (code, gc_username, uploaded_time, user_id, tb_code) 
+                VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
+            """, (code, tb.owner, user_id, tb.tid))
+            conn1.commit()
+            await interaction.response.send_message(f"This TB (`{code}`) has been added to the public database - thanks for sharing!")
+            await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
+            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
 
-                page_text = soup.get_text()
-                match = re.search(r"Use\s+(\S+).*to reference this item", page_text)
-                if match:
-                    tb_code_line = match.group(0)
-                    cleaned_text = re.sub(r"\b(?:Use|to|reference|this|item)\b", "", tb_code_line, flags=re.IGNORECASE).strip()
-                    cleaned_text = re.sub(r"\s+", " ", cleaned_text)
-                else:
-                    await interaction.response.send_message(f"The TB code you entered (`{code}`) was not valid. Please try again with a valid code.")
-                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add` but the TB code was not valid.")
-                    cleaned_text = "Not Found"
-
-                owner_label = soup.find("dt", string=lambda text: text and "Owner:" in text)
-                if owner_label:
-                    owner_name_tag = owner_label.find_next_sibling("dd")
-                    if owner_name_tag:
-                        owner_name = owner_name_tag.get_text(strip=True)
-
-                        cleaned_owner_name = re.sub(r"\s*Send\sMessage\sto\sOwner.*", "", owner_name)
-
-
-                        cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
-                        existing_entry = cursor1.fetchone()
-                        if existing_entry:
-                            await interaction.response.send_message(f"This TB code (`{code}`) is already in the database.")
-                        else:
-                            user_id = interaction.user.id
-                            cursor1.execute("""
-                                INSERT INTO trackables (code, gc_username, uploaded_time, user_id, tb_code) 
-                                VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
-                            """, (code, cleaned_owner_name, user_id, cleaned_text))
-                            conn1.commit()
-                            await interaction.response.send_message(f"This TB (`{code}`) has been added to the public database - thanks for sharing!")
-                            await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
-                            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
-                    else:
-                        await interaction.response.send_message("Owner name not found. Please make sure the TB is activated and try again.")
-                        await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add`, but the owner name was not found. Code: `{code}`")
-                else:
-                    await interaction.response.send_message("Owner label not found. Please make sure the TB is activated and try again.")
-                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add`, but the owner label was not found. Code: `{code}`")
-
-            except Exception as e:
-                await interaction.response.send_message(f"An unknown error occured whilst processing code `{code}`. The Dev has been notified.")
-                await log_error(interaction.guild, bot, interaction.command.name, 
-                    f"User: {interaction.user.mention} ({interaction.user.name}) adding TB `{code}` to the database. Error: \n```\n{str(e)}\n```"
-                )
+        except Exception as e:
+            await interaction.response.send_message(f"An unknown error occured whilst processing code `{code}`. The Dev has been notified.")
+            await log_error(interaction.guild, bot, interaction.command.name, 
+                f"User: {interaction.user.mention} ({interaction.user.name}) adding TB `{code}` to the database. Error: \n```\n{str(e)}\n```"
+            )
     
 # TB BULKADD        
     @app_commands.command()
-    @app_commands.describe(codes="The PRIVATE codes of the TBs you want to add, separated by commas, spaces, colons, etc.")
+    @app_commands.describe(codes="The PRIVATE codes of the TBs you want to add, separated by commas, spaces, or colons.")
     async def bulkadd(self, interaction: discord.Interaction, codes: str):
         """Adds multiple TBs to the public database."""
-        tb_codes = re.split(r"[,\s:]+", codes.strip())
+        tb_codes = [ code.upper() for code in re.split(r"[,\s:]+", codes.strip()) ]
 
         await interaction.response.send_message(f"Processing {len(tb_codes)} TB code(s)... this may take a while.", ephemeral=True)
 
@@ -170,67 +145,37 @@ class TBDatabase(app_commands.Group):
                 failed_codes.append(code)
                 continue
 
-            headers = {
-                "User-Agent": "GCDiscordBot/1.0 (+https://discord.gg/EKn8z23KkC)"
-            }
-            url = f"https://www.geocaching.com/track/details.aspx?tracker={code}"
-
             try:
-                response = requests.get(url, headers=headers, timeout=(5, 10))
-                response.raise_for_status()
-
-                soup = BeautifulSoup(response.text, "html.parser")
-
-                page_text = soup.get_text()
-                match = re.search(r"Use\s+(\S+).*to reference this item", page_text)
-                if match:
-                    tb_code_line = match.group(0)
-                    cleaned_text = re.sub(r"\b(?:Use|to|reference|this|item)\b", "", tb_code_line, flags=re.IGNORECASE).strip()
-                    cleaned_text = re.sub(r"\s+", " ", cleaned_text)
-                else:
+                tb = g_obj.get_trackable(code)
+                try:
+                    tb.load()
+                except:
                     await master_log_message(interaction.guild, bot, interaction.command.name,
-                        f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd` but the TB code line was not found for code: `{code}`."
+                        f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd` but the TB code was invalid or unactivated for code: `{code}`."
                     )
                     failed_codes.append(code)
                     continue 
 
-                owner_label = soup.find("dt", string=lambda text: text and "Owner:" in text)
-                if owner_label:
-                    owner_name_tag = owner_label.find_next_sibling("dd")
-                    if owner_name_tag:
-                        owner_name = owner_name_tag.get_text(strip=True)
-                        cleaned_owner_name = re.sub(r"\s*Send\sMessage\sto\sOwner.*", "", owner_name)
-
-
-                        cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
-                        existing_entry = cursor1.fetchone()
-                        if existing_entry:
-                            await master_log_message(interaction.guild, bot, interaction.command.name,
-                                f"{interaction.user.mention} ({interaction.user.name}) attempted to bulkadd TB `{code}`, but it already exists in the database."
-                            )
-                            failed_codes.append(code)
-                        else:
-                            user_id = interaction.user.id
-                            cursor1.execute("""
-                                INSERT INTO trackables (code, gc_username, uploaded_time, user_id, tb_code) 
-                                VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
-                            """, (code, cleaned_owner_name, user_id, cleaned_text))
-                            conn1.commit()
-                            await master_log_message(interaction.guild, bot, interaction.command.name,
-                                f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!"
-                            )
-                            await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
-                            successful_codes.append(code)
-                    else:
-                        await master_log_message(interaction.guild, bot, interaction.command.name,
-                            f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd`, but the owner name was not found. Code: `{code}`."
-                        )
-                        failed_codes.append(code)
-                else:
+                cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
+                existing_entry = cursor1.fetchone()
+                if existing_entry:
                     await master_log_message(interaction.guild, bot, interaction.command.name,
-                        f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd`, but the owner label was not found. Code: `{code}`."
+                        f"{interaction.user.mention} ({interaction.user.name}) attempted to bulkadd TB `{code}`, but it already exists in the database."
                     )
                     failed_codes.append(code)
+                    continue
+
+                user_id = interaction.user.id
+                cursor1.execute("""
+                    INSERT INTO trackables (code, gc_username, uploaded_time, user_id, tb_code) 
+                    VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
+                """, (code, tb.owner, user_id, tb.tid))
+                conn1.commit()
+                await master_log_message(interaction.guild, bot, interaction.command.name,
+                    f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!"
+                )
+                await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
+                successful_codes.append(code)
 
             except Exception as e:
                 await log_error(interaction.guild, bot, interaction.command.name,
@@ -248,76 +193,6 @@ class TBDatabase(app_commands.Group):
             f"Thank you for your contribution(s) towards the trackable database!",
             ephemeral=True
         )
-      
-# TB FORCEADD      
-    @app_commands.command()
-    @is_dev()
-    @app_commands.describe(code="The PRIVATE code of the TB you want to add")
-    async def forceadd(self, interaction: discord.Interaction, code: str):
-        """Smash crash forces a TB into the public database."""
-        if code.lower().startswith("tb"):
-            await interaction.response.send_message(f"Please try again with the private code (this can be found on the TB itself) as the code, instead of `{code}`. If you believe this to be an error, please contact the Dev.")
-            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb forceadd` but entered the public code instead of the private one: `{code}`.")
-        else:
-            headers = {
-                "User-Agent": "GCDiscordBot/1.0 (+https://discord.gg/EKn8z23KkC)"
-            }
-
-            url = f"https://www.geocaching.com/track/details.aspx?tracker={code}"
-
-            try:
-                response = requests.get(url, headers=headers, timeout=(5, 10))
-                response.raise_for_status()
-
-                soup = BeautifulSoup(response.text, "html.parser")
-
-                page_text = soup.get_text()
-                match = re.search(r"Use\s+(\S+).*to reference this item", page_text)
-                if match:
-                    tb_code_line = match.group(0)
-                    cleaned_text = re.sub(r"\b(?:Use|to|reference|this|item)\b", "", tb_code_line, flags=re.IGNORECASE).strip()
-                    cleaned_text = re.sub(r"\s+", " ", cleaned_text)
-                else:
-                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb forceadd` but the public TB code was not found.")
-                    cleaned_text = "Not Found"
-
-                owner_label = soup.find("dt", string=lambda text: text and "Owner:" in text)
-                if owner_label:
-                    owner_name_tag = owner_label.find_next_sibling("dd")
-                    if owner_name_tag:
-                        owner_name = owner_name_tag.get_text(strip=True)
-
-                        cleaned_owner_name = re.sub(r"\s*Send\sMessage\sto\sOwner.*", "", owner_name)
-
-                        if cleaned_owner_name:
-                            cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
-                            existing_entry = cursor1.fetchone()
-                            if existing_entry:
-                                await interaction.response.send_message(f"This TB code `{code}` is already in the database.")
-                            else:
-                                user_id = interaction.user.id
-                                cursor1.execute("""
-                                    INSERT INTO trackables (code, gc_username, uploaded_time, user_id, tb_code) 
-                                    VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
-                                """, (code, cleaned_owner_name, user_id, cleaned_text))
-                                conn1.commit()
-                                await interaction.response.send_message(f"This TB has been forcibly added to the public database - thanks for sharing!")
-                                await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has forceadded TB `{code}` to the database!")
-                                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been forcibly added to the database!")
-                        else:
-                            await interaction.response.send_message(f"It appears that the owner name does not exist. The Dev has been notified.")
-                            await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) was using `tb forceadd`: It appears that the `cleaned_owner_name` variable does not exist.")
-                    else:
-                        await interaction.response.send_message("The owner name not found. The Dev has been notified.")
-                        await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb forceadd`, but the owner name was not found in the expected <dd> tag. Code: {code}")
-                else:
-                    await interaction.response.send_message("The owner label was not found. The Dev has been notified.")
-                    await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb forceadd`, but the owner label was not found in the expected <dt> tag. Code: {code}")
-
-            except Exception as e:
-                await log_error(interaction.guild, bot, interaction.command.name,
-                    f"{interaction.user.mention} ({interaction.user.name}) tried to forceadd TB `{code}`: {e}"
-                ) 
             
 # TB PURGE
     @app_commands.command()
@@ -366,7 +241,7 @@ class TBDatabase(app_commands.Group):
     @is_dev()
     @app_commands.describe(code="The PRIVATE code of the TB you want to remove")
     async def forceremove(self, interaction: discord.Interaction, code: str):
-        """Smash crash forces removal a TB from the public database."""
+        """Smash crash forces removal of a TB from the public database."""
         try:
             cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
             existing_entry = cursor1.fetchone()

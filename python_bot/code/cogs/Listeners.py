@@ -103,49 +103,60 @@ class Listeners(commands.Cog):
             
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if after.author.bot:
-            return
-        if not after.guild:
-            return
-        
         content = after.content
+        setting = get_guild_settings(after.guild.id)
+        detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
+        link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
         gc_matches = re.findall(r'\bGC[0-9A-Z]{1,5}\b', content, re.IGNORECASE)
         gc_matches += re.findall(r'geocache/GC[0-9A-Z]{1,5}', content, re.IGNORECASE)
         tb_matches = re.findall(r'\bTB[0-9A-Z]{1,5}\b', content, re.IGNORECASE)
         tb_matches += re.findall(r'/track/TB[0-9A-Z]{1,5}', content, re.IGNORECASE)
-        gc_codes = list(set(code[-7:].upper() for code in gc_matches))
-        tb_codes = list(set(code[-7:].upper() for code in tb_matches))
-        gcblacklist = ["GC", "GCHQ", "GCFAQ"]
-        tbblacklist = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
+        gcblacklist = {"GC", "GCHQ", "GCFAQ"}
+        tbblacklist = {"TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"}
+        gc_codes = list({code[-7:].upper() for code in gc_matches if code[-7:].upper() not in gcblacklist})
+        tb_codes = list({code[-7:].upper() for code in tb_matches if code[-7:].upper() not in tbblacklist})
+        before_gc = set(code[-7:].upper() for code in re.findall(r'\bGC[0-9A-Z]{1,5}\b|geocache/GC[0-9A-Z]{1,5}', before.content, re.IGNORECASE))
+        before_tb = set(code[-7:].upper() for code in re.findall(r'\bTB[0-9A-Z]{1,5}\b|/track/TB[0-9A-Z]{1,5}', before.content, re.IGNORECASE))
+        after_gc = set(gc_codes)
+        after_tb = set(tb_codes)
+
+        if after.author.bot:
+            return
+        if not after.guild:
+            return
+
+        if re.search(r'https?://(www\.)?(geocaching\.com|coord\.info)', after.content, re.IGNORECASE):
+            if after.author.bot:
+                return
+            if not link_embed_status:
+                return
+            if not after.embeds: 
+                return
+            await asyncio.sleep(2)
+            await after.reply("Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>", delete_after=5)
+            await after.edit(suppress=True)
 
         if any(code in gcblacklist for code in gc_codes):
             return 
         if any(code in tbblacklist for code in tb_codes):
             return  
-        
-        setting = get_guild_settings(after.guild.id)
-        detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
-        link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
+        if before_gc == after_gc and before_tb == after_tb:
+            return 
 
         if before.embeds and not after.embeds:
             return
 
-        if gc_matches or tb_matches:
+        elif gc_codes or tb_codes:
             if not detection_status:
+                return
+            
+            if not after.embeds:
+                if not before.embeds and not after.embeds:
+                    finalmessage = get_cache_basic_info(gc_codes, tb_codes)
+                    await after.reply(finalmessage)
                 return
             finalmessage = get_cache_basic_info(gc_codes, tb_codes)
             await after.reply(finalmessage)
-
-        elif "https://www.geocaching.com" in after.content or "https://www.coord.info" in after.content or "https://coord.info" in after.content or "https://geocaching.com" in after.content:
-            if after.author.bot:
-                return
-            if not link_embed_status:
-                return
-            if not after.embeds:
-                return
-            await asyncio.sleep(2)
-            await after.reply("Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>", delete_after=5)
-            await after.edit(suppress=True)
 
         elif "good bot" in after.content.lower():
             await after.reply("<:happy_tracker:1329914691656614042>")
@@ -247,7 +258,7 @@ class Listeners(commands.Cog):
             else:
                 return
 
-        elif "https://www.geocaching.com" in message.content or "https://www.coord.info" in message.content or "https://coord.info" in message.content or "https://geocaching.com" in message.content:
+        elif re.search(r'https?://(www\.)?(geocaching\.com|coord\.info)', message.content, re.IGNORECASE):
             if message.author.bot:
                 return
             if not link_embed_status:
