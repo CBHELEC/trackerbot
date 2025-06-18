@@ -38,11 +38,11 @@ class HelpView(View):
         return {
             "Message": Embed(
                 title="📨 | Message Commands",
-                description="/say <saying> - Says what you wanted where you wanted\n"
-                            "/reply <message_id> <message> - Replies to a specific message\n"
-                            "/react <messageID> <reaction> - Reacts to a specific message\n"
-                            "/delete <messageID> - Deletes a specific message\n"
-                            "/edit <messageID> <newmessage> - Edits a specific message",
+                description="/message say <saying> - Says what you wanted where you wanted\n"
+                            "/message reply <message_id> <message> - Replies to a specific message\n"
+                            "/message react <messageID> <reaction> - Reacts to a specific message\n"
+                            "/message delete <messageID> - Deletes a specific message\n"
+                            "/message edit <messageID> <newmessage> - Edits a specific message",
                 color=color
             ),
             "Geocaching": Embed(
@@ -65,6 +65,7 @@ class HelpView(View):
                             "/host_info - Shows info about me and my host\n"
                             "/foxfil - Shows info that @FoxFil made about Geocaching\n"
                             "/status - 🔧⚙️ - Changes the bot's custom status\n"
+                            "/about - Shows info about the bot and its developers\n"
                             "/clear_commands - 🔧⚙️ - Clears the Bot's app commands",
                 color=color
             ),
@@ -82,6 +83,7 @@ class HelpView(View):
                 description="/setperm <@role> - Sets roles that can use the message commands\n"
                             "(/say, /delete, /edit, /react, /reply)\n"
                             "/setskullboard <status (enable or disable)> <#channel> - Sets whether skullboard is enabled and which channel it posts to\n"
+                            "/toggles - Toggles the bot's features on or off\n"
                             "/settings - Shows the bot configuration for your server",
                 color=color
             ),
@@ -147,8 +149,9 @@ class Dev(commands.Cog):
 
         landing_embed = Embed(
             title="📘 Help Menu",
-            description="'Tracker' brought to you by <@820297275448098817> w/ help from <@624616551898808322>\n"
-                        "**__[Click for Bot Invite](https://discord.com/oauth2/authorize?client_id=1322305662973116486)__**\n\n"
+            description="'Tracker' brought to you by <@820297275448098817> w/ help from friends (!about)\n"
+                        "**__[Click for Bot Invite](https://discord.com/oauth2/authorize?client_id=1322305662973116486)__**\n"
+                        "**__[Click for Dashboard Link](https://dashboard.trackerbot.xyz)__**\n\n"
                         "***Press a button below to view a section.***",
             color=0xad7e66
         )

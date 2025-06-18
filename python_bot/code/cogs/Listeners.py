@@ -6,7 +6,7 @@ import sqlite3
 from functions import *
 from discord.ext import commands
 from datetime import datetime
-from economy import *
+# from economy import *
 
 reminded_users = load_reminded_users()
 async def send_vote_reward_topgg(self, user_id, new_streak, voted_at):
@@ -27,29 +27,29 @@ async def send_vote_reward_topgg(self, user_id, new_streak, voted_at):
             )
             embed.set_footer(text=f"Vote Streak: {new_streak}")
 
-            async with Session() as session:
-                userinfo = await get_db_settings(session, user_id)
-                if userinfo is None:
-                    await add_user_to_db(session, user_id)
-                    userinfo1 = await get_db_settings(session, user_id)
-                    balance = userinfo1.balance
-                else:
-                    balance = userinfo.balance
-                new_balance = balance + amount
-                await update_balance(session, user_id, new_balance)
-                self.c.execute('SELECT moneh FROM moneh WHERE user_id = ?', (user_id,))
-                row1 = self.c.fetchone()
-                if row1:
-                    moneh = row1[0]
-                else:
-                    moneh = 0
-                new_moneh = moneh + amount
-                self.c.execute(
-                    "INSERT INTO moneh (user_id, moneh) VALUES (?, ?) "
-                    "ON CONFLICT(user_id) DO UPDATE SET moneh = excluded.moneh",
-                    (str(user_id), new_moneh)
-                )
-                self.conn2.commit()
+  #          async with Session() as session:
+   #             userinfo = await get_db_settings(session, user_id)
+    #            if userinfo is None:
+     #               await add_user_to_db(session, user_id)
+      #              userinfo1 = await get_db_settings(session, user_id)
+       #             balance = userinfo1.balance
+        #        else:
+         #           balance = userinfo.balance
+          #      new_balance = balance + amount
+           #     await update_balance(session, user_id, new_balance)
+            self.c.execute('SELECT moneh FROM moneh WHERE user_id = ?', (user_id,))
+            row1 = self.c.fetchone()
+            if row1:
+                moneh = row1[0]
+            else:
+                moneh = 0
+            new_moneh = moneh + amount
+            self.c.execute(
+                "INSERT INTO moneh (user_id, moneh) VALUES (?, ?) "
+                "ON CONFLICT(user_id) DO UPDATE SET moneh = excluded.moneh",
+                (str(user_id), new_moneh)
+            )
+            self.conn2.commit()
 
             await discord_user.send(embed=embed)
             
@@ -103,6 +103,11 @@ class Listeners(commands.Cog):
             
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
+        if after.author.bot:
+            return
+        if not after.guild:
+            return
+
         content = after.content
         setting = get_guild_settings(after.guild.id)
         detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
@@ -119,11 +124,6 @@ class Listeners(commands.Cog):
         before_tb = set(code[-7:].upper() for code in re.findall(r'\bTB[0-9A-Z]{1,5}\b|/track/TB[0-9A-Z]{1,5}', before.content, re.IGNORECASE))
         after_gc = set(gc_codes)
         after_tb = set(tb_codes)
-
-        if after.author.bot:
-            return
-        if not after.guild:
-            return
 
         if re.search(r'https?://(www\.)?(geocaching\.com|coord\.info)', after.content, re.IGNORECASE):
             if after.author.bot:

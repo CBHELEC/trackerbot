@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from discord.ui import View, Button, Modal, TextInput
 
 class Economy(app_commands.Group):
-    """Geocaching Game Commands!"""
+    """Discaching Game Commands!"""
     
     @app_commands.command()
     async def balance(self, interaction: discord.Interaction):

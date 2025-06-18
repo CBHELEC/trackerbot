@@ -20,7 +20,7 @@ CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 REDIRECT_URI = os.getenv('REDIRECT_URI')
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-LOGIN_URL = f"https://discord.com/oauth2/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fcallback&scope=identify+guilds"
+LOGIN_URL = f"https://discord.com/oauth2/authorize?client_id={CLIENT_ID}&response_type=code&redirect_uri=https%3A%2F%2Fdashboard.trackerbot.xyz%2Fcallback&scope=identify+guilds"
 INVITE_LINK = f"https://discord.com/oauth2/authorize?client_id={CLIENT_ID}"
 
 @asynccontextmanager

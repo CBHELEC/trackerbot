@@ -4,7 +4,7 @@ import random
 import aiohttp
 import sqlite3
 from datetime import datetime, timedelta, timezone
-from economy import *
+# from economy import *
 from discord import app_commands
 from functions import *
 from discord.ext import tasks, commands
@@ -202,29 +202,29 @@ class VoteChecker(commands.Cog):
                 )
                 embed.set_footer(text=f"Vote Streak: {new_streak}")
 
-                async with Session() as session:
-                    userinfo = await get_db_settings(session, user_id)
-                    if userinfo is None:
-                        await add_user_to_db(session, user_id)
-                        userinfo1 = await get_db_settings(session, user_id)
-                        balance = userinfo1.balance
-                    else:
-                        balance = userinfo.balance
-                    new_balance = balance + amount
-                    await update_balance(session, user_id, new_balance)
-                    self.c.execute('SELECT moneh FROM moneh WHERE user_id = ?', (user_id,))
-                    row1 = self.c.fetchone()
-                    if row1:
-                        moneh = row1[0]
-                    else:
-                        moneh = 0
-                    new_moneh = moneh + amount
-                    self.c.execute(
-                        "INSERT INTO moneh (user_id, moneh) VALUES (?, ?) "
-                        "ON CONFLICT(user_id) DO UPDATE SET moneh = excluded.moneh",
-                        (str(user_id), new_moneh)
-                    )
-                    self.conn2.commit()
+              #  async with Session() as session:
+               #     userinfo = await get_db_settings(session, user_id)
+                #    if userinfo is None:
+                 #       await add_user_to_db(session, user_id)
+                  #      userinfo1 = await get_db_settings(session, user_id)
+                   #     balance = userinfo1.balance
+                    #else:
+                     #   balance = userinfo.balance
+                   # new_balance = balance + amount
+                    #await update_balance(session, user_id, new_balance)
+                self.c.execute('SELECT moneh FROM moneh WHERE user_id = ?', (user_id,))
+                row1 = self.c.fetchone()
+                if row1:
+                    moneh = row1[0]
+                else:
+                    moneh = 0
+                new_moneh = moneh + amount
+                self.c.execute(
+                    "INSERT INTO moneh (user_id, moneh) VALUES (?, ?) "
+                    "ON CONFLICT(user_id) DO UPDATE SET moneh = excluded.moneh",
+                    (str(user_id), new_moneh)
+                )
+                self.conn2.commit()
 
                 await discord_user.send(embed=embed)
         except Exception as e:

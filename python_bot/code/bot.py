@@ -59,7 +59,6 @@ class Bot(ezcord.Bot):
             return {"guild_icon_hash": None}
 
         icon_hash = guild.icon.key if guild.icon else None 
-        print(f"owo yay gwuild icon has been fwound: {icon_hash}")
         return {"guild_icon_hash": icon_hash}
 
     @Server.route()
