@@ -477,8 +477,7 @@ def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
                 prefix = ":lock:"
 
             emoji_name = f"{cache_type.name if cache_type.name != 'lost_and_found_event' else 'community_celebration'}"
-            get_emoji_from_name(emoji_name)
-            emoji_text = f"{prefix}{emoji_text}"
+            emoji_text = f"{prefix}{get_emoji_from_name(emoji_name)}"
 
             final_message.append(f"""{'<:Premium:1368989525405335552>' if pmo else ''}{emoji_text} [{code}](<https://coord.info/{code}>) - {name} | {author}
 :light_blue_heart: {fps} | :mag_right: D{difficulty} - T{terrain} :mountain_snow: | <:tub:1327698135710957609> {size.value.capitalize()}""")
