@@ -112,17 +112,15 @@ class Listeners(commands.Cog):
         detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
         link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
 
-        succ, gc_codes, tb_codes = find_gc_tb_codes(message.content)
-
-        if succ:
+        if detection_status:
             if message.author.bot:
                 return
-            if not detection_status:
-                return
-            finalmessage = get_cache_basic_info(gc_codes, tb_codes)
-            await message.reply(finalmessage)
-            
-        elif message.poll:
+            succ, gc_codes, tb_codes = find_gc_tb_codes(message.content)
+            if succ:
+                finalmessage = get_cache_basic_info(gc_codes, tb_codes)
+                await message.reply(finalmessage)
+
+        if message.poll:
             if message.guild.id != 1368978029056888943:
                 return
             if message.channel.id == 1368978994518556844:
@@ -135,7 +133,7 @@ class Listeners(commands.Cog):
             else:
                 return
 
-        elif message.webhook_id:
+        if message.webhook_id:
             if message.channel.id == TOPGG_LOG_ID:
                 if message.embeds:
                     embed = message.embeds[0]
@@ -165,23 +163,17 @@ class Listeners(commands.Cog):
             else:
                 return
 
-        elif "https://www.geocaching.com/" in message.content or "https://www.coord.info/" in message.content or "https://coord.info/" in message.content or "https://geocaching.com/" in message.content:
+        if link_embed_status and re.search(GC_LINK_SEARCH, message.content, re.IGNORECASE):
             if message.author.bot:
                 return
-            if not link_embed_status:
-                return
-            await asyncio.sleep(2)
             await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>", delete_after=5)
             await message.edit(suppress=True)
 
-        elif "good bot" in message.content.lower():
+        if "good bot" in message.content.lower():
             await message.reply("<:happy_tracker:1329914691656614042>")
 
-        else:
-            return
-    
         await self.bot.process_commands(message)
-        
+
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         embed = discord.Embed(title="New Server!",
