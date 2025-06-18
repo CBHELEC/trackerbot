@@ -45,6 +45,8 @@ DEV_USER_ID = 374283134243700747  # 820297275448098817
 CODE_DIR = Path(__file__).parent
 DATA_DIR = CODE_DIR / "data"
 
+GC_LINK_SEARCH = r"https?://(www\.)?(geocaching\.com|coord\.info)"
+
 def is_mod():
     async def predicate(interaction: discord.Interaction):
         settings = get_guild_settings(interaction.guild.id)
@@ -434,8 +436,8 @@ def find_gc_tb_codes(s: str) -> tuple[bool, list[str], list[str]]:
     """
     # clean_content = re.sub(r'[^A-Za-z0-9\s]', '', s)
 
-    gc_matches = re.findall(r'(?<!:)\b(GC[A-Z0-9]+)\b', s, re.IGNORECASE)
-    tb_matches = re.findall(r'(?<!:)\b(TB[A-Z0-9]+)\b', s, re.IGNORECASE)
+    gc_matches = re.findall(r'(?<!:)\b(GC[A-Z0-9]{1,5})[\b_]', s, re.IGNORECASE)
+    tb_matches = re.findall(r'(?<!:)\b(TB[A-Z0-9]{1,5})[\b_]', s, re.IGNORECASE)
 
     gc_codes = {item.upper() for item in gc_matches if item.upper() not in GC_BLACKLIST}
     tb_codes = {item.upper() for item in tb_matches if item.upper() not in TB_BLACKLIST}
