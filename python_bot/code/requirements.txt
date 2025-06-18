@@ -10,3 +10,10 @@ giphy-client
 aiosqlite
 num2words
 aiohttp
+fastapi
+jinja2
+uvicorn
+better-ipc
+ezcord
+psutil
+sympy
