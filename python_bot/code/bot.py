@@ -5,6 +5,7 @@ import os
 import asyncio
 import warnings
 import ezcord
+import requests
 from discord.ext import commands, tasks
 from datetime import datetime
 from discord import app_commands
@@ -74,6 +75,18 @@ class Bot(ezcord.Bot):
         return {"perms": True}
     
     @Server.route()
+    async def get_user_status(self, data: ClientPayload):
+        guild = self.get_guild(1327423651699757097)
+        if not guild:
+            return {"status": "invisible"}
+
+        member = guild.get_member(int(data.user_id))
+        if not member:
+            return {"status": "invisible"}
+
+        return {"status": str(member.status)}
+    
+    @Server.route()
     async def guild_channels(self, data: ClientPayload):
         guild = self.get_guild(data.guild_id)
         if not guild:
@@ -116,6 +129,7 @@ async def on_ready():
     await bot.change_presence(
         activity=discord.CustomActivity(f"Invite Me! | {len(bot.guilds)} Servers"))
     update_presence.start()
+    update_card.start()
 
 last_server_count = 4
 @tasks.loop(minutes=5)
@@ -126,6 +140,21 @@ async def update_presence():
         await bot.change_presence(
             activity=discord.CustomActivity(f"Invite Me! | {current_server_count} Servers"))
         last_server_count = current_server_count
+
+@tasks.loop(minutes=30)
+async def update_card():
+    user = bot.get_user(820297275448098817)
+    if not user:
+        return
+
+    data = {
+        "id": str(user.id),
+        "name": user.name,
+        "pfp": user.display_avatar.url,
+        "status": str(user.status)
+    }
+
+    requests.post("http://192.168.178.74:8500/update_embed", json=data)
 
 async def log_unhandled_error(bot, title: str, error_text: str):
     try:

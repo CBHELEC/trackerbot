@@ -175,14 +175,12 @@ class Listeners(commands.Cog):
         gc_matches_l = re.findall(r'geocache/GC[0-9A-Z]{1,5}(?!:)', content, re.IGNORECASE)
         tb_matches = re.findall(r'\bTB[0-9A-Z]{1,5}\b(?!:)', content, re.IGNORECASE)
         tb_matches_l = re.findall(r'/track/TB[0-9A-Z]{1,5}(?!:)', content, re.IGNORECASE)
-        print(f"GCM: {gc_matches}, GCML: {gc_matches_l}, TBM: {tb_matches}, TBML: {tb_matches_l}, MID: {message.id}, AUTHOR: {message.author.id}, CHANNEL: {message.channel.id}, GUILD: {message.guild.id if message.guild else 'DM'}")
         gcblacklist = ["GC", "GCHQ", "GCFAQ", "GCHQBLOCKPARTY", "GCHQCE"]
         tbblacklist = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]        
         gc_codes = list(set(code[-7:].upper() for code in gc_matches if code.upper() not in gcblacklist))
         tb_codes = list(set(code[-7:].upper() for code in tb_matches if code.upper() not in tbblacklist))
         gc_codes_l = list(set(code[-7:].upper() for code in gc_matches_l if code.upper() not in gcblacklist))
         tb_codes_l = list(set(code[-7:].upper() for code in tb_matches_l if code.upper() not in tbblacklist))
-        print(f"GCC: {gc_codes}, GCCL: {gc_codes_l}, TBC: {tb_codes}, TBCL: {tb_codes_l}, MID: {message.id}, AUTHOR: {message.author.id}, CHANNEL: {message.channel.id}, GUILD: {message.guild.id if message.guild else 'DM'}")
 
   #      if any(code in gcblacklist for code in gc_codes):
   #          return 
