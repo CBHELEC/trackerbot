@@ -1,3 +1,4 @@
+from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -14,7 +15,6 @@ from contextlib import asynccontextmanager
 from backend import DiscordAuth, db, feature_db
 from database import *
 from datetime import datetime
-from pathlib import Path
 from urllib.parse import quote
 
 CLIENT_ID = os.getenv('CLIENT_ID')

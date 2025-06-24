@@ -385,7 +385,7 @@ class TBDatabase(app_commands.Group):
                 interaction.guild, bot, interaction.command.name,
                 f"{interaction.user.mention} ({interaction.user.name}) used `bulkview`. Error: {e}"
             )
-    
+
 tb_commands = TBDatabase(name="tb", description="Public TB Database commands.")
 
 async def setup(bot):

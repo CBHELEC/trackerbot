@@ -438,10 +438,8 @@ def find_gc_tb_codes(s: str) -> tuple[bool, set[str], set[str]]:
     Returns:
         tuple[bool, set[str], set[str]]: a tuple of whether codes were found, the gc code list, and the tb code list
     """
-    # clean_content = re.sub(r'[^A-Za-z0-9\s]', '', s)
-
-    gc_matches: list[str] = re.findall(r'(?<!:)\b(GC[A-Z0-9]{1,5})[\b_]', s, re.IGNORECASE)
-    tb_matches: list[str] = re.findall(r'(?<!:)\b(TB[A-Z0-9]{1,5})[\b_]', s, re.IGNORECASE)
+    gc_matches: list[str] = re.findall(r'(?<!:)\b(GC[A-Z0-9]{1,5})(?:\b|_)', s, re.IGNORECASE)
+    tb_matches: list[str] = re.findall(r'(?<!:)\b(TB[A-Z0-9]{1,5})(?:\b|_)', s, re.IGNORECASE)
 
     gc_codes = {item.upper() for item in gc_matches if item.upper() not in GC_BLACKLIST}
     tb_codes = {item.upper() for item in tb_matches if item.upper() not in TB_BLACKLIST}
