@@ -11,8 +11,8 @@ class GuildSettings(Base):
     __tablename__ = "guild_settings"
 
     guild_id = Column(BigInteger, primary_key=True)
-    mod_role_ids = Column(String, default="")  # Store multiple IDs as CSV
-    perm_role_ids = Column(String, default="")  # Store multiple IDs as CSV
+    mod_role_ids = Column(String, default="")
+    perm_role_ids = Column(String, default="")
     log_channel_id = Column(BigInteger, nullable=True)
     skullboard_status = Column(Boolean, default=False)
     skullboard_channel_id = Column(BigInteger, nullable=True)
@@ -23,7 +23,6 @@ class GuildSettings(Base):
     fun_set = Column(String, default="1")
     game_set = Column(String, default="1")
 
-# Database setup
 engine = create_engine(DATABASE_URL, echo=False)
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)

@@ -1,21 +1,24 @@
 import giphy_client
-from giphy_client.rest import ApiException
-from functions import *
 import discord
-from discord import app_commands
 import random
 import requests
 import asyncio
+import owoencode
+import owodecode
+import re
+import os
+from sympy import N
+from giphy_client.rest import ApiException
+from functions import *
+from discord import app_commands
 from datetime import datetime, timezone
 from bot import bot
 from PIL import Image, ImageSequence
 from io import BytesIO
 from sympy import sympify, SympifyError
-import owoencode
-import owodecode
 from discord.ext import commands
-import re
 from discord.app_commands import CheckFailure
+from dotenv import load_dotenv
 
 class Fun(app_commands.Group):
     """Fun Commands!"""
@@ -125,6 +128,10 @@ class Fun(app_commands.Group):
         """Solves a math equation."""
         try:
             result = sympify(expression)
+            try:
+                result = round(N(result), 3)
+            except:
+                pass
             embed = discord.Embed(
                 title=f"{escape_markdown(expression)} = {result}",
                 colour=0xad7e66
@@ -466,7 +473,8 @@ class Fun(app_commands.Group):
             await interaction.response.send_message(embeds=[embed])
         elif type.value == "2":
             api_instance = giphy_client.DefaultApi()
-            api_key = 'gC9drTTPIu9gfjNEBk8xDIW6ff8CG8bd'
+            load_dotenv(Path(__file__).parent / ".env")
+            api_key = os.getenv('GIPHY_API_KEY')
             tag = 'fursuit'
             try:
                 while True:

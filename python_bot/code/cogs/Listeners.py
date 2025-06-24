@@ -1,12 +1,12 @@
 import asyncio
 import re
-from functions import *
 import discord
+import random
+import sqlite3
+from functions import *
 from discord.ext import commands
 from datetime import datetime
-import random
-from economy import *
-import sqlite3
+# from economy import *
 
 reminded_users = load_reminded_users()
 async def send_vote_reward_topgg(self, user_id, new_streak, voted_at):
@@ -27,29 +27,29 @@ async def send_vote_reward_topgg(self, user_id, new_streak, voted_at):
             )
             embed.set_footer(text=f"Vote Streak: {new_streak}")
 
-            async with Session() as session:
-                userinfo = await get_db_settings(session, user_id)
-                if userinfo is None:
-                    await add_user_to_db(session, user_id)
-                    userinfo1 = await get_db_settings(session, user_id)
-                    balance = userinfo1.balance
-                else:
-                    balance = userinfo.balance
-                new_balance = balance + amount
-                await update_balance(session, user_id, new_balance)
-                self.c.execute('SELECT moneh FROM moneh WHERE user_id = ?', (user_id,))
-                row1 = self.c.fetchone()
-                if row1:
-                    moneh = row1[0]
-                else:
-                    moneh = 0
-                new_moneh = moneh + amount
-                self.c.execute(
-                    "INSERT INTO moneh (user_id, moneh) VALUES (?, ?) "
-                    "ON CONFLICT(user_id) DO UPDATE SET moneh = excluded.moneh",
-                    (str(user_id), new_moneh)
-                )
-                self.conn2.commit()
+  #          async with Session() as session:
+   #             userinfo = await get_db_settings(session, user_id)
+    #            if userinfo is None:
+     #               await add_user_to_db(session, user_id)
+      #              userinfo1 = await get_db_settings(session, user_id)
+       #             balance = userinfo1.balance
+        #        else:
+         #           balance = userinfo.balance
+          #      new_balance = balance + amount
+           #     await update_balance(session, user_id, new_balance)
+            self.c.execute('SELECT moneh FROM moneh WHERE user_id = ?', (user_id,))
+            row1 = self.c.fetchone()
+            if row1:
+                moneh = row1[0]
+            else:
+                moneh = 0
+            new_moneh = moneh + amount
+            self.c.execute(
+                "INSERT INTO moneh (user_id, moneh) VALUES (?, ?) "
+                "ON CONFLICT(user_id) DO UPDATE SET moneh = excluded.moneh",
+                (str(user_id), new_moneh)
+            )
+            self.conn2.commit()
 
             await discord_user.send(embed=embed)
             
@@ -67,47 +67,47 @@ class Listeners(commands.Cog):
     async def on_raw_reaction_add(self, payload):
         guild_id = payload.guild_id
         settings = get_guild_settings(guild_id)
-        
+
         STARBOARD_CHANNEL_ID = settings.skullboard_channel_id if settings.skullboard_channel_id else None
-        
+
         if settings.skullboard_channel_id is None:
             return
-        
+
         if not payload.guild_id:
             return  
-        
+
         if payload.channel_id == STARBOARD_CHANNEL_ID:
             return  
-        
+
         if str(payload.emoji.name) not in STAR_EMOJIS:
             return  
-        
+
         guild = self.bot.get_guild(payload.guild_id)
         channel = guild.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)  
-        
+
         if message.id in skullboarded_messages:
             return 
-        
+
         reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
         if reaction and reaction.count == REACTION_THRESHOLD:
             starboard_channel = self.bot.get_channel(STARBOARD_CHANNEL_ID)
             if not starboard_channel:
                 return  
-            
+
             await message.forward(destination=starboard_channel)
             await starboard_channel.send(f"**lmao get clipped 💀** - {message.author.mention}")
-            
+
             skullboarded_messages.append(message.id) 
             save_skullboarded_messages(skullboarded_messages) 
-            
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         global last_poll_date
-        
+
         if message.author.id == self.bot.user.id:
             return
-        
+
         setting = get_guild_settings(message.guild.id)
         detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
         link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
@@ -149,21 +149,21 @@ class Listeners(commands.Cog):
                     vote_again_time = fields.get("Can vote again at:")
                     total_votes = fields.get("Total Votes:")
                     vote_streak = fields.get("Current Vote Streak:")
-                    
+
                     self.c.execute(
                         "INSERT INTO topgg_votes (user_id, reminded) VALUES (?, ?) "
                         "ON CONFLICT(user_id) DO UPDATE SET reminded = excluded.reminded",
                         (str(voter1.id), 0)
                     )
                     self.conn2.commit()
-                    
+
                     await send_vote_reward_topgg(self, voter, vote_streak, datetime.now())
                 else:
                     return
             else:
                 return
 
-        if link_embed_status and re.search(GC_LINK_SEARCH, message.content, re.IGNORECASE):
+        if link_embed_status and len(message.embeds) and re.search(GC_LINK_SEARCH, message.content, re.IGNORECASE):
             if message.author.bot:
                 return
             await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>", delete_after=5)
@@ -175,6 +175,55 @@ class Listeners(commands.Cog):
         await self.bot.process_commands(message)
 
     @commands.Cog.listener()
+    async def on_message_edit(self, before: discord.Message, after: discord.Message):
+        if after.author.bot:
+            return
+        if not after.guild:
+            return
+
+        setting = get_guild_settings(after.guild.id)
+        detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
+        link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
+        before_succ, before_gc, before_tb = find_gc_tb_codes(before.content)
+        after_succ, after_gc, after_tb = find_gc_tb_codes(after.content)
+
+        if link_embed_status and len(after.embeds) and re.search(GC_LINK_SEARCH,after.content,re.IGNORECASE):
+            if after.author.bot:
+                return
+            await asyncio.sleep(2)
+            await after.reply(
+                "Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>",
+                delete_after=5,
+            )
+            await after.edit(suppress=True)
+
+        if before_gc == after_gc and before_tb == after_tb:
+            return
+
+        if before.embeds and not after.embeds:
+            return
+
+        elif after_succ:
+            if not detection_status:
+                return
+
+            if not after.embeds:
+                if not before.embeds and not after.embeds:
+                    finalmessage = get_cache_basic_info(after_gc, after_tb)
+                    await after.reply(finalmessage)
+                return
+            finalmessage = get_cache_basic_info(after_gc, after_tb)
+            await after.reply(finalmessage)
+
+        elif "good bot" in after.content.lower():
+            await after.reply("<:happy_tracker:1329914691656614042>")
+
+        else:
+            return
+
+        await self.bot.process_commands(after)
+
+    @commands.Cog.listener()
     async def on_guild_join(self, guild):
         embed = discord.Embed(title="New Server!",
                       description=f"Name: {guild.name}\nID: {guild.id}\nOwner: {guild.owner.name} ({guild.owner.id})\nMember Count: {guild.member_count} \nBoosts: {guild.premium_subscription_count}",
@@ -182,7 +231,7 @@ class Listeners(commands.Cog):
         if guild.icon:
             embed.set_thumbnail(url=guild.icon.url)
         await self.bot.get_channel(1360214049278787816).send(embed=embed)
-        
+
         for channel in guild.text_channels:
             if channel.permissions_for(guild.me).send_messages:
                 try:
@@ -193,6 +242,6 @@ class Listeners(commands.Cog):
                     break  
                 except discord.Forbidden:
                     continue  
-        
+
 async def setup(bot):
     await bot.add_cog(Listeners(bot))

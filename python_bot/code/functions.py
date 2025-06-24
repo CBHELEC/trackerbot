@@ -2,12 +2,13 @@ import re
 import pycaching
 import json
 import operator
-from google_images_search import GoogleImagesSearch
-from googleapiclient.discovery import build
-import discord
-from discord import app_commands
 import os
 import psutil
+import discord
+import re
+from google_images_search import GoogleImagesSearch
+from googleapiclient.discovery import build
+from discord import app_commands
 from pathlib import Path
 from datetime import datetime, date
 
@@ -17,6 +18,7 @@ BOT_PREFIX = "%"  # '!'
 
 GEOCACHING_USERNAME = os.getenv("GEOCACHING_USERNAME")
 GEOCACHING_PASSWORD = os.getenv("GEOCACHING_PASSWORD")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 GOOGLE_CX_ID = os.getenv('GOOGLE_SEARCH_ID')
@@ -37,10 +39,10 @@ RANDOMERROR = discord.Embed(title="<:denied:1336100920039313448> | An error occu
 YOUCANTUSETHIS = discord.Embed(title="<:denied:1336100920039313448> | You can't use this!",
                       colour=0xff0000)
 
-GOD_LOG_ID = 1378160179262259341  # 1341819097591185479
-ERROR_LOG_ID = 1378160179262259341  # 1341107185777643573
+GOD_LOG_ID = 1341819097591185479 # 1378160179262259341
+DEV_USER_ID = 820297275448098817 # 374283134243700747
+ERROR_LOG_ID = 1341107185777643573 # 1378160179262259341
 TOPGG_LOG_ID = 1365079297919811725
-DEV_USER_ID = 374283134243700747  # 820297275448098817
 
 CODE_DIR = Path(__file__).parent
 DATA_DIR = CODE_DIR / "data"
@@ -376,7 +378,7 @@ class BadgeInfoView(discord.ui.View):
 
 STAR_EMOJIS = {"💀"}  
 REACTION_THRESHOLD = 3 
-SKULLBOARD_DATA_FILE = "skullboarded_messages.json"  
+SKULLBOARD_DATA_FILE = f"{DATA_DIR}/skullboarded_messages.json"  
 
 def load_skullboarded_messages():
     try:
@@ -395,10 +397,10 @@ def save_skullboarded_messages(message_ids):
 
 skullboarded_messages = load_skullboarded_messages()
 
-GC_BLACKLIST = ["GC", "GCHQ", "GCC"]
-TB_BLACKLIST = ["TB", "TBF", "TBH", "TBS"]
+GC_BLACKLIST = ["GC", "GCHQ", "GCFAQ", "GCC"]
+TB_BLACKLIST = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
 
-POLL_JSON_FILE = "poll_dates.json"
+POLL_JSON_FILE = f"{DATA_DIR}/poll_dates.json"
 
 def load_poll_date() -> date:
     """Load the last poll date from a JSON file."""
@@ -566,7 +568,7 @@ async def find_latest_topgg_vote(bot, interaction):
 
     return None
 
-REMINDER_FILE = Path("reminded_users.json")
+REMINDER_FILE = Path(f"{DATA_DIR}/reminded_users.json")
 def load_reminded_users():
     if REMINDER_FILE.exists():
         with open(REMINDER_FILE, "r") as f:
@@ -579,3 +581,16 @@ def save_reminded_users(cache):
     with open(REMINDER_FILE, "w") as f:
         # Convert datetime objects to ISO strings
         json.dump({str(k): v.isoformat() for k, v in cache.items()}, f, indent=2)
+
+def get_command_counts(bot):
+    pc = {c.qualified_name for c in bot.commands}
+    sc = set()
+
+    def collect(cmds):
+        for c in cmds:
+            sc.add(c.qualified_name)
+            if hasattr(c, "commands"):
+                collect(c.commands)
+
+    collect(bot.tree.get_commands())
+    return len(pc | sc), len(pc), len(sc)

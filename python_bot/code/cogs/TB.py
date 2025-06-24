@@ -1,4 +1,5 @@
 import discord
+import asyncio
 from discord import app_commands
 import sqlite3
 
@@ -6,7 +7,8 @@ from functions import *
 import re
 from bot import bot
 from datetime import datetime
-import asyncio
+from functions import *
+from bs4 import BeautifulSoup
 from logger import log
 
 conn1 = sqlite3.connect(DATA_DIR / "trackables.db")
@@ -85,6 +87,7 @@ class TBDatabase(app_commands.Group):
     @app_commands.describe(code="The PRIVATE code of the TB you want to add")
     async def add(self, interaction: discord.Interaction, code: str):
         """Adds a TB to the public database."""
+        code = code.upper()
         code = code.upper()
         if code.lower().startswith("tb"):
             await interaction.response.send_message(f"Please try again with the private code (this can be found on the TB itself) as the code, instead of `{code}`. If you believe this to be an error, please contact staff.")
@@ -190,7 +193,7 @@ class TBDatabase(app_commands.Group):
             f"Thank you for your contribution(s) towards the trackable database!",
             ephemeral=True
         )
-   
+
 # TB PURGE
     @app_commands.command()
     @is_dev()
@@ -238,7 +241,7 @@ class TBDatabase(app_commands.Group):
     @is_dev()
     @app_commands.describe(code="The PRIVATE code of the TB you want to remove")
     async def forceremove(self, interaction: discord.Interaction, code: str):
-        """Smash crash forces removal a TB from the public database."""
+        """Smash crash forces removal of a TB from the public database."""
         try:
             cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
             existing_entry = cursor1.fetchone()

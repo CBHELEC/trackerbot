@@ -1,16 +1,18 @@
+from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv(".env")
+load_dotenv(Path(__file__).parent / ".env")
 
 import discord
-from discord.ext import commands, tasks
+import traceback
+import sys
 import os
 import asyncio
 import warnings
-from datetime import datetime
-import traceback
-import sys
-from discord import app_commands
 import ezcord
+from discord.ext import commands, tasks
+from datetime import datetime
+from discord import app_commands
+from functions import *
 from discord.ext.ipc import ClientPayload, Server
 
 from functions import *
@@ -23,7 +25,7 @@ class Bot(ezcord.Bot):
         intents.members = True
 
         super().__init__(command_prefix=BOT_PREFIX, intents=intents)
-        self.ipc = Server(self, secret_key="keks")
+        self.ipc = Server(self, secret_key=SECRET_KEY)
 
     @Server.route()
     async def guild_count(self, _):
@@ -56,7 +58,6 @@ class Bot(ezcord.Bot):
             return {"guild_icon_hash": None}
 
         icon_hash = guild.icon.key if guild.icon else None 
-        print(f"owo yay gwuild icon has been fwound: {icon_hash}")
         return {"guild_icon_hash": icon_hash}
 
     @Server.route()
@@ -145,6 +146,10 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
 
     if isinstance(error, app_commands.CheckFailure):
         if interaction.command.name == "unverified":
+            return
+        if str(error) == "COMMANDS_DISABLED_BY_ADMIN":
+            return
+        if str(error) == "M_COMMANDS_DISABLED_BY_ADMIN":
             return
         try:
             await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)

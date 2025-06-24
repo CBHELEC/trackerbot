@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import Column, BigInteger, Integer, String, Float, DateTime, text
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker

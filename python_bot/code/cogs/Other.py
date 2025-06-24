@@ -1,7 +1,7 @@
+import discord
 from functions import *
 from discord.ext import commands
 from discord import app_commands, Role
-import discord
 from discord.app_commands import Transform, Transformer
 from database import get_guild_settings, update_guild_settings
 from datetime import datetime
@@ -17,6 +17,11 @@ class RoleTransformer(Transformer):
                 raise ValueError(f"Role {role_id} not found.")
             roles.append(role)
         return roles
+
+class DashboardLinkView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(discord.ui.Button(label="Dashboard", url="https://dashboard.trackerbot.xyz", style=discord.ButtonStyle.link))
 
 class Other(commands.Cog):
     def __init__(self, bot):
@@ -44,7 +49,9 @@ class Other(commands.Cog):
         updated_roles = existing_roles.union(new_roles)
 
         update_guild_settings(guild_id, perm_role_ids=",".join(updated_roles))
-        await interaction.response.send_message(f"✅ Added permission roles: {', '.join(role.mention for role in roles)}")
+        embed = discord.Embed(title="✅ | Permission Roles Updated", description=f"Added permission roles: {', '.join(role.mention for role in roles)}", color=0xad7e66)
+        embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
+        await interaction.response.send_message(embed=embed, view=DashboardLinkView())
         await log(interaction, f"Added permission roles: {', '.join(role.mention for role in roles)}")
 
 # REMOVEPERM
@@ -63,7 +70,9 @@ class Other(commands.Cog):
         updated_roles = existing_roles - roles_to_remove
 
         update_guild_settings(guild_id, perm_role_ids=",".join(updated_roles))
-        await interaction.response.send_message(f"✅ Removed permission roles: {', '.join(role.mention for role in roles)}")
+        embed = discord.Embed(title="✅ | Permission Roles Updated", description=f"Removed permission roles: {', '.join(role.mention for role in roles)}", color=0xad7e66)
+        embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
+        await interaction.response.send_message(embed=embed, view=DashboardLinkView())
         await log(interaction, f"Removed permission roles: {', '.join(role.mention for role in roles)}")
 
 # SETSKULLBOARD
@@ -89,10 +98,14 @@ class Other(commands.Cog):
         update_guild_settings(interaction.guild.id, skullboard_status=skullboard_status, skullboard_channel_id=channel.id if status.value == "1" else None)
         
         if status.value == "1":
-            await interaction.response.send_message(f"✅ Skullboard enabled in {channel.mention}!")
+            embed = discord.Embed(title="✅ | Skullboard Enabled", description=f"Skullboard has been enabled in {channel.mention}", color=0xad7e66)
+            embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
+            await interaction.response.send_message(embed=embed, view=DashboardLinkView())
             await log(interaction, f"Skullboard enabled in {channel.mention}")
         else:
-            await interaction.response.send_message("✅ Skullboard disabled!") 
+            embed = discord.Embed(title="✅ | Skullboard Disabled", description=f"Skullboard has been disabled", color=0xad7e66)
+            embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
+            await interaction.response.send_message(embed=embed, view=DashboardLinkView())
             await log(interaction, "Skullboard disabled")
 
 # SETTINGS          
@@ -109,6 +122,10 @@ class Other(commands.Cog):
         embed = discord.Embed(title="Guild Settings", color=0xad7e66)
         
         perm_roles = settings.perm_role_ids.split(",") if settings.perm_role_ids else []
+        detection_status = bool(settings.detection_status) if hasattr(settings, 'detection_status') else True
+        link_embed_status = bool(settings.link_embed_status) if hasattr(settings, 'link_embed_status') else True
+        fun_commands = bool(settings.fun_set) if hasattr(settings, 'fun_set') else True
+        message_commands = bool(settings.message_set) if hasattr(settings, 'message_set') else True
 
         embed.add_field(
             name="Perm Roles",
@@ -117,8 +134,21 @@ class Other(commands.Cog):
         )
         embed.add_field(name="Skullboard Enabled", value="Yes" if settings.skullboard_status else "No", inline=False)
         embed.add_field(name="Skullboard Channel", value=f"<#{settings.skullboard_channel_id}>" if settings.skullboard_channel_id else "Not set", inline=False)
+        embed.add_field(name="Code Detection Status", value="Enabled" if detection_status else "Disabled", inline=False)
+        embed.add_field(name="Link Embed Removal Status", value="Enabled" if link_embed_status else "Disabled", inline=False)
+        embed.add_field(name="Message Commands Status", value="Enabled" if message_commands else "Disabled", inline=False)
+        embed.add_field(name="Fun Commands Status", value="Enabled" if fun_commands else "Disabled", inline=False)
+        embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
+        await interaction.response.send_message(embed=embed, view=DashboardLinkView()) 
 
-        await interaction.response.send_message(embed=embed) 
+# TOGGLES
+    @app_commands.command()
+    async def toggles(self, interaction: discord.Interaction):
+        """Toggle bot features"""
+        embed = discord.Embed(title="Toggle Bot Features",
+                      description="There are 4 toggles available:\n- Code Detection,\n- Link Embed Removal,\n- Message Commands,\n- Fun Commands\nThese can only be done via our fancy new dashboard, found at https://dashboard.trackerbot.xyz or by hitting the button below!",
+                      colour=0xad7e66)
+        await interaction.response.send_message(embed=embed, view=DashboardLinkView())
 
 # FOXFIL
     @app_commands.command()
@@ -150,6 +180,16 @@ class Other(commands.Cog):
         embed = discord.Embed(title="Permission Only Commands",
                             description="- Say, react, edit, delete, reply\n- FoxFil\n\nYou can use these commands if you have a role allowed via /setperm.\nTrying to use these commands without permissions results in a 'You can't do this!' error.",
                             colour=0xf50000)
+        await ctx.send(embed=embed)
+
+# ABOUT ME
+    @commands.hybrid_command()
+    async def about(self, ctx):
+        """About the bot, and the Dev team."""
+        total, prefix, slash = get_command_counts(self.bot)
+        embed = discord.Embed(title="About Me",
+                            description=f"Yo! I'm Tracker, the ultimate Discord bot for Geocachers, made by Geocachers. Here's a bit about me...\nI'm made by a small team of Developers and Helpers. These people are:\n- CBH (me!, Lead Developer & Founder),\n- democat (Assistant Developer),\n- mikaboo055 (Tester & Helper),\n- echoperson (Tester & Helper),\n- fisk (Bugfixer & Tester),\n- FoxFil (Development Helper, yall can thank him for code detection)\nWe have worked hard to make this bot and grow it to how it is now, and your support means the world to us.\nHere's some info about me, the bot:\n- I am in **{len(self.bot.guilds)}** servers,\n- I have **{total}** commands,\n- I am written in Python, more specifically with the discord.py library,\n- My prefix is **!**, but I mainly use slash (**/**) commands,\n- My website is [trackerbot.xyz](<https://trackerbot.xyz>).",
+                            colour=0xad7e66)
         await ctx.send(embed=embed)
         
 async def setup(bot):

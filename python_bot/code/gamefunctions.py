@@ -1,12 +1,12 @@
-from collections import Counter
 import discord
-from discord.ui import Select, Button, View, Modal, TextInput
 import typing
-from economy import *
 import re
 import string
 import random
 from functions import *
+from economy import *
+from discord.ui import Select, Button, View, Modal, TextInput
+from collections import Counter
 
 def get_container_name(container_code):
     parts = re.findall(r'\d+|\.\d+|[A-Za-z]', container_code)
@@ -82,8 +82,7 @@ class ShopDropdown(Select):
         options = [
             discord.SelectOption(label="Writing Instruments", value="writing"),
             discord.SelectOption(label="Container Accessories", value="accessoryembed"),
-            discord.SelectOption(label="Containers", value="containers"),
-            discord.SelectOption(label="Transport", value="transport"),
+            discord.SelectOption(label="Containers", value="transport"),
             discord.SelectOption(label="Trackables", value="trackables"),
         ]
         super().__init__(placeholder="Select a category", options=options)
@@ -1493,24 +1492,21 @@ async def logbook_name_to_id(logbook_name: str) -> str:
             return k
     return ''  # Not found
 
-class WritingInstrumentSelect(discord.ui.Select):
-    def __init__(self, inventory, hide_data):
-        options = []
-        # Only show options if user has them in inventory
-        if inventory.get("5.19", 0) > 0:
-            options.append(discord.SelectOption(label="MiniWrite Pencil", value="5.19", description="Add a MiniWrite Pencil to the cache"))
-        if inventory.get("5.20", 0) > 0:
-            options.append(discord.SelectOption(label="MiniWrite Pen", value="5.20", description="Add a MiniWrite Pen to the cache"))
-        if not options:
-            options.append(discord.SelectOption(label="No writing instrument available", value="none", description="You have no MiniWrite Pencil or Pen"))
-        super().__init__(placeholder="Select a writing instrument (optional)", min_values=1, max_values=1, options=options)
-        self.hide_data = hide_data
+class WritingInstrumentSelect(View):
+    def __init__(self, pen_options, on_select_callback, user_id, timeout=180):
+        super().__init__(timeout=timeout)
+        self.user_id = user_id
+        self.on_select_callback = on_select_callback
+        self.add_item(self.WritingInstrumentDropdown(pen_options, self))
 
-    async def callback(self, interaction: discord.Interaction):
-        value = self.values[0]
-        if value == "none":
-            self.hide_data.writing_instrument_id = None
-        else:
-            self.hide_data.writing_instrument_id = value
-        await interaction.response.send_message(f"Writing instrument set: {self.hide_data.writing_instrument_id or 'None'}", ephemeral=True)
-        # Optionally, update the embed or advance the flow here
+    class WritingInstrumentDropdown(Select):
+        def __init__(self, pen_options, parent_view):
+            options = [discord.SelectOption(label=pen, value=pen) for pen in pen_options]
+            super().__init__(placeholder="Select a pen for your hide...", min_values=1, max_values=1, options=options)
+            self.parent_view = parent_view
+
+        async def callback(self, interaction: discord.Interaction):
+            if interaction.user.id != self.parent_view.user_id:
+                await interaction.response.send_message("You can't select a pen for someone else's hide!", ephemeral=True)
+                return
+            await self.parent_view.on_select_callback(interaction, self.values[0])
