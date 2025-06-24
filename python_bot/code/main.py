@@ -236,11 +236,12 @@ def draw_paragraph(draw, text, font, x, y, max_width, fill=(255, 255, 255), line
     for i, line in enumerate(lines):
         draw.text((x, y + i * (font.size + line_spacing)), line, font=font, fill=fill)
 
-@app.get("/embed/image/{user_id}")
+@app.get("/embed/image/{user_id}.png")
 async def embed_image(user_id: str):
-    print(user_id)
     user = get_discord_user(user_id)
     username = user["global_name"]
+    if not username:
+        username = user["username"]
     u_status = await ipc.request("get_user_status", user_id=user_id)
     status = (u_status.response or {}).get("status", "invisible")
 
@@ -255,6 +256,7 @@ async def embed_image(user_id: str):
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     font_path = os.path.join(base_dir, "frontend", "static", "NotoSansCJKRegular.otf")
+    para_font = ImageFont.truetype(font_path, 14)
     font_main = ImageFont.truetype(font_path, 24)
     font_sub = ImageFont.truetype(font_path, 16)
 
@@ -284,16 +286,44 @@ async def embed_image(user_id: str):
 
     text_x = 120
     draw.text((text_x, 30), username, font=font_main, fill=text_color)
-    draw.text((text_x, 65), "Lead Developer & Founder", font=font_sub, fill=subtext_color)
 
-    # Draw paragraph BELOW avatar
-    if user_id == 820297275448098817:
+    servercount = await ipc.request("guild_count")
+
+    if user_id == "820297275448098817":
+        draw.text((text_x, 65), "Lead Developer & Founder", font=font_sub, fill=subtext_color)
         draw.text((text_x, 90), "he/him, British", font=font_sub, fill=subtext_color)
-        paragraph_text = "Heya – I’m CBH. I started this bot in December of 2024, and it just kept growing. Now, it is in x servers, and the updates keep rolling. I have always had a passion for technology and started coding python in August of 2024. I am a furry, and my fursona species is a mix between a wolf / dog. In terms of Geocaching, I (as of writing this) have 160 finds, 11 hides and love to collect geocoins, the cool expensive trackable coins. Right now, I have 25 geocoins, and my favourites are the Mardi Gras mask coins - I am working on collecting all of them! Anyways… that’s it for now, happy caching folks!"
-    if user_id == 966167498011598858:
-        draw.text((text_x, 90), "𝄢/𝄢, Canadian", font=font_sub, fill=subtext_color)
+        paragraph_text = f"Heya – I’m CBH. I started this bot in December of 2024, and it just kept growing. Now, it is in {servercount.response} servers, and the updates keep rolling. I have always had a passion for technology and started coding python in August of 2024. I am a furry, and my fursona species is a mix between a wolf / dog. In terms of Geocaching, I (as of writing this) have 160 finds, 11 hides and love to collect geocoins, the cool expensive trackable coins. Right now, I have 25 geocoins, and my favourites are the Mardi Gras mask coins - I am working on collecting all of them! Anyways… that’s it for now, happy caching folks!"
+    elif user_id == "966167498011598858":
+        draw.text((text_x, 65), "Bugfixer & Tester", font=font_sub, fill=subtext_color)
+        font_sub_a_path = os.path.join(base_dir, "frontend", "static", "Symbola.ttf")
+        font_sub_a = ImageFont.truetype(font_sub_a_path, size=20)
+
+        clef = "𝄢"
+        slash = "/"
+        y = 90
+
+        clef1_x = text_x + 12
+        slash_x = text_x + 9   
+        clef2_x = text_x + 28   
+        canadian_x = text_x + 25  
+
+        draw.text((clef1_x, y), clef, font=font_sub_a, fill=subtext_color)
+        draw.text((slash_x, y - 2), slash, font=font_sub, fill=subtext_color)
+        draw.text((clef2_x, y), clef, font=font_sub_a, fill=subtext_color)
+        draw.text((canadian_x, y), ", Canadian", font=font_sub, fill=subtext_color)
         paragraph_text = "i love music"
-    para_font = ImageFont.truetype(font_path, 14)
+    elif user_id == "1081379243948265602":
+        draw.text((text_x, 65), "Artist & Tester", font=font_sub, fill=subtext_color)
+        draw.text((text_x, 90), "he/him, Canadian", font=font_sub, fill=subtext_color)
+        paragraph_text = "I'm Artist/Designer for this project, and a geocacher from the province of Alberta. We're a team of geocachers with a little over 300 finds, and we've been caching since 2024. As of right now, a newer passion of mine is collecting geocoins—right now we only have one, but we hope to grow our collection in the future!"
+    elif user_id == "768519177954131988":
+        draw.text((text_x, 65), "Tester & Helper", font=font_sub, fill=subtext_color)
+        draw.text((text_x, 90), "??/??, ??", font=font_sub, fill=subtext_color)
+        paragraph_text = "this will change, but mikaboo is on break sadly and unconctactable. we liek mikaboo though. mikaboo is good."
+    elif user_id == "374283134243700747":
+        draw.text((text_x, 65), "Assistant Developer", font=font_sub, fill=subtext_color)
+        draw.text((text_x, 90), "??/??, ??", font=font_sub, fill=subtext_color)
+        paragraph_text = "we <3 democat"
 
     below_avatar_x = avatar_x
     below_avatar_y = avatar_y + 80 + 20  # avatar + spacing
