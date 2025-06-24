@@ -1,4 +1,5 @@
 import re
+from typing import Iterable
 import pycaching
 import json
 import operator
@@ -46,6 +47,7 @@ TOPGG_LOG_ID = 1365079297919811725
 
 CODE_DIR = Path(__file__).parent
 DATA_DIR = CODE_DIR / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 GC_LINK_SEARCH = r"https?://(www\.)?(geocaching\.com|coord\.info)"
 
@@ -378,7 +380,7 @@ class BadgeInfoView(discord.ui.View):
 
 STAR_EMOJIS = {"💀"}  
 REACTION_THRESHOLD = 3 
-SKULLBOARD_DATA_FILE = f"{DATA_DIR}/skullboarded_messages.json"  
+SKULLBOARD_DATA_FILE = DATA_DIR / "skullboarded_messages.json"  
 
 def load_skullboarded_messages():
     try:
@@ -400,7 +402,7 @@ skullboarded_messages = load_skullboarded_messages()
 GC_BLACKLIST = ["GC", "GCHQ", "GCFAQ", "GCC"]
 TB_BLACKLIST = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
 
-POLL_JSON_FILE = f"{DATA_DIR}/poll_dates.json"
+POLL_JSON_FILE = DATA_DIR / "poll_dates.json"
 
 def load_poll_date() -> date:
     """Load the last poll date from a JSON file."""
@@ -427,31 +429,31 @@ def get_emoji_from_name(emoji_name: str) -> str:
     global emoji_names
     return emoji_names.get(emoji_name, {}).get("emoji", "")
 
-def find_gc_tb_codes(s: str) -> tuple[bool, list[str], list[str]]:
+def find_gc_tb_codes(s: str) -> tuple[bool, set[str], set[str]]:
     """Find GC and TB codes in a string.
 
     Args:
         s (str): string to find gc and tb codes in
 
     Returns:
-        tuple[bool, list[str], list[str]]: a tuple of whether codes were found, the gc code list, and the tb code list
+        tuple[bool, set[str], set[str]]: a tuple of whether codes were found, the gc code list, and the tb code list
     """
     # clean_content = re.sub(r'[^A-Za-z0-9\s]', '', s)
 
-    gc_matches = re.findall(r'(?<!:)\b(GC[A-Z0-9]{1,5})[\b_]', s, re.IGNORECASE)
-    tb_matches = re.findall(r'(?<!:)\b(TB[A-Z0-9]{1,5})[\b_]', s, re.IGNORECASE)
+    gc_matches: list[str] = re.findall(r'(?<!:)\b(GC[A-Z0-9]{1,5})[\b_]', s, re.IGNORECASE)
+    tb_matches: list[str] = re.findall(r'(?<!:)\b(TB[A-Z0-9]{1,5})[\b_]', s, re.IGNORECASE)
 
     gc_codes = {item.upper() for item in gc_matches if item.upper() not in GC_BLACKLIST}
     tb_codes = {item.upper() for item in tb_matches if item.upper() not in TB_BLACKLIST}
 
     if len(gc_codes) == 0 and len(tb_codes) == 0:
-        return False, [], []
+        return False, set(), set()
 
     return True, gc_codes, tb_codes
 
 g_obj = pycaching.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
 
-def get_cache_basic_info(geocache_codes=[], tb_codes=[]):
+def get_cache_basic_info(geocache_codes: Iterable[str]=[], tb_codes: Iterable[str]=[]):
     global g_obj
     final_message = []
     for code in geocache_codes:
@@ -568,7 +570,7 @@ async def find_latest_topgg_vote(bot, interaction):
 
     return None
 
-REMINDER_FILE = Path(f"{DATA_DIR}/reminded_users.json")
+REMINDER_FILE = DATA_DIR / "reminded_users.json"
 def load_reminded_users():
     if REMINDER_FILE.exists():
         with open(REMINDER_FILE, "r") as f:
