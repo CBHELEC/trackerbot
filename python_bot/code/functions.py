@@ -456,8 +456,18 @@ def get_cache_basic_info(geocache_codes: Iterable[str]=[], tb_codes: Iterable[st
     final_message = []
     for code in geocache_codes:
         try:
-            cache = g_obj.get_cache(code)
-            cache.load_quick()
+            try:
+                cache = g_obj.get_cache(code)
+                cache.load_quick()
+            except AttributeError as e:
+                print("Got AttributeError, attempting to refresh session")
+                g_obj.logout()
+                g_obj.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
+
+                cache = g_obj.get_cache(code)
+                cache.load_quick()
+            except Exception as e:
+                raise e
 
             name = cache.name
             size = cache.size
