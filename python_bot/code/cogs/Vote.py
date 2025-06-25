@@ -41,7 +41,7 @@ class VoteChecker(commands.Cog):
     @tasks.loop(minutes=0.75)
     async def check_votes(self):
         if not self.DBL_API_TOKEN:
-            print("Error: DBL_TOKEN not found. Please check your .env file.")
+            # print("Error: DBL_TOKEN not found. Please check your .env file.")
             return
 
         url = f"https://discordbotlist.com/api/v1/bots/{self.BOT_ID}/upvotes"
