@@ -222,14 +222,13 @@ class Dev(commands.Cog):
     @app_commands.command(name="test", description="Test command for development purposes.")
     @is_dev()
     async def test(self, interaction: discord.Interaction):
-        # Fetch all global commands
-        commands = await interaction.client.tree.fetch()
-        # Find your command by name
-        for cmd in commands:
-            if cmd.name == "test":
-                await interaction.response.send_message(f"ID: {cmd.id}", ephemeral=True)
-                return
-        await interaction.response.send_message("Command ID not found.", ephemeral=True)
+        guild = interaction.guild
+        member = guild.get_member(820297275448098817)
+
+        if member is None:
+            member = await guild.fetch_member(820297275448098817)
+
+        await interaction.response.send_message(str(member.status))
         
 async def setup(bot):
     await bot.add_cog(Dev(bot))

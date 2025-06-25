@@ -488,7 +488,7 @@ def get_cache_basic_info(geocache_codes: Iterable[str]=[], tb_codes: Iterable[st
 
         except Exception as e:
             print(e)
-            final_message.append(f"<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
+            final_message.append(f"<:DNF:1368989100220092516> **That Geocache doesn't exist!** (ERROR: {e})")
 
     for trackable in tb_codes:
         try:
@@ -503,7 +503,7 @@ def get_cache_basic_info(geocache_codes: Iterable[str]=[], tb_codes: Iterable[st
             )
 
         except Exception as e:
-            final_message.append(f"<:DNF:1368989100220092516> **That Trackable doesn't exist!**")
+            final_message.append(f"<:DNF:1368989100220092516> **That Trackable doesn't exist!** (ERROR: {e})")
 
     final_message = "\n\n".join(final_message)
     return final_message

@@ -108,6 +108,9 @@ class Listeners(commands.Cog):
         if message.author.id == self.bot.user.id:
             return
 
+        if not message.guild:
+            return
+
         setting = get_guild_settings(message.guild.id)
         detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
         link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
