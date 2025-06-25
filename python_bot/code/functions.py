@@ -1,3 +1,9 @@
+from pathlib import Path
+
+CODE_DIR = Path(__file__).parent
+DATA_DIR = CODE_DIR / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
 import re
 from typing import Iterable
 import pycaching
@@ -10,7 +16,6 @@ import re
 from google_images_search import GoogleImagesSearch
 from googleapiclient.discovery import build
 from discord import app_commands
-from pathlib import Path
 from datetime import datetime, date
 
 from database import get_guild_settings, get_log_channel
@@ -45,9 +50,6 @@ DEV_USER_ID = int(os.getenv("DEV_USER_ID"))
 ERROR_LOG_ID = int(os.getenv("ERROR_LOG_ID"))
 TOPGG_LOG_ID = 1365079297919811725
 
-CODE_DIR = Path(__file__).parent
-DATA_DIR = CODE_DIR / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 GC_LINK_SEARCH = r"https?://(www\.)?(geocaching\.com|coord\.info)"
 

@@ -26,6 +26,13 @@ class VoteChecker(commands.Cog):
         ''')
         self.conn2.commit()
         self.c.execute(''' 
+            CREATE TABLE IF NOT EXISTS topgg_votes ( 
+                user_id TEXT PRIMARY KEY, 
+                reminded INTEGER DEFAULT 0
+            ) 
+        ''')
+        self.conn2.commit()
+        self.c.execute(''' 
             CREATE TABLE IF NOT EXISTS moneh ( 
                 user_id TEXT PRIMARY KEY, 
                 moneh INTEGER

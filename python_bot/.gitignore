@@ -1,3 +1,5 @@
 __pycache__/
 .env
 logs/
+code/data/
+!code/data/name-icon.json
