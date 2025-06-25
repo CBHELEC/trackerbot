@@ -33,8 +33,6 @@ class VoteChecker(commands.Cog):
         ''')
         self.conn2.commit()
 
-        from dotenv import load_dotenv
-        load_dotenv(Path(__file__).parent / ".env")
         self.DBL_API_TOKEN = os.getenv("DBL_TOKEN")
         self.BOT_ID = "1322305662973116486"
 

@@ -18,7 +18,6 @@ from io import BytesIO
 from sympy import sympify, SympifyError
 from discord.ext import commands
 from discord.app_commands import CheckFailure
-from dotenv import load_dotenv
 
 class Fun(app_commands.Group):
     """Fun Commands!"""
@@ -473,7 +472,6 @@ class Fun(app_commands.Group):
             await interaction.response.send_message(embeds=[embed])
         elif type.value == "2":
             api_instance = giphy_client.DefaultApi()
-            load_dotenv(Path(__file__).parent / ".env")
             api_key = os.getenv('GIPHY_API_KEY')
             tag = 'fursuit'
             try:
