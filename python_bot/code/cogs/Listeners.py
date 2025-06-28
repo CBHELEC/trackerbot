@@ -175,8 +175,6 @@ class Listeners(commands.Cog):
         if "good bot" in message.content.lower():
             await message.reply("<:happy_tracker:1329914691656614042>")
 
-        await self.bot.process_commands(message)
-
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
         if after.author.bot:
@@ -223,8 +221,6 @@ class Listeners(commands.Cog):
 
         else:
             return
-
-        await self.bot.process_commands(after)
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

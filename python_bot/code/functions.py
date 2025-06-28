@@ -20,7 +20,7 @@ from datetime import datetime, date
 
 from database import get_guild_settings, get_log_channel
 
-BOT_PREFIX = "%"  # '!'
+BOT_PREFIX = os.getenv("BOT_PREFIX")
 
 GEOCACHING_USERNAME = os.getenv("GEOCACHING_USERNAME")
 GEOCACHING_PASSWORD = os.getenv("GEOCACHING_PASSWORD")
@@ -49,7 +49,6 @@ GOD_LOG_ID = int(os.getenv("GOD_LOG_ID"))
 DEV_USER_ID = int(os.getenv("DEV_USER_ID"))
 ERROR_LOG_ID = int(os.getenv("ERROR_LOG_ID"))
 TOPGG_LOG_ID = 1365079297919811725
-
 
 GC_LINK_SEARCH = r"https?://(www\.)?(geocaching\.com|coord\.info)"
 
@@ -499,8 +498,8 @@ def get_cache_basic_info(geocache_codes: Iterable[str]=[], tb_codes: Iterable[st
 :light_blue_heart: {fps} | :mag_right: D{difficulty} - T{terrain} :mountain_snow: | <:tub:1327698135710957609> {size.value.capitalize()}""")
 
         except Exception as e:
-            print(e)
-            final_message.append(f"<:DNF:1368989100220092516> **That Geocache doesn't exist!** (ERROR: {e})")
+       #     print(e)
+            final_message.append(f"<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
 
     for trackable in tb_codes:
         try:

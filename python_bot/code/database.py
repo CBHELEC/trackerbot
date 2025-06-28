@@ -35,7 +35,10 @@ def get_guild_settings(guild_id):
             settings = GuildSettings(guild_id=guild_id)
             session.add(settings)
             session.commit()
-        session.close()
+            session.refresh(settings)  
+
+        _ = settings.detection_status
+
         return settings
 
 def update_guild_settings(guild_id, **kwargs):
