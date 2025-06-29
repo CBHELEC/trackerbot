@@ -2,6 +2,7 @@ import asyncio
 import re
 import discord
 import random
+import topgg
 import sqlite3
 from functions import *
 from discord.ext import commands

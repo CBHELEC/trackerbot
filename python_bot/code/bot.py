@@ -8,7 +8,6 @@ import os
 import asyncio
 import warnings
 import ezcord
-import requests
 from discord.ext import commands, tasks
 from datetime import datetime
 from discord import app_commands
@@ -121,7 +120,7 @@ bot.start_time = datetime.now()
 async def on_ready():
     print(f'Logged in as {bot.user}')
     print('------------------------')
-    # await bot.tree.sync()]
+    # await bot.tree.sync()
     await bot.ipc.start()
     print(f'IPC Server Started')
     await bot.change_presence(
