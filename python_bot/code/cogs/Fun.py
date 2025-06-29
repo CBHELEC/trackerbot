@@ -16,8 +16,8 @@ from bot import bot
 from PIL import Image, ImageSequence
 from io import BytesIO
 from sympy import sympify, SympifyError
-from discord.ext import commands
 from discord.app_commands import CheckFailure
+from furrydb import *
 
 class Fun(app_commands.Group):
     """Fun Commands!"""
@@ -460,6 +460,10 @@ class Fun(app_commands.Group):
         """Sends a random Furry image or gif."""
         if type.value == "1":
             response = requests.get(url="http://sheri.bot/api/mur/").json()
+
+            user_id = str(interaction.user.id)
+            current, best, message = update_furry_streak(user_id, response['url'])
+            
             embed = discord.Embed(title=f"Woof!", url=response['source'], colour=0xad7e66)
 
             embed.add_field(name="Inappropriate Image?",
@@ -468,6 +472,9 @@ class Fun(app_commands.Group):
 
             embed.set_footer(text="Furry | Tracker | Sheri API",
                  icon_url="https://i.imgur.com/J8jXkhj.png")
+
+            if message:
+                await interaction.followup.send(message, ephemeral=False)
 
             await interaction.response.send_message(embeds=[embed])
         elif type.value == "2":
