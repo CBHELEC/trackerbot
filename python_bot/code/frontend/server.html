@@ -44,7 +44,7 @@
 
         <div class="settings-container">
             <form id="channelForm">
-                <label for="channel">Choose a channel:</label>
+                <label for="channel">Choose a skullboard channel:</label>
                 <select id="channel" name="channel_id">
                     <option value="none" {% if feature == 'none' or not feature %}selected{% endif %}>🚫 | Disable</option>
                     {% for category in categories %}
@@ -60,7 +60,7 @@
             </form>
 
             <form id="permroleForm">
-                <label for="role">Choose roles:</label>
+                <label for="role">Choose permission roles:</label>
                 <select id="role" name="role_ids" multiple size="8">
                     {% for role in roles %}
                         <option value="{{ role.id }}" {% if role.id in selected_roles %}selected{% endif %}>
