@@ -5,6 +5,7 @@ import discord
 import traceback
 import sys
 import os
+import topgg
 import asyncio
 import warnings
 import ezcord
@@ -127,6 +128,15 @@ async def on_ready():
         activity=discord.CustomActivity(f"Invite Me! | {len(bot.guilds)} Servers"))
     update_presence.start()
 
+
+webhooks = topgg.Webhooks(os.getenv('TOPGG_WEBHOOK'), 9500)
+#client = topgg.Client(os.getenv('TOPGG_TOKEN'))
+
+@webhooks.on_vote('/votes')
+def voted(vote: topgg.Vote) -> None:
+  print(f'A user with the ID of {vote.voter_id} has voted us on Top.gg!')
+
+
 last_server_count = 4
 @tasks.loop(minutes=5)
 async def update_presence():
@@ -204,6 +214,20 @@ async def load_extensions():
     for extension in initial_extensions:
         await bot.load_extension(extension)
 
-if __name__ == '__main__':
-    asyncio.run(load_extensions())
-    bot.run(TOKEN)
+async def main():
+    await load_extensions()
+    print("Extensions Loaded")
+
+    async def start_webhooks():
+        if os.getenv('TOPGG_WEBHOOK_FLAG') == "1":
+            return
+        await webhooks.start()
+        print("top.gg Webhook Server Started")
+
+    await asyncio.gather(
+        start_webhooks(),
+        bot.start(TOKEN)
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main())
