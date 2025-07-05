@@ -1,62 +1,10 @@
 import asyncio
 import re
 import discord
-import random
-import topgg
 import sqlite3
 from functions import *
 from discord.ext import commands
 from datetime import datetime
-# from economy import *
-
-reminded_users = load_reminded_users()
-async def send_vote_reward_topgg(self, user_id, new_streak, voted_at):
-    try:
-        discord_user = await self.bot.fetch_user(int(user_id))
-        if discord_user:
-            if user_id in reminded_users:
-                del reminded_users[user_id]
-                save_reminded_users(reminded_users)
-           # amount = random.randint(10, 35)
-            amount = random.randint(2, 5)
-            embed = discord.Embed(
-                title="Thank you for voting on top.gg! 🎉",
-                #description=f"You voting helps a lot, so take {amount} G$ as your reward!\nThanks! <3",
-                description=f"You voting helps a lot, so take {amount} Vote Crates as your reward!\nThanks! <3",
-                colour=0xad7e66,
-                timestamp=datetime.now()
-            )
-            embed.set_footer(text=f"Vote Streak: {new_streak}")
-
-  #          async with Session() as session:
-   #             userinfo = await get_db_settings(session, user_id)
-    #            if userinfo is None:
-     #               await add_user_to_db(session, user_id)
-      #              userinfo1 = await get_db_settings(session, user_id)
-       #             balance = userinfo1.balance
-        #        else:
-         #           balance = userinfo.balance
-          #      new_balance = balance + amount
-           #     await update_balance(session, user_id, new_balance)
-            self.c.execute('SELECT moneh FROM moneh WHERE user_id = ?', (user_id,))
-            row1 = self.c.fetchone()
-            if row1:
-                moneh = row1[0]
-            else:
-                moneh = 0
-            new_moneh = moneh + amount
-            self.c.execute(
-                "INSERT INTO moneh (user_id, moneh) VALUES (?, ?) "
-                "ON CONFLICT(user_id) DO UPDATE SET moneh = excluded.moneh",
-                (str(user_id), new_moneh)
-            )
-            self.conn2.commit()
-
-            await discord_user.send(embed=embed)
-            
-    except Exception as e:
-        print(e)
-        return
 
 class Listeners(commands.Cog):
     def __init__(self, bot):
@@ -134,36 +82,6 @@ class Listeners(commands.Cog):
                     last_poll_date = today
                     save_poll_date(today)
                     await message.channel.send(f"It's poll time! <@&1369003389576417300>")
-            else:
-                return
-
-        if message.webhook_id:
-            if message.channel.id == TOPGG_LOG_ID:
-                if message.embeds:
-                    embed = message.embeds[0]
-                    voter_match = re.search(r"<@(\d+)> Voted for <@(\d+)>!", embed.description or "")
-                    if voter_match:
-                        voter = voter_match.group(1)
-                        bot_voted = voter_match.group(2)
-                        voter1 = self.bot.get_user(int(voter))
-                    else:
-                        return 
-
-                    fields = {field.name: field.value for field in embed.fields}
-                    vote_again_time = fields.get("Can vote again at:")
-                    total_votes = fields.get("Total Votes:")
-                    vote_streak = fields.get("Current Vote Streak:")
-
-                    self.c.execute(
-                        "INSERT INTO topgg_votes (user_id, reminded) VALUES (?, ?) "
-                        "ON CONFLICT(user_id) DO UPDATE SET reminded = excluded.reminded",
-                        (str(voter1.id), 0)
-                    )
-                    self.conn2.commit()
-
-                    await send_vote_reward_topgg(self, voter, vote_streak, datetime.now())
-                else:
-                    return
             else:
                 return
 

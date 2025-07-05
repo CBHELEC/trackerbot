@@ -80,26 +80,6 @@ class Debug(app_commands.Group):
     def __init__(self, bot):
         super().__init__(name="debug", description="Developer Debug Commands.")
         self.bot = bot
-
-        self.conn2 = sqlite3.connect(DATA_DIR / 'votes.db')
-        self.c = self.conn2.cursor()
-        self.c.execute(''' 
-            CREATE TABLE IF NOT EXISTS dbl_votes ( 
-                user_id TEXT PRIMARY KEY, 
-                voted_at TEXT, 
-                vote_streak INTEGER DEFAULT 1, 
-                reminded INTEGER DEFAULT 0,
-                total_votes INTEGER DEFAULT 1
-            ) 
-        ''')
-        self.conn2.commit()
-        self.c.execute(''' 
-            CREATE TABLE IF NOT EXISTS moneh ( 
-                user_id TEXT PRIMARY KEY, 
-                moneh INTEGER
-            ) 
-        ''')
-        self.conn2.commit()
         
 # DEBUG SETPERM  
     @app_commands.command()

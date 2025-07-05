@@ -1,9 +1,15 @@
+from dotenv import load_dotenv
+load_dotenv(verbose=True, override=True)
+
 import random
+import os
 import discord
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine, Column, BigInteger, Integer, String, select
 from sqlalchemy.orm import declarative_base, sessionmaker
 from pathlib import Path
+
+VOTE_LOG_ID = 1391169156530962553
 
 # Database Path
 DATABASE_URL = f"sqlite:///{Path(__file__).parent.resolve() / 'data' / 'votes.db'}"
@@ -326,6 +332,7 @@ async def notify_vote(user_id, type: str, bot):
 
                 await user.send(embeds=embeds_to_send)
                 await toggle_reminded(user_id, "topgg")
+                await bot.get_channel(VOTE_LOG_ID).send(f"<@{user_id}> just voted on top.gg!")
             except discord.Forbidden:
                 print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
                 return
@@ -390,9 +397,12 @@ async def notify_vote(user_id, type: str, bot):
 
                 await user.send(embeds=embeds_to_send)
                 await toggle_reminded(user_id, "dbl")
+                await bot.get_channel(VOTE_LOG_ID).send(f"<@{user_id}> just voted on DBL!")
             except discord.Forbidden:
                 print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
                 return
+        else:
+            print("no.")
             
 async def send_vote_reminders(bot):
     with Session() as session:

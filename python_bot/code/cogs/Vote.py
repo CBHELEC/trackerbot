@@ -21,17 +21,22 @@ class VoteChecker(commands.Cog):
         # top.gg Cooldown Check
         topgg_last_vote = await get_last_type_vote(interaction.user.id, "topgg")
         if not isinstance(topgg_last_vote, datetime):
-            topgg_last_vote = datetime.fromisoformat(str(topgg_last_vote))
+            topgg_last_vote = datetime.fromisoformat(str(topgg_last_vote)) if topgg_last_vote else None
 
-        if is_12h_or_more_ago(topgg_last_vote):
+        if topgg_last_vote:
+            if is_12h_or_more_ago(topgg_last_vote):
+                topgg_can_vote = True
+                topgg_cannot_vote = False
+                topgg_can_vote_timestamp = "Now"
+            else:
+                topgg_can_vote = False
+                topgg_cannot_vote = True
+                topgg_can_vote_unix = (topgg_last_vote + timedelta(hours=12)).timestamp()
+                topgg_can_vote_timestamp = "<t:"+str(int(topgg_can_vote_unix))+":R>"
+        else:
             topgg_can_vote = True
             topgg_cannot_vote = False
             topgg_can_vote_timestamp = "Now"
-        else:
-            topgg_can_vote = False
-            topgg_cannot_vote = True
-            topgg_can_vote_unix = (topgg_last_vote + timedelta(hours=12)).timestamp()
-            topgg_can_vote_timestamp = "<t:"+str(int(topgg_can_vote_unix))+":R>"
 
         if topgg_can_vote:
             embed.add_field(name="top.gg:",
@@ -45,17 +50,22 @@ class VoteChecker(commands.Cog):
         # DBL Cooldown Check
         dbl_last_vote = await get_last_type_vote(interaction.user.id, "dbl")
         if not isinstance(dbl_last_vote, datetime):
-            dbl_last_vote = datetime.fromisoformat(str(dbl_last_vote))
+            dbl_last_vote = datetime.fromisoformat(str(dbl_last_vote)) if dbl_last_vote else None
 
-        if is_12h_or_more_ago(dbl_last_vote):
+        if dbl_last_vote:
+            if is_12h_or_more_ago(dbl_last_vote):
+                dbl_can_vote = True
+                dbl_cannot_vote = False
+                dbl_can_vote_timestamp = "Now"
+            else:
+                dbl_can_vote = False
+                dbl_cannot_vote = True
+                dbl_can_vote_unix = (dbl_last_vote + timedelta(hours=12)).timestamp()
+                dbl_can_vote_timestamp = "<t:"+str(int(dbl_can_vote_unix))+":R>"
+        else:
             dbl_can_vote = True
             dbl_cannot_vote = False
             dbl_can_vote_timestamp = "Now"
-        else:
-            dbl_can_vote = False
-            dbl_cannot_vote = True
-            dbl_can_vote_unix = (dbl_last_vote + timedelta(hours=12)).timestamp()
-            dbl_can_vote_timestamp = "<t:"+str(int(dbl_can_vote_unix))+":R>"
 
         if dbl_can_vote:
             embed.add_field(name="DBL:",
