@@ -9,15 +9,22 @@ import topgg
 import asyncio
 import warnings
 import ezcord
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from discord.ext import commands, tasks
 from datetime import datetime
 from discord import app_commands
 from functions import *
+from votefunctions import *
 from discord.ext.ipc import ClientPayload, Server
 
 from functions import *
 
+# NOTE: 8080 = DBL, 9500 = top.gg
+
 TOKEN = os.getenv("BOT_TOKEN")
+DBL_SECRET = os.getenv("DBL_WEBHOOK")
 
 class Bot(ezcord.Bot):
     def __init__(self):
@@ -127,15 +134,33 @@ async def on_ready():
     await bot.change_presence(
         activity=discord.CustomActivity(f"Invite Me! | {len(bot.guilds)} Servers"))
     update_presence.start()
-
+    vote_reminders.start()
 
 webhooks = topgg.Webhooks(os.getenv('TOPGG_WEBHOOK'), 9500)
-#client = topgg.Client(os.getenv('TOPGG_TOKEN'))
-
 @webhooks.on_vote('/votes')
-def voted(vote: topgg.Vote) -> None:
-  print(f'A user with the ID of {vote.voter_id} has voted us on Top.gg!')
+async def voted(vote: topgg.Vote) -> None:
+    await notify_vote(vote.voter_id, "topgg", bot)
 
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.post("/dblwebhook")
+async def dbl_webhook(request: Request):
+    data = await request.json()
+    user_id = data.get("id")
+    await notify_vote(user_id, "dbl", bot)
+    return {"received_user_id": user_id}
+
+@tasks.loop(minutes=2)
+async def vote_reminders():
+    await send_vote_reminders(bot)
 
 last_server_count = 4
 @tasks.loop(minutes=5)
@@ -215,6 +240,10 @@ async def load_extensions():
         await bot.load_extension(extension)
 
 async def main():
+    config = uvicorn.Config(app, host="0.0.0.0", port=8080, log_level="info")
+    server = uvicorn.Server(config)
+    webhook_task = asyncio.create_task(server.serve())
+
     await load_extensions()
     print("Extensions Loaded")
 
@@ -225,6 +254,7 @@ async def main():
         print("top.gg Webhook Server Started")
 
     await asyncio.gather(
+        webhook_task,
         start_webhooks(),
         bot.start(TOKEN)
     )

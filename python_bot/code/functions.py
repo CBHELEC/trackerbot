@@ -5,7 +5,6 @@ DATA_DIR = CODE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 import re
-from typing import Iterable
 import pycaching
 import json
 import operator
@@ -13,11 +12,12 @@ import os
 import psutil
 import discord
 import re
+import random
 from google_images_search import GoogleImagesSearch
 from googleapiclient.discovery import build
 from discord import app_commands
 from datetime import datetime, date
-
+from typing import Iterable
 from database import get_guild_settings, get_log_channel
 
 BOT_PREFIX = os.getenv("BOT_PREFIX")

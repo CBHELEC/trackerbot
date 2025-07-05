@@ -3,7 +3,6 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from pathlib import Path
 
 DATABASE_URL = f"sqlite:///{Path(__file__).parent.resolve() / 'data' / 'furry.db'}"
-print(DATABASE_URL)
 
 Base = declarative_base()
 engine = create_engine(DATABASE_URL, echo=False)

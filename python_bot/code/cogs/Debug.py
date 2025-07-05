@@ -8,6 +8,7 @@ import sys
 import os 
 import requests
 import importlib.util
+from votefunctions import *
 from functions import *
 from datetime import datetime
 from discord import app_commands, Role, Interaction, Embed, ButtonStyle
@@ -330,7 +331,7 @@ class Debug(app_commands.Group):
         user_id="User ID to add the votes crate to (if not using @user)"
     )
     @is_dev()
-    async def addvotecrate(self, interaction: discord.Interaction, amount: int, user: discord.Member = None, user_id: str = None):
+    async def addvotecrate(self, interaction: discord.Interaction, amount: int, type: str, user: discord.Member = None, user_id: str = None):
         """Add votes crate to a user."""
         if not user_id and not user:
             await interaction.response.send_message("❌ User not found.", ephemeral=True)
@@ -339,27 +340,11 @@ class Debug(app_commands.Group):
         if amount <= 0:
             await interaction.response.send_message("❌ Amount must be greater than 0.", ephemeral=True)
             return
-
-        try:
-            user_id = user_id if user_id else str(user.id)
-            user = user if user else await self.bot.fetch_user(user_id)
-            self.c.execute('SELECT moneh FROM moneh WHERE user_id = ?', (user_id,))
-            row1 = self.c.fetchone()
-            if row1:
-                moneh = row1[0]
-            else:
-                moneh = 0
-            new_moneh = moneh + amount
-            self.c.execute(
-                "INSERT INTO moneh (user_id, moneh) VALUES (?, ?) "
-                "ON CONFLICT(user_id) DO UPDATE SET moneh = excluded.moneh",
-                (str(user_id), new_moneh)
-            )
-            self.conn2.commit()
-            await interaction.response.send_message(f"✅ Added {amount} votes crate to {user.mention}.", ephemeral=True)
-
-        except sqlite3.Error as e:
-            await interaction.response.send_message(f"❌ Database error: {e}", ephemeral=True)
+        
+        user_id = user_id if user_id else str(user.id)
+        user = user if user else await self.bot.fetch_user(user_id)
+        await update_type_rewardtotal(user_id, type, amount)
+        await interaction.response.send_message(f"✅ Added {amount} vote crates to {user.mention}.", ephemeral=True)
 
 # DEBUG EVAL
     @app_commands.command(name="eval", description="Evaluate Python code.")
