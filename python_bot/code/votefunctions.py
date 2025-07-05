@@ -336,6 +336,32 @@ async def notify_vote(user_id, type: str, bot):
             except discord.Forbidden:
                 print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
                 return
+        else:
+            user = await bot.fetch_user(user_id)
+            if user:
+                embed = discord.Embed(
+                    title="Thank you for voting on top.gg! 🎉",
+                    description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
+                    colour=0xad7e66
+                )
+                embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")
+                if new_streak_update:
+                    milestoneembed = discord.Embed(
+                        title="Oh?",
+                        description=f"It appears you have reached a total of {topgg_type_streak} total top.gg votes!\nTo reward that, you have been given an additional {bonus_reward_amount} Vote Crates.\nThank you for the support and happy voting!",
+                        colour=0xad7e66
+                    )
+                try:
+                    embeds_to_send = [embed]
+                    if milestoneembed is not None:
+                        embeds_to_send.append(milestoneembed)
+
+                    await user.send(embeds=embeds_to_send)
+                    await toggle_reminded(user_id, "topgg")
+                    await bot.get_channel(VOTE_LOG_ID).send(f"<@{user_id}> just voted on top.gg!")
+                except discord.Forbidden:
+                    print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
+                    return
     elif type == "dbl":
         reward_amount = random.randint(2, 5)
         await update_type_streak(user_id, "dbl")
@@ -402,7 +428,31 @@ async def notify_vote(user_id, type: str, bot):
                 print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
                 return
         else:
-            print("no.")
+            user = await bot.fetch_user(user_id)
+            if user:
+                embed = discord.Embed(
+                    title="Thank you for voting on DBL! 🎉",
+                    description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
+                    colour=0xad7e66
+                )
+                embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")
+                if new_streak_update:
+                    milestoneembed = discord.Embed(
+                        title="Oh?",
+                        description=f"It appears you have reached a total of {dbl_type_streak} total DBL votes!\nTo reward that, you have been given an additional {bonus_reward_amount} Vote Crates.\nThank you for the support and happy voting!",
+                        colour=0xad7e66
+                    )
+                try:
+                    embeds_to_send = [embed]
+                    if milestoneembed is not None:
+                        embeds_to_send.append(milestoneembed)
+
+                    await user.send(embeds=embeds_to_send)
+                    await toggle_reminded(user_id, "dbl")
+                    await bot.get_channel(VOTE_LOG_ID).send(f"<@{user_id}> just voted on DBL!")
+                except discord.Forbidden:
+                    print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
+                    return
             
 async def send_vote_reminders(bot):
     with Session() as session:
