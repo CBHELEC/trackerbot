@@ -268,14 +268,13 @@ async def is_type_reminded(user_id, type: str):
         else:
             return False
 
-async def notify_vote(user_id, type: str, bot):
+async def notify_vote(user_id, type: str, bot, weekend: bool = None):
     milestoneembed = None
     if type == "topgg":
         reward_amount = random.randint(2, 5)
         await update_type_streak(user_id, "topgg")
         await update_type_total(user_id, "topgg")
         await update_last_type_vote(user_id, "topgg")
-        await update_type_rewardtotal(user_id, "topgg", reward_amount)
         topgg_type_streak = await get_type_streak(user_id, "topgg")
         new_streak_update = False
         if topgg_type_streak in [10, 25, 50, 75, 100, 150, 250, 500, 1000]:
@@ -313,12 +312,22 @@ async def notify_vote(user_id, type: str, bot):
             new_streak_update = True
         user = bot.get_user(user_id)
         if user:
-            embed = discord.Embed(
-                title="Thank you for voting on top.gg! 🎉",
-                description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
-                colour=0xad7e66
-            )
-            embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")
+            if weekend:
+                embed = discord.Embed(
+                    title="Thank you for voting on top.gg! 🎉",
+                    description=f"You voting helps a lot, so take ███████ Vote Crates as your reward!\nThanks! <3\n\nWait wait wait what!? Oh, right... it's the weekend! I guess you get double then? Either way take {reward_amount * 2} Vote Crates.",
+                    colour=0xad7e66
+                )
+                embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")  
+                await update_type_rewardtotal(user_id, "topgg", reward_amount * 2)    
+            else:
+                embed = discord.Embed(
+                    title="Thank you for voting on top.gg! 🎉",
+                    description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
+                    colour=0xad7e66
+                )
+                embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")
+                await update_type_rewardtotal(user_id, "topgg", reward_amount)
             if new_streak_update:
                 milestoneembed = discord.Embed(
                     title="Oh?",
@@ -339,12 +348,22 @@ async def notify_vote(user_id, type: str, bot):
         else:
             user = await bot.fetch_user(user_id)
             if user:
-                embed = discord.Embed(
-                    title="Thank you for voting on top.gg! 🎉",
-                    description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
-                    colour=0xad7e66
-                )
-                embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")
+                if weekend:
+                    embed = discord.Embed(
+                        title="Thank you for voting on top.gg! 🎉",
+                        description=f"You voting helps a lot, so take ███████ Vote Crates as your reward!\nThanks! <3\n\nWait wait wait what!? Oh, right... it's the weekend! I guess you get double then? Either way take {reward_amount * 2} Vote Crates.",
+                        colour=0xad7e66
+                    )
+                    embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")  
+                    await update_type_rewardtotal(user_id, "topgg", reward_amount * 2)    
+                else:
+                    embed = discord.Embed(
+                        title="Thank you for voting on top.gg! 🎉",
+                        description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
+                        colour=0xad7e66
+                    )
+                    embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")
+                    await update_type_rewardtotal(user_id, "topgg", reward_amount)
                 if new_streak_update:
                     milestoneembed = discord.Embed(
                         title="Oh?",
@@ -367,7 +386,6 @@ async def notify_vote(user_id, type: str, bot):
         await update_type_streak(user_id, "dbl")
         await update_type_total(user_id, "dbl")
         await update_last_type_vote(user_id, "dbl")
-        await update_type_rewardtotal(user_id, "dbl", reward_amount)
         dbl_type_streak = await get_type_streak(user_id, "dbl")
         new_streak_update = False
         if dbl_type_streak in [10, 25, 50, 75, 100, 150, 250, 500, 1000]:
@@ -404,12 +422,22 @@ async def notify_vote(user_id, type: str, bot):
             await update_type_rewardtotal(user_id, "dbl", bonus_reward_amount)
         user = bot.get_user(user_id)
         if user:
-            embed = discord.Embed(
-                title="Thank you for voting on DBL! 🎉",
-                description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
-                colour=0xad7e66
-            )
-            embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")
+            if weekend:
+                embed = discord.Embed(
+                    title="Thank you for voting on DBL! 🎉",
+                    description=f"You voting helps a lot, so take ███████ Vote Crates as your reward!\nThanks! <3\n\nWait wait wait what!? Oh, right... it's the weekend! I guess you get double then? Either way take {reward_amount * 2} Vote Crates.",
+                    colour=0xad7e66
+                )
+                embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")  
+                await update_type_rewardtotal(user_id, "dbl", reward_amount * 2)    
+            else:
+                embed = discord.Embed(
+                    title="Thank you for voting on DBL! 🎉",
+                    description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
+                    colour=0xad7e66
+                )
+                embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")
+                await update_type_rewardtotal(user_id, "dbl", reward_amount)
             if new_streak_update:
                 milestoneembed = discord.Embed(
                     title="Oh?",
@@ -430,12 +458,22 @@ async def notify_vote(user_id, type: str, bot):
         else:
             user = await bot.fetch_user(user_id)
             if user:
-                embed = discord.Embed(
-                    title="Thank you for voting on DBL! 🎉",
-                    description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
-                    colour=0xad7e66
-                )
-                embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")
+                if weekend:
+                    embed = discord.Embed(
+                        title="Thank you for voting on DBL! 🎉",
+                        description=f"You voting helps a lot, so take ███████ Vote Crates as your reward!\nThanks! <3\n\nWait wait wait what!? Oh, right... it's the weekend! I guess you get double then? Either way take {reward_amount * 2} Vote Crates.",
+                        colour=0xad7e66
+                    )
+                    embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")  
+                    await update_type_rewardtotal(user_id, "dbl", reward_amount * 2)    
+                else:
+                    embed = discord.Embed(
+                        title="Thank you for voting on DBL! 🎉",
+                        description=f"You voting helps a lot, so take {reward_amount} Vote Crates as your reward!\nThanks! <3",
+                        colour=0xad7e66
+                    )
+                    embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")
+                    await update_type_rewardtotal(user_id, "dbl", reward_amount)
                 if new_streak_update:
                     milestoneembed = discord.Embed(
                         title="Oh?",
@@ -473,7 +511,9 @@ async def send_vote_reminders(bot):
             for user_id in all_user_ids:
                 user = bot.get_user(user_id)
                 if not user:
-                    continue
+                    user = await bot.fetch_user(user_id)
+                    if not user:
+                        continue
 
                 result_topgg = session.execute(
                     select(topgg_votes)

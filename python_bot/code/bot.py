@@ -139,8 +139,10 @@ async def on_ready():
 webhooks = topgg.Webhooks(os.getenv('TOPGG_WEBHOOK'), 9500)
 @webhooks.on_vote('/votes')
 async def voted(vote: topgg.Vote) -> None:
-    print(f"TOPGG VOTE {vote.voter_id}")
-    await notify_vote(vote.voter_id, "topgg", bot)
+    if datetime.today().weekday() >= 5:
+        await notify_vote(vote.voter_id, "topgg", bot, weekend=True)
+    else:
+        await notify_vote(vote.voter_id, "topgg", bot)
 
 app = FastAPI()
 
@@ -156,8 +158,10 @@ app.add_middleware(
 async def dbl_webhook(request: Request):
     data = await request.json()
     user_id = data.get("id")
-    print("DBL VOTE "+user_id)
-    await notify_vote(user_id, "dbl", bot)
+    if datetime.today().weekday() >= 5:
+        await notify_vote(user_id, "dbl", bot, weekend=True)
+    else:
+       await notify_vote(user_id, "dbl", bot)
     return {"received_user_id": user_id}
 
 @tasks.loop(minutes=2)
