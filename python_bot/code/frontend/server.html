@@ -47,6 +47,15 @@
                 <label for="channel">Choose a skullboard channel:</label>
                 <select id="channel" name="channel_id">
                     <option value="none" {% if feature == 'none' or not feature %}selected{% endif %}>🚫 | Disable</option>
+                    <option disabled></option>
+
+                    {% for channel in channels %}
+                        {% set is_selected = feature|string == channel.id|string %}
+                        <option value="{{ channel.id }}" {% if is_selected %}selected{% endif %}>
+                            {{ '✅ ' if is_selected else '' }}{{ channel.name }}
+                        </option>
+                    {% endfor %}
+
                     {% for category in categories %}
                         <optgroup label="{{ category.name }}">
                             {% for channel in category.channels %}

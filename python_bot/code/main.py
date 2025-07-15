@@ -380,6 +380,9 @@ async def server(request: Request, guild_id: int):
     categories_resp = await ipc.request("guild_categories", guild_id=guild_id)
     categories = categories_resp.response["categories"] if categories_resp and "categories" in categories_resp.response else []
 
+    channels_resp = await ipc.request("guild_channels", guild_id=guild_id)
+    channels = channels_resp.response["channels"] if channels_resp and "channels" in channels_resp.response else []
+
     roles_resp = await ipc.request("guild_roles", guild_id=guild_id)
     roles = []
     if roles_resp and roles_resp.response and "roles" in roles_resp.response:
@@ -394,6 +397,7 @@ async def server(request: Request, guild_id: int):
             "id": guild_id,
             "feature": feature_txt,
             "categories": categories,
+            "channels": channels,
             "roles": roles,
             "selected_roles": selected_roles,
             "global_name": user["global_name"],
@@ -513,5 +517,6 @@ async def error_redirect(_, __):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+  #  uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="localhost", port=8000)
     # uvicorn.run("main:app", host="localhost", port=8000, reload=True)
