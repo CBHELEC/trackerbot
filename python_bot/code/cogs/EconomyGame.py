@@ -110,6 +110,7 @@ class Economy(app_commands.Group):
             user_id = interaction.user.id
             user_database_settings = await get_db_settings(session, user_id)
 
+            # if user isnt registered
             if user_database_settings.cacher_name is None:
                 await interaction.followup.send(
                     f"It appears you haven't set your cacher name yet! Please press the button below to enter your name and start caching.",
@@ -119,6 +120,7 @@ class Economy(app_commands.Group):
                 await original_message.edit(view=CacherNameView(original_message))
                 return
 
+            # if inventory empty
             inventory_items = await get_inventory(session, user_id)
             if not inventory_items:
                 await interaction.followup.send(
@@ -127,6 +129,7 @@ class Economy(app_commands.Group):
                 )
                 return
 
+            # inv has stuff but no containers
             containers = [item for item in inventory_items if item.split('.')[0] in SHOP_PRICES["containers"]]
             if not containers:
                 await interaction.followup.send(
@@ -136,9 +139,10 @@ class Economy(app_commands.Group):
                 return
 
             hides = await get_hides_by_user(session, user_id)
+            
+            # user has unpublished hides
             unpublished_hides = [hide for hide in hides if hide.published == 0]
             if unpublished_hides:
-                # Show embed with unpublished hides and two buttons
                 embed = discord.Embed(
                     title="Unpublished Hides",
                     description="It appears you have unpublished hides. Do you want to edit one of these or make a new hide?",
@@ -147,17 +151,13 @@ class Economy(app_commands.Group):
                 for hide in unpublished_hides:
                     embed.add_field(name=f"{hide.id} - {hide.name}", value=" ", inline=False)
                 async def on_edit(interaction, selected_hide):
-                    # Load all fields from DB for this unpublished hide
                     hide_data = await load_hide_data_from_db(selected_hide.id)
                     if not hide_data:
                         await interaction.response.send_message("Could not load hide data.", ephemeral=True)
                         return
-                    # Use start_hide_configuration to launch the config UI with a valid message reference
                     await uwu1.delete()
                     await start_hide_configuration(interaction, hide_data, hide_id=selected_hide.id)
                 async def on_continue(interaction):
-                  #  await interaction.response.defer(ephemeral=True)
-                    # Continue to new hide flow (container selection)
                     item_counts = defaultdict(int)
                     item_to_container = {}
                     for container in containers:
@@ -191,7 +191,7 @@ class Economy(app_commands.Group):
                 uwu1 = await interaction.followup.send(embed=embed, view=view, ephemeral=True)
                 return
 
-            # If no unpublished hides, proceed with new hide creation as before
+            # user has no unpublished hides
             embed = discord.Embed(
                 title="Select a Container for Your Hide",
                 description="Below is a list of containers in your inventory. Enter the number corresponding to the container you want to use. No log means one from your inventory will be picked later.",
@@ -586,14 +586,6 @@ class Economy(app_commands.Group):
             embed.add_field(name="Previous Discovery Date", value=thedatething, inline=True)
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
-        
-    @app_commands.command()
-    async def credits(self, interaction: discord.Interaction):
-        """View the credits for the bot."""
-        embed = discord.Embed(title="Tracker Credits",
-                      description="__Developer__: **not.cbh** (<@820297275448098817>)\n\n__Tester__: **mikaboo055** (<@768519177954131988>), **echoperson** (<@1081379243948265602>), **fiskwater** (<@966167498011598858>)\n\n__Artist__: **echoperson** (<@1081379243948265602>)\n\n__Development Assistant__: **fiskwater** (<@966167498011598858>)",
-                            colour=0xad7e66)
-        await interaction.response.send_message(embed=embed)
         
     @app_commands.command()
     async def daily(self, interaction: discord.Interaction):

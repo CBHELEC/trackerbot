@@ -74,7 +74,7 @@ class Bot(ezcord.Bot):
             return {"perms": False}
 
         member = guild.get_member(int(data.user_id))
-        if not member or not member.guild_permissions.administrator:
+        if not member or not member.guild_permissions.administrator or not member.guild_permissions.manage_guild:
             return {"perms": False}
 
         return {"perms": True}

@@ -536,6 +536,7 @@ class HideConfigData:
         self.log = None
         self.log_status = None
         self.writing_instrument_id = None
+        self.pen = None
        
 async def send_a_modal(interaction, modal):
     await interaction.response.send_modal(modal)
@@ -552,6 +553,7 @@ class HideConfigureSelect(Select):
             discord.SelectOption(label="Description", value="description"),
             discord.SelectOption(label="Difficulty", value="difficulty"),
             discord.SelectOption(label="Terrain", value="terrain"),
+            discord.SelectOption(label="Pen", value="pen"),
             discord.SelectOption(label="Save", value="save"),
             discord.SelectOption(label="Publish Hide", value="publish")
         ]
@@ -653,15 +655,69 @@ class HideConfigureSelect(Select):
                     colour=0xad7e66
                 )
                 await self.original_message.edit(embed=embed, view=view)
+            elif self.values[0] == "pen":
+                # Show pen selection dropdown
+                view = View()
+                view.add_item(PenSelect(self.hide_data, interaction, self.original_message, hide_id=self.hide_id))
+                embed = discord.Embed(
+                    title="Select a Writing Instrument",
+                    description="Choose a pen or pencil for your hide.",
+                    colour=0xad7e66
+                )
+                await self.original_message.edit(embed=embed, view=view)
             elif self.values[0] == "save":
-                await self.save_hide(interaction)
-                await self.update_embed(interaction)
+                # Route to PenSelect's save_hide
+                pen_select = PenSelect(self.hide_data, interaction, self.original_message, hide_id=self.hide_id)
+                await pen_select.save_hide(interaction)
             elif self.values[0] == "publish":
-                await self.publish_hide(interaction)
-            # Reset the dropdown to its placeholder
-            self.placeholder = "Select an option to configure..."
-            if self.values[0] not in ["location", "difficulty", "terrain", "publish"]:
-                await self.update_embed(interaction)
+                # Route to PenSelect's publish_hide
+                pen_select = PenSelect(self.hide_data, interaction, self.original_message, hide_id=self.hide_id)
+                await pen_select.publish_hide(interaction)
+        # Reset the dropdown to its placeholder
+        self.placeholder = "Select an option to configure..."
+        # Only update embed for options that do not open a subview
+        if self.values[0] not in ["location", "difficulty", "terrain", "publish", "pen"]:
+            await self.update_embed(interaction)
+class PenSelect(Select):
+    def __init__(self, hide_data, interaction, original_message, hide_id=None):
+        self.hide_data = hide_data
+        self.interaction = interaction
+        self.original_message = original_message
+        self.hide_id = hide_id
+        options = [
+            discord.SelectOption(label="MiniWrite Pencil", value="5.19"),
+            discord.SelectOption(label="MiniWrite Pen", value="5.20"),
+        ]
+        super().__init__(placeholder="Select a writing instrument...", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        selected_id = self.values[0]
+        self.hide_data.writing_instrument_id = selected_id
+        # Optionally, set a human-readable name
+        if selected_id == "5.19":
+            self.hide_data.pen = "MiniWrite Pencil (5.19)"
+        elif selected_id == "5.20":
+            self.hide_data.pen = "MiniWrite Pen (5.20)"
+        # Update the embed and return to config view
+        view = View()
+        view.add_item(HideConfigureSelect(self.hide_data, self.interaction, self.original_message, hide_id=self.hide_id))
+        embed = discord.Embed(
+            title="Configure Your Hide",
+            description="Use the dropdown below to configure your hide.",
+            colour=0xad7e66
+        )
+        embed.add_field(name="Name", value=self.hide_data.name or "Not set", inline=False)
+        embed.add_field(name="Location", value=self.hide_data.location or "Not set", inline=False)
+        embed.add_field(name="Description", value=self.hide_data.description or "Not set", inline=False)
+        embed.add_field(name="Difficulty", value=f"{self.hide_data.difficulty}/5" if self.hide_data.difficulty else "Not set", inline=True)
+        embed.add_field(name="Terrain", value=f"{self.hide_data.terrain}/5" if self.hide_data.terrain else "Not set", inline=True)
+        embed.add_field(name="Container", value=self.hide_data.container or "Not set", inline=False)
+        if self.hide_data.log_status == True:
+            embed.add_field(name="Logbook", value=self.hide_data.log or "Not set", inline=False)
+        if self.hide_data.writing_instrument_id:
+            wi = "MiniWrite Pencil (5.19)" if self.hide_data.writing_instrument_id == "5.19" else "MiniWrite Pen (5.20)"
+            embed.add_field(name="Writing Instrument", value=wi, inline=False)
+        await self.original_message.edit(embed=embed, view=view)
 
     async def save_hide(self, interaction: discord.Interaction):
         """
@@ -688,6 +744,11 @@ class HideConfigureSelect(Select):
                     await update_hide_location_name(session, self.hide_id, self.hide_data.location)
                     # Save writing instrument
                     await update_hide_writing_instrument(session, self.hide_id, self.hide_data.writing_instrument_id)
+                    # Remove pen from inventory if selected and container size is Medium or larger
+                    if self.hide_data.writing_instrument_id and self.hide_data.container:
+                        # Check for .8, .9, .10 in container string
+                        if any(size in self.hide_data.container for size in [".8", ".9", ".10"]):
+                            await remove_inv_item(session, interaction.user.id, self.hide_data.writing_instrument_id)
                     await interaction.followup.send(f"Hide `{self.hide_id}` has been saved! You can dismiss the previous message, or continue editing.", ephemeral=True)
                 else:
                     # New hide: create a new unpublished hide entry, even if incomplete
@@ -709,11 +770,17 @@ class HideConfigureSelect(Select):
                     containernametoid = await container_name_to_id(self.hide_data.container) if self.hide_data.container else None
                     await update_hide_containerid(session, hide_id, containernametoid)
                     await update_hide_writing_instrument(session, hide_id, self.hide_data.writing_instrument_id)
+                    # Remove pen from inventory if selected and container size is Medium or larger
+                    if self.hide_data.writing_instrument_id and self.hide_data.container:
+                        if any(size in self.hide_data.container for size in [".8", ".9", ".10"]):
+                            await remove_inv_item(session, interaction.user.id, self.hide_data.writing_instrument_id)
                     self.hide_id = hide_id
                     await interaction.followup.send(f"Hide `{hide_id}` has been saved! You can dismiss the previous message, or continue editing.", ephemeral=True)
         except Exception as e:
             await interaction.followup.send(f"Error saving hide: {e}", ephemeral=True)
-        await self.update_embed(interaction)
+        # Update the embed using HideConfigureSelect
+        config_select = HideConfigureSelect(self.hide_data, self.interaction, self.original_message, hide_id=self.hide_id)
+        await config_select.update_embed(interaction)
 
     async def publish_hide(self, interaction: discord.Interaction):
         """
@@ -1102,15 +1169,18 @@ class ContainerSelectionModal(Modal, title="Select a Container"):
         view = View(timeout=None)
         view.add_item(HideConfigureSelect(self.hide_data, interaction, self.original_message))
 
+        # Only update the original message, do not send a new message in response to the modal
         if self.original_message is not None:
             await self.original_message.edit(embed=embed, view=view)
+         #   await interaction.followup.send(
+          #      f"Container **{name}** selected.", ephemeral=True
+           # )
         else:
-            # If no original message, respond to the modal (should be rare)
             await interaction.response.send_message(
                 embed=embed, view=view, ephemeral=False
             )
 
-    async def _handle_missing_log(self, interaction: discord.Interaction, display_name, raw_key):
+    async def publish_hide(self, interaction: discord.Interaction):
         # fetch inventory and count logs
         async with Session() as session:
             inv = await get_inventory(session, self.user_id)
@@ -1133,12 +1203,10 @@ class ContainerSelectionModal(Modal, title="Select a Container"):
             if cnt == 1:
                 label = f"{main} {' '.join(alts)}".strip()
             embed.add_field(name=f"{num}. {label}", value="", inline=False)
-
-        print(display_name)
-        print(raw_key)
+            
         hide_data = HideConfigData()
-        hide_data.container = display_name
-        hide_data.container_id = raw_key
+      #  hide_data.container = display_name
+       # hide_data.container_id = raw_key
         hide_data.log_status = True
         hide_data.log = label
         print(hide_data.container)
@@ -1164,7 +1232,6 @@ class LogSelectionModal(Modal, title="Select a Log"):
         self.counts_list = counts_list
         self.original_message = original_message
         self.hide_data = hide_data
-
         self.log_input = TextInput(
             label="Enter log number",
             placeholder="e.g. 1",
@@ -1180,16 +1247,16 @@ class LogSelectionModal(Modal, title="Select a Log"):
         except ValueError:
             return await interaction.response.send_message("Enter a valid number.", ephemeral=True)
 
+        if not 0 <= idx < len(self.counts_list):
+            return await interaction.response.send_message(
+                f"Number must be between 1 and {len(self.counts_list)}.", ephemeral=True
+            )
+
         log_id, _ = self.counts_list[idx]
         parts = re.findall(r'\d+|\.\d+|[A-Za-z]', str(log_id))
         main = MAIN_INVENTORY.get(parts[0], str(log_id))
         alts = [ALT_INVENTORY.get(p, "") for p in parts[1:]]
         name = f"{main} {' '.join(alts)}".strip()
-
-        if not 0 <= idx < len(self.counts_list):
-            return await interaction.response.send_message(
-                f"Number must be between 1 and {len(self.counts_list)}.", ephemeral=True
-            )
 
         print(main)
 
@@ -1204,6 +1271,11 @@ class LogSelectionModal(Modal, title="Select a Log"):
         if "Small Notepad Log" in main:
             nuh_uh_sizes = ["XS", "S", "XL"]
             if any(size in self.hide_data.container for size in nuh_uh_sizes):
+                # Remove pen from inventory if selected and container size is Medium or larger
+                if self.hide_data.writing_instrument_id and self.hide_data.container:
+                    if any(size in self.hide_data.container for size in [".8", ".9", ".10"]):
+                        async with Session() as session:
+                            await remove_inv_item(session, interaction.user.id, self.hide_data.writing_instrument_id)
                 return await interaction.response.send_message(
                     "You cannot use a Small Notepad Log with an Extra Small, Small or Extra Large container. Please select a different log.",
                     ephemeral=True
