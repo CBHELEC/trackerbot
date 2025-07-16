@@ -96,7 +96,17 @@ class Bot(ezcord.Bot):
         guild = self.get_guild(data.guild_id)
         if not guild:
             return {"channels": []}
-        return {"channels": [channel.name for channel in guild.text_channels]}
+
+        return {
+            "channels": [
+                {
+                    "id": ch.id,
+                    "name": ch.name
+                }
+                for ch in guild.text_channels
+                if not ch.category and ch.name and ch.name.strip()
+            ]
+        }
 
     @Server.route()
     async def guild_categories(self, data: ClientPayload):
