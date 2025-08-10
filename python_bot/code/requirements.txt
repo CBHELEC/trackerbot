@@ -17,3 +17,4 @@ better-ipc
 ezcord
 psutil
 sympy
+topggpy
