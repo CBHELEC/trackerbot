@@ -11,7 +11,7 @@
           "value": "invite.trackerbot.xyz"
         }
       ],
-      "destination": "https://discord.com/oauth2/authorize?client_id=1322305662973116486",
+      "destination": "https://discord.com/discovery/applications/1322305662973116486",
       "permanent": true
     }
   ]
