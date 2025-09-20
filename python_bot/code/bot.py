@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 load_dotenv(verbose=True, override=True)
 
 import discord
+import requests
 import traceback
 import sys
 import os
@@ -28,8 +29,8 @@ DBL_SECRET = os.getenv("DBL_WEBHOOK")
 
 class Bot(ezcord.Bot):
     def __init__(self):
-        intents = discord.Intents.all()
-        intents.members = True
+        intents = discord.Intents.default()
+        intents.message_content = True
 
         super().__init__(command_prefix=BOT_PREFIX, intents=intents)
         self.ipc = Server(self, secret_key=SECRET_KEY)
@@ -174,9 +175,24 @@ async def dbl_webhook(request: Request):
        await notify_vote(user_id, "dbl", bot)
     return {"received_user_id": user_id}
 
+@app.get("/ping")
+async def ping():
+    uptime_seconds = int((datetime.now() - bot.start_time).total_seconds())
+    latency_ms = int(bot.latency * 1000)
+    return {
+        "status": "online",
+        "uptime_seconds": uptime_seconds,
+        "latency_ms": latency_ms,
+        "server_count": len(bot.guilds)
+    }
+
 @tasks.loop(minutes=2)
 async def vote_reminders():
     await send_vote_reminders(bot)
+
+@tasks.loop(minutes=2)
+async def vote_streakreset():
+    await streak_reset(bot)
 
 last_server_count = 4
 @tasks.loop(minutes=5)
@@ -186,6 +202,18 @@ async def update_presence():
     if current_server_count != last_server_count:
         await bot.change_presence(
             activity=discord.CustomActivity(f"Invite Me! | {current_server_count} Servers"))
+
+        if os.getenv("TOPGG_WEBHOOK_FLAG") == "0":
+            url = f"https://top.gg/api/bots/1322305662973116486/stats"
+            headers = {
+                "Authorization": os.getenv("TOPGG_TOKEN"),
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "server_count": len(bot.guilds),
+            }
+            requests.post(url, headers=headers, json=payload)
+
         last_server_count = current_server_count
 
 async def log_unhandled_error(bot, title: str, error_text: str):
