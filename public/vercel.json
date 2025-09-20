@@ -1,5 +1,18 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1.js" }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "invite.trackerbot.xyz"
+        }
+      ],
+      "destination": "https://discord.com/discovery/applications/1322305662973116486",
+      "permanent": true
+    }
   ]
 }
