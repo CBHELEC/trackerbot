@@ -1,9 +1,10 @@
 import discord
 import re
+import aiohttp
 from discord import app_commands
+from embedbuilder import BaseView
 from functions import *
 from bot import bot
-from discord.ext import commands
 from logger import log
 from discord.app_commands import CheckFailure
 
@@ -12,6 +13,7 @@ class Message(app_commands.Group):
     def __init__(self, bot):
         super().__init__(name="message", description="Message Commands.")
         self.bot = bot
+        self.session = aiohttp.ClientSession()
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         """Only let commands run if the Server Owner or Admin has enabled them."""
@@ -188,5 +190,15 @@ class Message(app_commands.Group):
         await interaction.response.send_message("I edited the message!", ephemeral=True) 
         await log(interaction, f"I edited message {origMessage.id} (content: '{origMessage.content}') in {interaction.channel.id} to '{newmessage}'")
             
+# EMBEDBUILDER
+    @app_commands.command()
+    async def embedbuilder(self, interaction: discord.Interaction): 
+        """Interactive embed builder."""
+        view = BaseView(interaction, self.session)
+        await interaction.response.send_message(view.content, view = view)
+        message = await interaction.original_response()
+        view.set_message(message)
+        await view.wait()
+
 async def setup(bot):
     bot.tree.add_command(Message(bot))
