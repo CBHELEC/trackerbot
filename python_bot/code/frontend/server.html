@@ -6,6 +6,7 @@
     <title>Tracker Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', path='choices.min.css') }}"/>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='config.css') }}">
+    <link rel="icon" type="image/ico" href="/static/favicon.ico">
 </head>
 <body>
     <div class="dashboard-content">
@@ -128,6 +129,20 @@
                         <img src="{{ url_for('static', path='cross.png') }}" alt="Disable" class="toggle-icon"> Disable
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-toggle-container">
+        <div class="bottom-toggle-card">
+            <span class="toggle-label">'Code Not Found' Message</span>
+            <div class="toggle-buttons">
+                <button id="cnf-enable" class="toggle-btn {% if cnf_status %}active{% endif %}">
+                    <img src="{{ url_for('static', path='tick.png') }}" alt="Enable" class="toggle-icon"> Enable
+                </button>
+                <button id="cnf-disable" class="toggle-btn {% if not cnf_status %}active{% endif %}">
+                    <img src="{{ url_for('static', path='cross.png') }}" alt="Disable" class="toggle-icon"> Disable
+                </button>
             </div>
         </div>
     </div>
@@ -301,6 +316,24 @@
         dropdownOpen = false;
         document.removeEventListener('click', outsideClick);
     }
+
+    const cnfEnableBtn = document.getElementById('cnf-enable');
+    const cnfDisableBtn = document.getElementById('cnf-disable');
+    if (cnfEnableBtn && cnfDisableBtn) {
+        cnfEnableBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!cnfEnableBtn.classList.contains('active')) {
+                window.location.href = `/server/{{ id }}/settings/toggle_set/deadcode/1`;
+            }
+        });
+        cnfDisableBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!cnfDisableBtn.classList.contains('active')) {
+                window.location.href = `/server/{{ id }}/settings/toggle_set/deadcode/0`;
+            }
+        });
+    }
+
     </script>
 
 </body>

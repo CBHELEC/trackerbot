@@ -424,3 +424,52 @@ input[type="submit"]:hover {
     overflow-x: auto;
 }
 */
+
+
+
+@media (max-width: 768px) {
+    .top-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 1rem 0;
+        padding: 0 1rem;
+        text-align: center;
+    }
+
+    .item {
+        width: 100%;
+        max-width: 95%;
+        min-width: unset;
+        margin: 0.8rem auto;
+        padding: 1rem;
+        box-sizing: border-box;
+    }
+
+    .item .guild-name {
+        white-space: normal;
+        word-break: break-word;
+        max-width: 100%;
+        text-align: center;
+    }
+
+    .button {
+        font-size: 1rem;
+        padding: 0.6rem 1.2rem;
+    }
+
+    .item .guild-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+        padding-right: 2.2em;  /* reserve space for the symbol */
+        max-width: calc(100% - 2.2em);
+        text-align: left;      /* keep alignment consistent */
+    }
+
+    .item .guild-symbol {
+        right: 1rem;
+        min-width: 1.2em;      /* prevents overlap */
+    }
+
+}

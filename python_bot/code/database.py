@@ -22,6 +22,7 @@ class GuildSettings(Base):
     tb_set = Column(String, default="1")
     fun_set = Column(String, default="1")
     game_set = Column(String, default="1")
+    deadcode = Column(String, default="1")
 
 engine = create_engine(DATABASE_URL, echo=False)
 Base.metadata.create_all(engine)
