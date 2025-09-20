@@ -1,3 +1,4 @@
+import country_emoji as ce
 import giphy_client
 import discord
 import random
@@ -7,7 +8,7 @@ import owoencode
 import owodecode
 import re
 import os
-from sympy import N
+import numpy as np
 from giphy_client.rest import ApiException
 from functions import *
 from discord import app_commands
@@ -15,9 +16,9 @@ from datetime import datetime, timezone
 from bot import bot
 from PIL import Image, ImageSequence
 from io import BytesIO
-from sympy import sympify, SympifyError
 from discord.app_commands import CheckFailure
 from furrydb import *
+from locationprofiledb import *
 
 class Fun(app_commands.Group):
     """Fun Commands!"""
@@ -76,7 +77,7 @@ class Fun(app_commands.Group):
                 value="/fun 8ball <question> <potato_mode> - Asks the magic 8ball a question\n/fun avatar <user:optional> - Shows the avatar of a user\n/fun cat - Sends a random Cat image\n/fun coinflip - Flips a coin\n/fun define <word> - Sends the definition of a word\n/fun dog - Sends a random Dog image\n/fun google <query> - Search Google for web results\n/fun image <query> - Search Google for image results\n/fun math <expression> - Solves a math equation\n/fun roll <maxroll> - Rolls a random number\n/fun servericon - Send the server's icon\n/fun serverinfo - Shows some generic server info\n/fun userinfo <user:optional> - Shows some generic user info\n/fun petpet <user:optional> - Creates a PetPet gif for a user.\n/fun furry - Sends a random Furry gif :3\n/fun fakedoxx <user:optional> - Sends fake info about a user.\n/fun help - Shows all of the Fun commands",
                 inline=False)
         embed.set_footer(text="Help | Tracker",
-                         icon_url="https://i.imgur.com/J8jXkhj.png")
+                         icon_url="https://i.imgur.com/UrJoUHP.png")
         await interaction.response.send_message(embed=embed)
     
 # ROLL
@@ -89,7 +90,7 @@ class Fun(app_commands.Group):
             title=f"{interaction.user.name} rolled a {rollnum} (max = {num})",
             colour=0xad7e66)
         rng.set_footer(text="Roll | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
         await interaction.response.send_message(embed=rng)
         
 # COINFLIP
@@ -102,7 +103,7 @@ class Fun(app_commands.Group):
                                  colour=0xad7e66)
         flipping.set_image(url="https://i.imgur.com/nULLx1x.gif")
         flipping.set_footer(text="Coinflip | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
         msg = await interaction.followup.send(embed=flipping, content=None)
         await asyncio.sleep(3)
         if random.choice(determine_flip) == 1:
@@ -110,14 +111,14 @@ class Fun(app_commands.Group):
                                   colour=0xad7e66)
             heads.set_image(url="https://i.imgur.com/h1Os447.png")
             heads.set_footer(text="Coinflip | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
             await interaction.followup.edit_message(message_id=msg.id, embed=heads)
         else:
             tails = discord.Embed(title="The coin landed on tails!",
                                   colour=0xad7e66)
             tails.set_image(url="https://i.imgur.com/EiBLhPX.png")
             tails.set_footer(text="Coinflip | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
             await interaction.followup.edit_message(message_id=msg.id, embed=tails)
         
 # MATH
@@ -125,31 +126,35 @@ class Fun(app_commands.Group):
     @app_commands.describe(expression="The math equation you want to solve.")
     async def math(self, interaction: discord.Interaction, expression: str):
         """Solves a math equation."""
+
+        allowed_names = {k: v for k, v in np.__dict__.items() if not k.startswith("__")}
+        allowed_names.update({"abs": abs, "round": round})
+
         try:
-            result = sympify(expression)
-            try:
-                result = round(N(result), 3)
-            except:
-                pass
+            result = eval(expression, {"__builtins__": {}}, allowed_names)
+
+            def round_floats(x):
+                if isinstance(x, float):
+                    x = round(x, 2)
+                    if x.is_integer():
+                        return int(x)
+                    return x
+                if isinstance(x, (list, tuple, np.ndarray)):
+                    return [round_floats(i) for i in x]
+                return x
+
+            result = round_floats(result)
+
             embed = discord.Embed(
                 title=f"{escape_markdown(expression)} = {result}",
                 colour=0xad7e66
             )
             embed.set_footer(
                 text="Math | Tracker",
-                icon_url="https://i.imgur.com/J8jXkhj.png"
+                icon_url="https://i.imgur.com/UrJoUHP.png"
             )
             await interaction.response.send_message(embed=embed)
-        except SympifyError:
-            embed = discord.Embed(
-                title="<:denied:1336100920039313448> | Error! Invalid expression - please use a valid math expression.",
-                colour=0xad7e66
-            )
-            embed.set_footer(
-                text="Math | Tracker",
-                icon_url="https://i.imgur.com/J8jXkhj.png"
-            )
-            await interaction.response.send_message(embed=embed)
+
         except ZeroDivisionError:
             embed = discord.Embed(
                 title="<:denied:1336100920039313448> | Error! Division by zero is not allowed.",
@@ -157,7 +162,18 @@ class Fun(app_commands.Group):
             )
             embed.set_footer(
                 text="Math | Tracker",
-                icon_url="https://i.imgur.com/J8jXkhj.png"
+                icon_url="https://i.imgur.com/UrJoUHP.png"
+            )
+            await interaction.response.send_message(embed=embed)
+
+        except Exception:
+            embed = discord.Embed(
+                title="<:denied:1336100920039313448> | Error! Invalid expression - please use a valid math expression.",
+                colour=0xad7e66
+            )
+            embed.set_footer(
+                text="Math | Tracker",
+                icon_url="https://i.imgur.com/UrJoUHP.png"
             )
             await interaction.response.send_message(embed=embed)
 
@@ -176,7 +192,7 @@ class Fun(app_commands.Group):
                         description=f"{response}", colour=0xad7e66)
 
             embed.set_footer(text="8ball | Tracker",
-                    icon_url="https://i.imgur.com/J8jXkhj.png")
+                    icon_url="https://i.imgur.com/UrJoUHP.png")
             await interaction.response.send_message(embed=embed)  
         else:
             response = random.choice(funny_eightball_answers) 
@@ -184,7 +200,7 @@ class Fun(app_commands.Group):
                         description=f"{response}", colour=0xad7e66)
 
             embed.set_footer(text="8ball | Tracker",
-                    icon_url="https://i.imgur.com/J8jXkhj.png")
+                    icon_url="https://i.imgur.com/UrJoUHP.png")
             await interaction.response.send_message(embed=embed) 
 
 # CAT
@@ -202,7 +218,7 @@ class Fun(app_commands.Group):
             embed.set_image(url=f"{cat_image_url}")
 
         embed.set_footer(text="Cat | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
         await interaction.response.send_message(embed=embed)
 
 # DOG
@@ -217,7 +233,7 @@ class Fun(app_commands.Group):
         embed.set_image(url=f"{dog_image_url}")
 
         embed.set_footer(text="Dog | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
         await interaction.response.send_message(embed=embed)
 
 # GOOGLE
@@ -226,7 +242,7 @@ class Fun(app_commands.Group):
     async def google(self, interaction: discord.Interaction, *, query: str):
         """Search Google for web results."""
         await interaction.response.defer()
-        msg = await interaction.followup.send(f"<:search:1338134220718997625> | Searching for '{query}'. This may take a while. <:happy_tracker:1329914691656614042>")
+        msg = await interaction.followup.send(f"<:search:1338134220718997625> | Searching for '{query}'. This may take a while!")
         msgid = msg.id
         results = google_search(query)
         if not results:
@@ -250,11 +266,10 @@ class Fun(app_commands.Group):
         
         await interaction.response.defer()
         
-        msg = await interaction.followup.send(f"<:search:1338134220718997625> | Image searching for '{query}'. This may take a while. <:happy_tracker:1329914691656614042>")
+        msg = await interaction.followup.send(f"<:search:1338134220718997625> | Image searching for '{query}'. This may take a while!")
 
         msgid = msg.id
 
-        # Set search parameters
         search_params = {
             'q': query,
             'num': 10,  # Number of results to fetch
@@ -293,7 +308,7 @@ class Fun(app_commands.Group):
         )
         embed.set_thumbnail(url=server.icon.url)
         embed.set_footer(text="ServerInfo | Tracker",
-            icon_url="https://i.imgur.com/J8jXkhj.png")
+            icon_url="https://i.imgur.com/UrJoUHP.png")
         await interaction.response.send_message(embed=embed)
 
 # AVATAR
@@ -309,7 +324,7 @@ class Fun(app_commands.Group):
         embed.set_image(url=f"{avatar_url}")
 
         embed.set_footer(text="Avatar | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
         await interaction.response.send_message(embed=embed)
 
 # SERVERICON
@@ -322,7 +337,7 @@ class Fun(app_commands.Group):
         embed.set_image(url=f"{server_icon}")
 
         embed.set_footer(text="ServerIcon | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
         await interaction.response.send_message(embed=embed)
 
 # USERINFO
@@ -331,7 +346,10 @@ class Fun(app_commands.Group):
     async def userinfo(self, interaction: discord.Interaction, member: discord.Member = None):
         """Shows some generic user info."""
         if member is None:
-            member = interaction.user
+            if isinstance(interaction.user, discord.Member):
+                member = interaction.user
+            else:
+                member = await interaction.guild.fetch_member(interaction.user.id)
 
         roles = sorted(member.roles[1:], key=lambda role: role.position, reverse=True)
         displayed_roles = roles[:10]
@@ -347,9 +365,15 @@ class Fun(app_commands.Group):
 
         username = member.name
         display_name = member.display_name
-        now = datetime.now(timezone.utc)
-        created_at = f"<t:{int(member.created_at.timestamp())}:f> (<t:{int(member.created_at.timestamp())}:R>)"
-        joined_at = f"<t:{int(member.joined_at.timestamp())}:f> (<t:{int((now - member.joined_at).total_seconds())}:R>)"
+
+        if member.created_at is not None:
+            created_at = f"<t:{int(member.created_at.timestamp())}:f> (<t:{int(member.created_at.timestamp())}:R>)"
+        else:
+            created_at = "Unknown"
+        if member.joined_at is not None:
+            joined_at = f"<t:{int(member.joined_at.timestamp())}:f> (<t:{int(member.joined_at.timestamp())}:R>)"
+        else:
+            joined_at = "Unknown"
 
         embed = discord.Embed(title=display_name, colour=0xad7e66)
         embed.set_author(name=f"{username}", icon_url=member.display_avatar.url)
@@ -375,7 +399,7 @@ class Fun(app_commands.Group):
         )
 
         embed.set_footer(text="UserInfo | Tracker",
-            icon_url="https://i.imgur.com/J8jXkhj.png")
+            icon_url="https://i.imgur.com/UrJoUHP.png")
 
         await interaction.response.send_message(embed=embed)
 
@@ -401,7 +425,7 @@ class Fun(app_commands.Group):
                 embed.add_field(name='Example', value=example, inline=False)
 
                 embed.set_footer(text="Define | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
 
                 await interaction.response.send_message(embed=embed)
             else:
@@ -471,7 +495,7 @@ class Fun(app_commands.Group):
             embed.set_image(url=response['url'])
 
             embed.set_footer(text="Furry | Tracker | Sheri API",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
 
             if message:
                 await interaction.followup.send(message, ephemeral=False)
@@ -496,7 +520,7 @@ class Fun(app_commands.Group):
 # FAKEDOXX
     @app_commands.command(name="fakedoxx")
     async def fake_dox(self, interaction: discord.Interaction, member: discord.Member = None):
-        """Generate a fake IP address for a user."""
+        """Generate fake information for a user."""
         member = member if member else interaction.user
 
         fake_ip = ".".join(str(random.randint(1, 255)) for _ in range(4))
@@ -513,7 +537,7 @@ class Fun(app_commands.Group):
         )
         embed.set_thumbnail(url=member.display_avatar.url)
         embed.set_footer(text="FakeDoxx | Tracker",
-                 icon_url="https://i.imgur.com/J8jXkhj.png")
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
         embed.set_author(name="THIS IS A JOKE, AND NOT REAL.")
 
         await interaction.response.send_message(embed=embed)
@@ -535,6 +559,29 @@ class Fun(app_commands.Group):
         matches = re.findall(r'(?:[OoUuwW]+)', text)
         last_sequence = matches[-1] if matches else None
         await interaction.response.send_message(owodecode.decode(last_sequence), ephemeral=True)
+
+# LOCATIONPROFILE
+    @app_commands.command()
+    async def locationprofile(self, interaction: discord.Interaction, user: discord.User = None):
+        """Shows your or a users location profile, or creates one."""
+        enduser = user or interaction.user
+        profile = get_user_profile(enduser.id)
+
+        if not profile:
+            if user:
+                await interaction.response.send_message(f"{user.mention} doesn't have a location profile yet. Maybe you should prompt them to make one?", ephemeral=True)
+            else:
+                await interaction.response.send_message("You don't have a location profile yet. Press the button below to make one.", ephemeral=True, view=CreateButton(self.bot, interaction))
+            return
+
+        embed = discord.Embed(title=f"{enduser.display_name}'s Location Profile", colour=0xad7e66)
+        embed.add_field(name="Location", value=ce.flag(profile.country) + " " + profile.country or "Not set", inline=False)
+        embed.add_field(name="Timezone", value=f"{profile.timezone} (<t:{int(time_in_tz(profile.timezone).timestamp())}:T>)" or "Not set", inline=False)
+
+        embed.set_footer(text="LocationProfile | Tracker",
+                 icon_url="https://i.imgur.com/UrJoUHP.png")
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 async def setup(bot):
     bot.tree.add_command(Fun(bot))
