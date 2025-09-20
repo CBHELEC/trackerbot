@@ -255,6 +255,23 @@ async def toggle_reminded(user_id, type: str):
                 reminder.dbl_reminded = 0
         session.commit()
 
+async def reset_streak_amt(user_id, type: str):
+    with Session() as session:
+        topgg = session.query(topgg_votes).filter_by(user_id=user_id).first()
+        if not topgg:
+            topgg = topgg_votes(user_id=user_id)
+            session.add(topgg)
+        dbl = session.query(dbl_votes).filter_by(user_id=user_id).first()
+        if not dbl:
+            dbl = dbl_votes(user_id=user_id)
+            session.add(dbl)
+
+        if type == "topgg":
+            topgg.streak = 0
+        elif type == "dbl":
+            dbl.streak = 0
+        session.commit()
+
 async def is_type_reminded(user_id, type: str):
     with Session() as session:
         reminder = session.query(reminders).filter_by(user_id=user_id).first()
@@ -562,3 +579,47 @@ async def send_vote_reminders(bot):
 
 def is_12h_or_more_ago(timestamp: datetime) -> bool:
     return datetime.now() - timestamp >= timedelta(hours=12)
+
+async def streak_reset(bot):
+    with Session() as session:
+        now = datetime.now()
+
+        topgg_users = session.query(topgg_votes.user_id).all()
+        dbl_users = session.query(dbl_votes.user_id).all()
+        all_user_ids = set([u[0] for u in topgg_users] + [u[0] for u in dbl_users])
+
+        for user_id in all_user_ids:
+            topgg_vote = session.query(topgg_votes).filter_by(user_id=user_id).first()
+            dbl_vote = session.query(dbl_votes).filter_by(user_id=user_id).first()
+
+            def too_old(vote):
+                if (not vote) or (not vote.voted_at and vote.streak != 0):
+                    return True
+                try:
+                    ts = datetime.fromisoformat(str(vote.voted_at))
+                except Exception:
+                    return True
+                return now - ts >= timedelta(hours=24)
+
+            topgg_old = too_old(topgg_vote)
+            dbl_old = too_old(dbl_vote)
+
+            if topgg_old or dbl_old:
+                if topgg_old:
+                    await reset_streak_amt(user_id, "topgg")
+                    embed = discord.Embed(
+                        title="Oh Noes! Your top.gg streak died...",
+                        description=f"It appears that you didn't vote on top.gg in the last 24 hours, so sadly your streak reset.",
+                        colour=0xad7e66
+                    )
+                    embed.set_footer(text=f"Vote Streak: 0 | /vote for more info")  
+                    await bot.get_user(user_id).send(embed=embed)
+                if dbl_old:
+                    await reset_streak_amt(user_id, "dbl")
+                    embed = discord.Embed(
+                        title="Oh Noes! Your DBL streak died...",
+                        description=f"It appears that you didn't vote on DBL in the last 24 hours, so sadly your streak reset.",
+                        colour=0xad7e66
+                    )
+                    embed.set_footer(text=f"Vote Streak: 0 | /vote for more info") 
+                    await bot.get_user(user_id).send(embed=embed)
