@@ -126,6 +126,7 @@ class Other(commands.Cog):
         link_embed_status = bool(settings.link_embed_status) if hasattr(settings, 'link_embed_status') else True
         fun_commands = bool(settings.fun_set) if hasattr(settings, 'fun_set') else True
         message_commands = bool(settings.message_set) if hasattr(settings, 'message_set') else True
+        show_dead_codes = bool(settings.show_dead_codes) if hasattr(settings, 'show_dead_codes') else True
 
         embed.add_field(
             name="Perm Roles",
@@ -138,6 +139,7 @@ class Other(commands.Cog):
         embed.add_field(name="Link Embed Removal Status", value="Enabled" if link_embed_status else "Disabled", inline=False)
         embed.add_field(name="Message Commands Status", value="Enabled" if message_commands else "Disabled", inline=False)
         embed.add_field(name="Fun Commands Status", value="Enabled" if fun_commands else "Disabled", inline=False)
+        embed.add_field(name="'Code Not Found' Message Status", value="Enabled" if show_dead_codes else "Disabled", inline=False)
         embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
         await interaction.response.send_message(embed=embed, view=DashboardLinkView()) 
 
@@ -146,7 +148,7 @@ class Other(commands.Cog):
     async def toggles(self, interaction: discord.Interaction):
         """Toggle bot features"""
         embed = discord.Embed(title="Toggle Bot Features",
-                      description="There are 4 toggles available:\n- Code Detection,\n- Link Embed Removal,\n- Message Commands,\n- Fun Commands\nThese can only be done via our fancy new dashboard, found at https://dashboard.trackerbot.xyz or by hitting the button below!",
+                      description="There are 5 toggles available:\n- Code Detection,\n- Link Embed Removal,\n- Message Commands,\n- Fun Commands,\n- Show 'Code Not Found'\nThese can only be done via our fancy new dashboard, found at https://dashboard.trackerbot.xyz or by hitting the button below!",
                       colour=0xad7e66)
         await interaction.response.send_message(embed=embed, view=DashboardLinkView())
 
@@ -169,7 +171,7 @@ class Other(commands.Cog):
     async def dev_cmds(self, ctx):
         """List of Dev only commands."""
         embed = discord.Embed(title="Dev Only Commands",
-                      description="- ALL /debug commands\n- Sync, status, clear_cmds\n- ALL /tb force__ commands\n- TB purge\n\nTrying to use these commands results in a 'You can't do this!' error.",
+                      description="- ALL /debug commands\n- Sync, status, clear_cmds, meme_mode, reload\n- /tb forceremove\n- TB purge\n\nTrying to use these commands results in a 'You can't do this!' error.",
                       colour=0xf50000)
         await ctx.send(embed=embed)
         

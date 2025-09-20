@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv(verbose=True, override=True)
+
 from pathlib import Path
 
 CODE_DIR = Path(__file__).parent
@@ -452,7 +455,8 @@ def find_gc_tb_codes(s: str) -> tuple[bool, set[str], set[str]]:
 
 g_obj = pycaching.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
 
-def get_cache_basic_info(geocache_codes: Iterable[str]=[], tb_codes: Iterable[str]=[]):
+def get_cache_basic_info(guild_id: int, geocache_codes: Iterable[str]=[], tb_codes: Iterable[str]=[]):
+    deadcode = False
     global g_obj
     final_message = []
     for code in geocache_codes:
@@ -461,7 +465,6 @@ def get_cache_basic_info(geocache_codes: Iterable[str]=[], tb_codes: Iterable[st
                 cache = g_obj.get_cache(code)
                 cache.load_quick()
             except AttributeError as e:
-                print("Got AttributeError, attempting to refresh session")
                 g_obj.logout()
                 g_obj.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
 
@@ -498,7 +501,15 @@ def get_cache_basic_info(geocache_codes: Iterable[str]=[], tb_codes: Iterable[st
 :light_blue_heart: {fps} | :mag_right: D{difficulty} - T{terrain} :mountain_snow: | <:tub:1327698135710957609> {size.value.capitalize()}""")
 
         except Exception as e:
-            final_message.append(f"<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
+            if guild_id == 0:
+                final_message.append(f"<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
+            else:
+                gsettings = get_guild_settings(guild_id)
+                if gsettings.deadcode == 1:
+                    final_message.append(f"<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
+                else:
+                    deadcode = True
+                    return final_message, deadcode
 
     for trackable in tb_codes:
         try:
@@ -513,10 +524,18 @@ def get_cache_basic_info(geocache_codes: Iterable[str]=[], tb_codes: Iterable[st
             )
 
         except Exception as e:
-            final_message.append(f"<:DNF:1368989100220092516> **That Trackable doesn't exist!**")
+            if guild_id == 0:
+                final_message.append(f"<:DNF:1368989100220092516> **That Trackable doesn't exist!**")
+            else:
+                gsettings = get_guild_settings(guild_id)
+                if gsettings.deadcode == 1:
+                    final_message.append(f"<:DNF:1368989100220092516> **That Trackable doesn't exist!**")
+                else:
+                    deadcode = True
+                    return final_message, deadcode
 
     final_message = "\n\n".join(final_message)
-    return final_message
+    return final_message, deadcode
 
 def escape_markdown(text: str) -> str:
     """Escapes markdown characters in a string."""
@@ -604,3 +623,45 @@ def get_command_counts(bot):
 
     collect(bot.tree.get_commands())
     return len(pc | sc), len(pc), len(sc)
+
+
+class FullModal(discord.ui.Modal, title="Suggest or Report"):
+    def __init__(self, bot, interaction: discord.Interaction):
+        super().__init__()
+        self.interaction = interaction
+        self.bot = bot
+    select_label = discord.ui.Label(
+        text="Pick an option",
+        component=discord.ui.Select(
+            placeholder="Bug Report or Feature Suggestion",
+            min_values=1,
+            max_values=1,
+            options=[
+                discord.SelectOption(label="Suggest a Feature"),
+                discord.SelectOption(label="Report a Bug"),
+            ],
+            required=True
+        ),
+        description="Select an option to proceed"
+    )
+
+    text_input_label = discord.ui.Label(
+        text="Your Report/Suggestion",
+        component=discord.ui.TextInput(
+            style=discord.TextStyle.short,
+            placeholder="Type something here...",
+            required=True
+        ),
+        description="This is your suggestion or bug report content"
+    )
+
+    async def on_submit(self, modal_interaction: discord.Interaction):
+        text_value = self.text_input_label.component.value
+        select_value = self.select_label.component.values[0]
+        await modal_interaction.response.send_message(
+            f"Thank you for your {"suggestion" if select_value == "Suggest a Feature" else "bug report"}! The Dev will review it ASAP.", ephemeral=True
+        )
+        embed = discord.Embed(title=f"New {"suggestion" if select_value == "Suggest a Feature" else "bug report"}!",
+                description=f"User: {self.interaction.user.mention}\nType: {"Suggestion" if select_value == "Suggest a Feature" else "Bug Report"}\nContent: {text_value}",
+                colour=0xad7e66)
+        await self.bot.get_channel(int(os.getenv('SUGGEST_REPORT_CHANNEL_ID'))).send(f"<@{os.getenv('DEV_USER_ID')}> New Suggestion/Bug Report!", embed=embed)

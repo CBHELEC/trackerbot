@@ -23,6 +23,7 @@ class Geocaching(commands.Cog):
         await interaction.response.send_message(embed=embed, ephemeral=True)
     
 # STATBAR
+    @app_commands.user_install()
     @app_commands.command()
     @app_commands.choices(labcaches=[
         app_commands.Choice(name="Exclude", value="1"),
@@ -33,6 +34,8 @@ class Geocaching(commands.Cog):
     dc_user="The Discord user display name the statbar will be made for",
     labcaches="Whether labcaches are included in your total finds (Default = Included)"
     )
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def statbar(self, interaction: discord.Interaction, gc_user: str = None, dc_user: discord.Member = None, labcaches: app_commands.Choice[str] = None):
         """Sends a statbar image."""
         user = gc_user if gc_user else dc_user.display_name if dc_user else interaction.user.display_name
@@ -48,11 +51,14 @@ class Geocaching(commands.Cog):
             await interaction.response.send_message(f"https://cdn2.project-gc.com/statbar.php?quote=discord.gg/pmuuVNptg3+-+{quotetimeusa}&user={user}")
         
 # BADGEBAR
+    @app_commands.user_install()
     @app_commands.command()
     @app_commands.describe(
     gc_user="The Geocaching username the statbar will be made for",
     dc_user="The Discord user display name the statbar will be made for",
     )
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def badgebar(self, interaction: discord.Interaction, gc_user: str = None, dc_user: discord.Member = None):
         """Sends a badgebar image."""
         user = gc_user if gc_user else dc_user.display_name if dc_user else interaction.user.display_name
@@ -62,18 +68,25 @@ class Geocaching(commands.Cog):
 # GC_INFO
     @app_commands.user_install()
     @app_commands.command()
-    @app_commands.describe(gc_code="The gc code to get info for")
+    @app_commands.describe(codes="The code(s) to get info for")
     @app_commands.allowed_installs(guilds=False, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
-    async def gc_info(self, interaction: discord.Interaction, gc_code: str):
-        """Sends info about a GC code."""
-        await interaction.response.defer()
-
-        succ, gc_codes, tb_codes = find_gc_tb_codes(gc_code)
+    async def gc_info(self, interaction: discord.Interaction, codes: str):
+        """Sends info about GC/TB code(s)."""
+        succ, gc_codes, tb_codes = find_gc_tb_codes(codes)
 
         if succ:
-            finalmessage = get_cache_basic_info(gc_codes, tb_codes)
-            await interaction.followup.send(finalmessage)
+            guildid = interaction.guild.id if interaction.guild else 0
+            finalmessage, deadcode = get_cache_basic_info(guildid, gc_codes, tb_codes)
+            if not deadcode:
+                await interaction.response.send_message(finalmessage) 
+            elif deadcode and not interaction.guild:
+                await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
+            elif deadcode and interaction.guild:
+                await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!** | This message has been disabled by the guild Administrator.", ephemeral=True)
+        else:
+            await interaction.response.defer(ephemeral=True, thinking=True)
+            await interaction.followup.send("I couldn't find any valid Geocache or Trackable codes in your input. Please try again.")
         
 # ROT DECODE|ENCODE
     @app_commands.command(name="rotcipher", description="Encode or decode text with ROT-N letter and number ciphers.")

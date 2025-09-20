@@ -3,10 +3,8 @@ import random
 import string
 import asyncio
 import discord
-import sqlite3
 import sys 
 import os 
-import requests
 import importlib.util
 from votefunctions import *
 from functions import *
@@ -17,7 +15,6 @@ from database import *
 from discord.app_commands import Transform, Transformer
 from typing import List
 from logger import log
-from discord.ext import commands
 
 class RoleTransformer(Transformer):
     async def transform(self, interaction: discord.Interaction, value: str) -> List[Role]:
@@ -380,22 +377,6 @@ class Debug(app_commands.Group):
         if len(result_str) > 1900:
             result_str = result_str[:1900] + "..."
         await interaction.followup.send(f"```py\n{result_str}\n```", ephemeral=True)
-
-    @commands.hybrid_command()
-    async def uwu1(self, ctx):
-        """a"""
-        user = self.bot.get_user(820297275448098817)
-        if not user:
-            return
-
-        data = {
-            "id": str(user.id),
-            "name": user.name,
-            "pfp": user.display_avatar.url,
-            "status": str(user.status)
-        }
-
-        requests.post("http://192.168.178.74:8500/update_embed", json=data)
 
 async def setup(bot):
     bot.tree.add_command(Debug(bot))

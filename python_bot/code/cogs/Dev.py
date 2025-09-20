@@ -53,6 +53,8 @@ class HelpView(View):
                             "/statbar <dc_user> <gc_user> <labcaches> - Sends a statbar image\n"
                             "If dc_user or gc_user are blank, it defaults to your Discord display name\n"
                             "labcaches = optional, default = true\n"
+                            "/gc_info <codes> - Fetches GC/TB info, similar to code detection\n"
+                            "/rotcipher <mode> <text> <text_rot> <num_rot> - Encodes or decodes text with ROT-N letter and number ciphers\n"
                             "/ftf - Shows how to get your FTFs recognised on PGC (Project-GC)",
                 color=color
             ),
@@ -66,6 +68,8 @@ class HelpView(View):
                             "/foxfil - Shows info that @FoxFil made about Geocaching\n"
                             "/status - 🔧⚙️ - Changes the bot's custom status\n"
                             "/about - Shows info about the bot and its developers\n"
+                            "/reload - 🔧⚙️ - Reloads the Bot's cogs\n"
+                            "/meme_mode - 🔧⚙️ - Meme Mode\n"
                             "/clear_commands - 🔧⚙️ - Clears the Bot's app commands",
                 color=color
             ),
@@ -82,6 +86,8 @@ class HelpView(View):
                 title="🔧 | Bot Configuration",
                 description="/setperm <@role> - Sets roles that can use the message commands\n"
                             "(/say, /delete, /edit, /react, /reply)\n"
+                            "/removeperm <@role> - Removes roles that can use the message commands\n"
+                            "(/say, /delete, /edit, /react, /reply)\n"
                             "/setskullboard <status (enable or disable)> <#channel> - Sets whether skullboard is enabled and which channel it posts to\n"
                             "/toggles - Toggles the bot's features on or off\n"
                             "/settings - Shows the bot configuration for your server",
@@ -96,40 +102,12 @@ class HelpView(View):
             print(self.message.id)
             await self.message.edit(view=self)
 
-class Dev(commands.Cog):
+class Dev(app_commands.Group):
+    """Dev Commands"""
     def __init__(self, bot):
+        super().__init__(name="dev", description="Dev Commands.")
         self.bot = bot
 
-# HOST
-    @app_commands.command()
-    async def host_info(self, interaction: discord.Interaction):
-        """Shows info about me and my host."""
-        now = datetime.now()
-        delta = now - self.bot.start_time
-        formatted = str(delta).split('.')[0]
-        embed = discord.Embed(title="Tracker's Status",
-                      description=f"Heya, I am running on a Raspberry Pi 3b cable tied behind my Dev's monitor, taped inside a cardboard box. I'm not a fan of it, but I can't do anything about it. Heres a lil more about me:\n⌚ | Uptime: **{formatted}** (HH:MM:SS)\n{get_formatted_ram_usage()}\n{get_formatted_cpu_usage()}\n{get_formatted_storage_usage()}",
-                      colour=0xad7e66)
-
-        embed.set_footer(text="Developed by not.cbh | /invite support")
-        await interaction.response.send_message(embed=embed)
-        
-# UPTIME
-    @commands.hybrid_command()
-    async def uptime(self, ctx):
-        """Display bot's uptime (H:M:S)."""
-        now = datetime.now()
-        delta = now - self.bot.start_time
-        formatted = str(delta).split('.')[0]
-        await ctx.reply(f"Bot Uptime: **{formatted}**")
-
-# PING
-    @commands.hybrid_command()
-    async def ping(self, ctx):
-        """Sends the bot's latency."""
-        latency = round(self.bot.latency * 1000)
-        await ctx.send(f"Pong! {latency}ms")
-        
 # STATUS  
     @app_commands.command()
     @is_dev()
@@ -140,7 +118,103 @@ class Dev(commands.Cog):
         await interaction.response.send_message(f'Status changed to: `{new_status}`', ephemeral=True)
         await master_log_message(interaction.guild, self.bot, interaction.command.name,f"{interaction.user.mention} ({interaction.user.name}) changed my status to `{new_status}`.")  
         await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) changed my status to `{new_status}`.")
+
+# CLEAR CMD  
+    @app_commands.command()
+    @is_dev()
+    async def clear_cmds(self, interaction: discord.Interaction):
+        """⚙️ | Clears the Bot's app commands."""
+        await interaction.response.defer()
+        self.bot.tree.clear_commands(guild=None)
         
+        message = await interaction.response.send_message("Commands Cleared!", ephemeral=True)
+        await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) cleared the bot's app commands.")
+        
+        await asyncio.sleep(5)
+        if message:
+            await message.delete()
+        else:
+            return
+        
+# SYNC    
+    @app_commands.command()
+    @is_dev()
+    async def sync(self, interaction: discord.Interaction):
+        """⚙️ | Syncs the Bot's app commands."""
+        await interaction.response.defer(ephemeral=True, thinking=True)        
+        await self.bot.tree.sync()
+        
+        message = await interaction.followup.send("Synced!")
+        await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) synced the bot's app commands.")
+        
+        await asyncio.sleep(5)
+        if message:
+            await message.delete()
+        else:
+            return   
+
+# RELOAD    
+    @app_commands.command(name="reload", description="⚙️ | Reloads all cogs.")
+    @is_dev()
+    async def reload(self, interaction: discord.Interaction):
+        script_dir = Path(__file__).parent.resolve()
+        for file in script_dir.glob("*.py"):
+            try:
+                await self.bot.unload_extension(f"cogs.{file.stem}")
+                await self.bot.load_extension(f"cogs.{file.stem}")
+            except Exception as e:
+                print(f"Failed to reload {file.name}: {e}")
+        await interaction.response.send_message("Cogs reloaded!")
+        await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) reloaded all cogs.")
+
+# meme mode
+    @app_commands.command()
+    @is_dev()
+    async def meme_mode(self, interaction: discord.Interaction, user: discord.Member, amount: int):
+        """⚙️ | Meme Mode."""
+        await interaction.response.send_message("meme time folks")
+        for i in range(amount):
+            await interaction.channel.send(f"wassup buddy {user.mention}, you have been memed")
+
+class Misc(app_commands.Group):
+    """Misc Commands"""
+    def __init__(self, bot):
+        super().__init__(name="misc", description="Misc Commands.")
+        self.bot = bot
+
+# HOST
+    @app_commands.command()
+    async def host_info(self, interaction: discord.Interaction):
+        """Shows info about me and my host."""
+        now = datetime.now()
+        delta = now - self.bot.start_time
+        formatted = str(delta).split('.')[0]
+        embed = discord.Embed(title="Tracker's Status",
+                      description=f"Heya, I am running on a Raspberry Pi 3b cable tied behind my Dev's monitor, taped inside a cardboard box. I'm not a fan of it, but I can't do anything about it. Heres a lil more about me:\n⌚ | Uptime: **{formatted}** (HH:MM:SS)\n{get_formatted_ram_usage()}\n{get_formatted_cpu_usage()}\n{get_formatted_storage_usage()}\nWant live status info, maintenence plans, and previous downtime logs? [status.trackerbot.xyz](<https://status.trackerbot.xyz>)",
+                      colour=0xad7e66)
+
+        embed.set_footer(text="Developed by not.cbh | /invite support")
+        await interaction.response.send_message(embed=embed)
+        
+# UPTIME
+    @app_commands.command()
+    async def uptime(self, interaction: discord.Interaction):
+        """Display bot's uptime (H:M:S)."""
+        now = datetime.now()
+        delta = now - self.bot.start_time
+        formatted = str(delta).split('.')[0]
+        await interaction.response.send_message(f"Bot Uptime: **{formatted}**")
+        
+# SUGGEST/REPORT
+    @app_commands.command()
+    async def suggest_report(self, interaction: discord.Interaction):
+        """Suggest a new feature or report a bug."""
+        await interaction.response.send_modal(FullModal(self.bot, interaction))
+
+class HelpCMD(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
 # HELP
     @commands.hybrid_command()
     async def help(self, ctx):
@@ -157,78 +231,15 @@ class Dev(commands.Cog):
         )
 
         view.message = await ctx.send(embed=landing_embed, view=view)
-        
-# CLEAR CMD  
+    
+# PING
     @commands.hybrid_command()
-    @is_dev()
-    async def clear_cmds(self, ctx):
-        """⚙️ | Clears the Bot's app commands."""
-        if ctx.interaction: 
-            await ctx.interaction.response.defer() 
-        
-        self.bot.tree.clear_commands(guild=None)
-        
-        message = await ctx.reply("Commands Cleared!", mention_author=False)
-        await log(ctx, f"{ctx.user.mention} ({ctx.user.name}) cleared the bot's app commands.")
-        
-        await asyncio.sleep(5)
-        if message:
-            await message.delete()
-        else:
-            return
-        
-# SYNC    
-    @commands.hybrid_command()
-    @is_dev()
-    async def sync(self, ctx):
-        """⚙️ | Syncs the Bot's app commands."""
-        if ctx.interaction: 
-            await ctx.interaction.response.defer() 
-        
-        await self.bot.tree.sync()
-        
-        message = await ctx.reply("Synced!", mention_author=False)
-        await log(ctx, f"{ctx.user.mention} ({ctx.user.name}) synced the bot's app commands.")
-        
-        await asyncio.sleep(5)
-        if message:
-            await message.delete()
-        else:
-            return   
+    async def ping(self, ctx):
+        """Sends the bot's latency."""
+        latency = round(self.bot.latency * 1000)
+        await ctx.send(f"Pong! {latency}ms")
 
-# RELOAD    
-    @app_commands.command(name="reload", description="Reloads all cogs.")
-    @is_dev()
-    async def reload(self, interaction: discord.Interaction):
-        script_dir = Path(__file__).parent.resolve()
-        for file in script_dir.glob("*.py"):
-            try:
-                await self.bot.unload_extension(f"cogs.{file.stem}")
-                await self.bot.load_extension(f"cogs.{file.stem}")
-            except Exception as e:
-                print(f"Failed to reload {file.name}: {e}")
-        await interaction.response.send_message("Cogs reloaded!")
-        await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) reloaded all cogs.")
-
-# meme mode
-    @app_commands.command(name="meme_mode", description="Memes the memers.")
-    @is_dev()
-    async def meme_mode(self, interaction: discord.Interaction, user: discord.Member, amount: int):
-        """Toggles meme mode."""
-        await interaction.response.send_message("meme time fuckers")
-        for i in range(amount):
-            await interaction.channel.send(f"wassup fucker {user.mention}, you have been memed")
-
-    @app_commands.command(name="test", description="Test command for development purposes.")
-    @is_dev()
-    async def test(self, interaction: discord.Interaction):
-        guild = interaction.guild
-        member = guild.get_member(820297275448098817)
-
-        if member is None:
-            member = await guild.fetch_member(820297275448098817)
-
-        await interaction.response.send_message(str(member.status))
-        
 async def setup(bot):
-    await bot.add_cog(Dev(bot))
+    await bot.add_cog(HelpCMD(bot))
+    bot.tree.add_command(Misc(bot))
+    bot.tree.add_command(Dev(bot))

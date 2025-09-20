@@ -69,7 +69,9 @@ class Listeners(commands.Cog):
                 return
             succ, gc_codes, tb_codes = find_gc_tb_codes(message.content)
             if succ:
-                finalmessage = get_cache_basic_info(gc_codes, tb_codes)
+                finalmessage, deadcode = get_cache_basic_info(message.guild.id, gc_codes, tb_codes)
+                if deadcode:
+                    return
                 await message.reply(finalmessage)
 
         if message.poll:
@@ -88,11 +90,11 @@ class Listeners(commands.Cog):
         if link_embed_status and len(message.embeds) and re.search(GC_LINK_SEARCH, message.content, re.IGNORECASE):
             if message.author.bot:
                 return
-            await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>", delete_after=5)
+            await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info!", delete_after=5)
             await message.edit(suppress=True)
 
         if "good bot" in message.content.lower():
-            await message.reply("<:happy_tracker:1329914691656614042>")
+            await message.reply("thank yous OwO")
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -112,7 +114,7 @@ class Listeners(commands.Cog):
                 return
             await asyncio.sleep(2)
             await after.reply(
-                "Heya, I cleared the embed from your message since it doesn't show any extra info! <:happy_tracker:1329914691656614042>",
+                "Heya, I cleared the embed from your message since it doesn't show any extra info!",
                 delete_after=5,
             )
             await after.edit(suppress=True)
@@ -129,14 +131,18 @@ class Listeners(commands.Cog):
 
             if not after.embeds:
                 if not before.embeds and not after.embeds:
-                    finalmessage = get_cache_basic_info(after_gc, after_tb)
+                    finalmessage, deadcode = get_cache_basic_info(after.guild.id, after_gc, after_tb)
+                    if deadcode: 
+                        return
                     await after.reply(finalmessage)
                 return
-            finalmessage = get_cache_basic_info(after_gc, after_tb)
+            finalmessage, deadcode = get_cache_basic_info(after.guild.id, after_gc, after_tb)
+            if deadcode:
+                return
             await after.reply(finalmessage)
 
         elif "good bot" in after.content.lower():
-            await after.reply("<:happy_tracker:1329914691656614042>")
+            await after.reply("thank yous OwO")
 
         else:
             return
