@@ -459,7 +459,7 @@ def get_cache_basic_info(guild_id: int, geocache_codes: Iterable[str]=[], tb_cod
     deadcode = False
     global g_obj
     final_message = []
-    for code in geocache_codes:
+    for code in list(geocache_codes)[:3]:
         try:
             try:
                 cache = g_obj.get_cache(code)
@@ -511,7 +511,7 @@ def get_cache_basic_info(guild_id: int, geocache_codes: Iterable[str]=[], tb_cod
                     deadcode = True
                     return final_message, deadcode
 
-    for trackable in tb_codes:
+    for trackable in list(tb_codes)[:3]:
         try:
             tb = g_obj.get_trackable(trackable)
             tb.load()
@@ -534,7 +534,11 @@ def get_cache_basic_info(guild_id: int, geocache_codes: Iterable[str]=[], tb_cod
                     deadcode = True
                     return final_message, deadcode
 
-    final_message = "\n\n".join(final_message)
+    if len(geocache_codes) - 3 > 0:
+        final_message.append(f"**(... {len(geocache_codes) - 3} truncated)**")
+    if len(tb_codes) - 3 > 0:
+        final_message.append(f"**(... {len(tb_codes) - 3} truncated)**")
+    final_message = "\n".join(final_message)
     return final_message, deadcode
 
 def escape_markdown(text: str) -> str:
@@ -656,12 +660,14 @@ class FullModal(discord.ui.Modal, title="Suggest or Report"):
     )
 
     async def on_submit(self, modal_interaction: discord.Interaction):
+        msg = "suggestion" if select_value == "Suggest a Feature" else "bug report"
+        msg2 = "Suggestion" if select_value == "Suggest a Feature" else "Bug Report"
         text_value = self.text_input_label.component.value
         select_value = self.select_label.component.values[0]
         await modal_interaction.response.send_message(
-            f"Thank you for your {"suggestion" if select_value == "Suggest a Feature" else "bug report"}! The Dev will review it ASAP.", ephemeral=True
+            f"Thank you for your {msg}! The Dev will review it ASAP.", ephemeral=True
         )
-        embed = discord.Embed(title=f"New {"suggestion" if select_value == "Suggest a Feature" else "bug report"}!",
-                description=f"User: {self.interaction.user.mention}\nType: {"Suggestion" if select_value == "Suggest a Feature" else "Bug Report"}\nContent: {text_value}",
+        embed = discord.Embed(title=f"New {msg}!",
+                description=f"User: {self.interaction.user.mention}\nType: {msg2}\nContent: {text_value}",
                 colour=0xad7e66)
         await self.bot.get_channel(int(os.getenv('SUGGEST_REPORT_CHANNEL_ID'))).send(f"<@{os.getenv('DEV_USER_ID')}> New Suggestion/Bug Report!", embed=embed)

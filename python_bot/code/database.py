@@ -1,11 +1,21 @@
 from sqlalchemy import create_engine, Column, BigInteger, Boolean, String
 from sqlalchemy.orm import declarative_base, sessionmaker
 from pathlib import Path
+from sqlalchemy.types import TypeDecorator, Integer
 
 # Database Path
 DATABASE_URL = f"sqlite:///{Path(__file__).parent.resolve() / 'data' / 'bot_settings.db'}"
 
 Base = declarative_base()
+
+class BoolInt(TypeDecorator):
+    impl = Integer
+
+    def process_bind_param(self, value, dialect):
+        return int(value) if value is not None else None
+
+    def process_result_value(self, value, dialect):
+        return bool(value) if value is not None else None
 
 class GuildSettings(Base):
     __tablename__ = "guild_settings"
@@ -16,13 +26,13 @@ class GuildSettings(Base):
     log_channel_id = Column(BigInteger, nullable=True)
     skullboard_status = Column(Boolean, default=False)
     skullboard_channel_id = Column(BigInteger, nullable=True)
-    detection_status = Column(Boolean, default=True)
-    link_embed_status = Column(Boolean, default=True)
-    message_set = Column(String, default="1")
-    tb_set = Column(String, default="1")
-    fun_set = Column(String, default="1")
-    game_set = Column(String, default="1")
-    deadcode = Column(String, default="1")
+    detection_status = Column(BoolInt, default=True)
+    link_embed_status = Column(BoolInt, default=True)
+    message_set = Column(Integer, default=True)
+    tb_set = Column(BoolInt, default=True)
+    fun_set = Column(Integer, default=True)
+    game_set = Column(BoolInt, default=True)
+    deadcode = Column(BoolInt, default=True)
 
 engine = create_engine(DATABASE_URL, echo=False)
 Base.metadata.create_all(engine)

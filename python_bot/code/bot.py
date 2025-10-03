@@ -31,6 +31,7 @@ class Bot(ezcord.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
+        intents.members = True
 
         super().__init__(command_prefix=BOT_PREFIX, intents=intents)
         self.ipc = Server(self, secret_key=SECRET_KEY)
@@ -75,10 +76,13 @@ class Bot(ezcord.Bot):
             return {"perms": False}
 
         member = guild.get_member(int(data.user_id))
-        if not member or not member.guild_permissions.administrator or not member.guild_permissions.manage_guild:
+        if not member:
             return {"perms": False}
 
-        return {"perms": True}
+        if member.id == guild.owner_id or member.guild_permissions.administrator or member.guild_permissions.manage_guild:
+            return {"perms": True}
+
+        return {"perms": False}
     
     @Server.route()
     async def get_user_status(self, data: ClientPayload):

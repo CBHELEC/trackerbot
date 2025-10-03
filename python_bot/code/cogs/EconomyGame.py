@@ -25,50 +25,28 @@ class Economy(app_commands.Group):
                 await original_message.edit(view=CacherNameView(original_message))            
                 return
             else:
-                balance = await get_balance(session, user_id)
-                fp = await get_fav_points_owned(session, user_id)
-                hides = await get_hides(session, user_id)
-                finds = await get_finds(session, user_id)
-                tb_d = await get_trackables_discovered(session, user_id)
-                tb_o = await get_trackables_owned(session, user_id)
-                name = await get_cacher_name(session, user_id)
-                embed = discord.Embed(title=f"{name}'s Balances:",
+                embed = discord.Embed(title=f"{await get_cacher_name(session, user_id)}'s Balances:",
                       colour=0xad7e66)
 
-                embed.add_field(name=f"G$: {balance}",
+                embed.add_field(name=f"G$: {await get_balance(session, user_id)}",
                                 value="",
                                 inline=False)
-                embed.add_field(name=f"FP: {fp}",
+                embed.add_field(name=f"FP: {await get_fav_points_owned(session, user_id)}",
                                 value="",
                                 inline=False)
-                embed.add_field(name=f"Hides: {hides}",
+                embed.add_field(name=f"Hides: {await get_hides(session, user_id)}",
                                 value="",
                                 inline=False)
-                embed.add_field(name=f"Finds: {finds}",
+                embed.add_field(name=f"Finds: {await get_finds(session, user_id)}",
                                 value="",
                                 inline=False)
-                embed.add_field(name=f"TB Discovered: {tb_d}",
+                embed.add_field(name=f"TB Discovered: {await get_trackables_discovered(session, user_id)}",
                                 value="",
                                 inline=False)
-                embed.add_field(name=f"TB Owned: {tb_o}",
+                embed.add_field(name=f"TB Owned: {await get_cacher_name(session, user_id)}",
                                 value="",
                                 inline=False)
                 await interaction.response.send_message(embed=embed)
-        
-    @app_commands.command()
-    async def finds(self, interaction: discord.Interaction):
-        user = interaction.user
-        user_id = user.id
-        async with Session() as session:
-            user_database_settings = await get_db_settings(session, user_id)
-            if user_database_settings.cacher_name is None:
-                await interaction.response.send_message(f"It appears you haven't set your cacher name yet! Please press the button below to enter your name and start caching.", ephemeral=True)
-                original_message = await interaction.original_response()
-                await original_message.edit(view=CacherNameView(original_message))            
-                return
-            else:
-                finds = await get_finds(session, user_id)
-                await interaction.response.send_message(f"{interaction.user.mention} ({interaction.user.name}) has {finds} finds.")
 
     @app_commands.command()
     @app_commands.choices(option=[
@@ -76,7 +54,6 @@ class Economy(app_commands.Group):
         app_commands.Choice(name="City Locations", value="2")
     ])
     async def locations(self, interaction: discord.Interaction, option: app_commands.Choice[str]):
-        view = DeleteEmbedView()
         if option.value == "1":
             embed = discord.Embed(
                 title="Rural Geocaching Locations",
@@ -85,7 +62,7 @@ class Economy(app_commands.Group):
 
             embed.set_footer(text="This embed will self-destruct in 5 minutes. Click the 🗑️ icon to delete now.")
 
-            await interaction.response.send_message(embed=embed, view=view)
+            await interaction.response.send_message(embed=embed, view=DeleteEmbedView())
             sent_message = await interaction.original_response()
             await asyncio.sleep(300)
             await sent_message.delete()
@@ -95,7 +72,7 @@ class Economy(app_commands.Group):
                       description="Harrowsbrook – A small industrial town nestled by the river, known for its aging factories and old brick buildings. The town has a gritty, blue-collar vibe, with a rich history tied to its ironworks and textile mills.\n\nEverfield – A city surrounded by sprawling farmland and endless green fields, where the pace of life is slow, and the community is tight-knit. Known for its annual agricultural fairs and harvest festivals.\n\nLarkspur Crossing – A vibrant market town that acts as a key transportation hub, with people coming from all around to trade goods. The town is built around a large central square where street vendors and performers gather.\n\nBrunswick Harbor – A busy coastal city known for its bustling harbor, where fishing boats and cargo ships dock daily. The city has a lively waterfront, with seafood restaurants and bars overlooking the docks.\n\nAlderpoint – A hilltop city known for its historic architecture, with winding cobblestone streets and a centuries-old cathedral at the city’s heart. It has a more refined, older charm, with an abundance of parks and cultural institutions.",
                       colour=0xad7e66)
             embed.set_footer(text="This embed will self-destruct in 5 minutes. Click the 🗑️ icon to delete now.")
-            await interaction.response.send_message(embed=embed, view=view)
+            await interaction.response.send_message(embed=embed, view=DeleteEmbedView())
             sent_message = await interaction.original_response()
             await asyncio.sleep(300)
             await sent_message.delete()
@@ -233,15 +210,14 @@ class Economy(app_commands.Group):
     async def cache_info(self, interaction: discord.Interaction, cache_id: str):
         async with Session() as session:
             user_id = interaction.user.id
-            user_database_settings = await get_db_settings(session, user_id)
-            if user_database_settings.cacher_name is None:
+            user_db_settings = await get_db_settings(session, user_id)
+            if user_db_settings.cacher_name is None:
                 await interaction.response.send_message(f"It appears you haven't set your cacher name yet! Please press the button below to enter your name and start caching.", ephemeral=True)
                 original_message = await interaction.original_response()
                 await original_message.edit(view=CacherNameView(original_message))            
                 return
             else:
-                cacher_name_db = await get_db_settings(session, user_id)
-                cacher_name = cacher_name_db.cacher_name
+                cacher_name = await get_db_settings(session, user_id).cacher_name
                 hide = await get_hide_by_id(session, cache_id)
 
                 if not hide:
@@ -275,9 +251,8 @@ class Economy(app_commands.Group):
     async def shop(self, interaction: discord.Interaction):
         """Browse the G$ shop."""
         async with Session() as session:
-            user_id = interaction.user.id
-            user_database_settings = await get_db_settings(session, user_id)
-            if user_database_settings.cacher_name is None:
+            user_db_settings = await get_db_settings(session, interaction.user.id)
+            if user_db_settings.cacher_name is None:
                 await interaction.response.send_message(f"It appears you haven't set your cacher name yet! Please press the button below to enter your name and start caching.", ephemeral=True)
                 original_message = await interaction.original_response()
                 await original_message.edit(view=CacherNameView(original_message))            
@@ -291,9 +266,8 @@ class Economy(app_commands.Group):
     @app_commands.command()
     async def inventory(self, interaction: discord.Interaction):
         async with Session() as session:
-            user_id = interaction.user.id
-            user_database_settings = await get_db_settings(session, user_id)
-            if user_database_settings.cacher_name is None:
+            user_db_settings = await get_db_settings(session, interaction.user.id)
+            if user_db_settings.cacher_name is None:
                 await interaction.response.send_message(
                     f"It appears you haven't set your cacher name yet! Please press the button below to enter your name and start caching.",
                     ephemeral=True
@@ -302,18 +276,17 @@ class Economy(app_commands.Group):
                 await original_message.edit(view=CacherNameView(original_message))
                 return
             else:
-                inventory_items = await get_inventory(session, user_id)  
-                if not inventory_items:
+                if not await get_inventory(session, interaction.user.id):
                     await interaction.response.send_message("Your inventory is empty.", ephemeral=True)
                     return
 
                 item_counts = {}
-                for item in inventory_items:
+                for item in await get_inventory(session, interaction.user.id):
                     item = item.strip()
                     item_counts[item] = item_counts.get(item, 0) + 1
 
                 embed = discord.Embed(
-                    title=f"{user_database_settings.cacher_name}'s Inventory:",
+                    title=f"{user_db_settings.cacher_name}'s Inventory:",
                     colour=0xad7e66
                 )
 
@@ -335,7 +308,10 @@ class Economy(app_commands.Group):
                     )
 
                 await interaction.response.send_message(embed=embed)
-        
+
+    ####################################################
+    # THIS COMMAND WILL BE REDONE ONCE HIDE IS FINISHED.
+
     @app_commands.command()
     @app_commands.choices(fp_status=[
         app_commands.Choice(name="Do NOT give FP", value=0),
@@ -382,6 +358,12 @@ class Economy(app_commands.Group):
             else:
                 await interaction.response.send_message(f"This cache doesn't exist, or you have already found it.", ephemeral=True)
         
+    # THIS COMMAND WILL BE REDONE ONCE HIDE IS FINISHED.
+    ####################################################
+    
+    ####################################################
+    # THIS COMMAND MAY BE REDONE ONCE HIDE IS FINISHED.
+
     @app_commands.command()
     async def cache_finds(self, interaction: discord.Interaction, cache_id: str):
         """
@@ -424,9 +406,16 @@ class Economy(app_commands.Group):
 
             await interaction.response.send_message(embed=embed)
         
+    # THIS COMMAND MAY BE REDONE ONCE HIDE IS FINISHED.
+    ####################################################
+
     @app_commands.command()
     async def tb_activate(self, interaction: discord.Interaction, private_code: str):
-        """Activate a trackable using its private code."""
+        """Activate a trackable using its private code.
+        
+        Args:
+            private_code (str): The private code of the trackable to activate.
+        """
         user_id = interaction.user.id
         async with Session() as session:
             trackable = await activate_trackable(session, user_id, private_code)
@@ -448,14 +437,13 @@ class Economy(app_commands.Group):
                 
     @app_commands.command()
     async def tb_view(self, interaction: discord.Interaction, public_code: str):
-        """
-        View details about a trackable using its public code.
+        """View info for a trackable.
+
+        Args: 
+            public_code (str): The public code of the trackable to view.
         """
         async with Session() as session:
-            result = await session.execute(
-                select(Trackables).where(Trackables.public_code == public_code)
-            )
-            trackable = result.scalars().first()
+            trackable = await get_trackable(public_code)
 
             if not trackable:
                 await interaction.response.send_message(
@@ -464,42 +452,27 @@ class Economy(app_commands.Group):
                 )
                 return
 
-            owner_name = await get_cacher_name(session, trackable.user_id)
-
             activated_time_dt = datetime.strptime(trackable.activated_time.split('.')[0], "%Y-%m-%d %H:%M:%S") if trackable.activated_time else "N/A"
             unix_timestamp = int(activated_time_dt.timestamp()) if activated_time_dt != "N/A" else None
 
-            activation_status = "✅ Activated" if trackable.activated == 1 else "❌ Not Activated"
-            activation_date = f"<t:{unix_timestamp}:R>" if trackable.activated_time else "❌ Not Activated"
-
-            discoveries = await session.execute(
-                select(TBDiscover).where(TBDiscover.tb_private_code == trackable.private_code)
-            )
-            discoveries = discoveries.scalars().all()
+            discoveries = await get_trackable_discoveries(session, public_code)
 
             embed = discord.Embed(
-                title=f"Trackable Details: {public_code}",
+                title=f"Trackable Details",
                 colour=0xad7e66
             )
             embed.add_field(name="Public Code", value=trackable.public_code, inline=True)
-            embed.add_field(name="Owner", value=owner_name, inline=True)
-            embed.add_field(name="Activation Status", value=activation_status, inline=False)
-            embed.add_field(name="Activation Date", value=activation_date, inline=False)
+            embed.add_field(name="Owner", value=await get_cacher_name(session, trackable.user_id), inline=True)
+            embed.add_field(name="Activation Status", value="✅ Activated" if trackable.activated == 1 else "❌ Not Activated", inline=False)
+            embed.add_field(name="Activation Date", value=f"<t:{unix_timestamp}:R>" if trackable.activated_time else "❌ Not Activated", inline=False)
 
             if discoveries:
                 for discovery in discoveries:
-                    userid2 = discovery.user_id if discovery else None
-                    userthingidk = await get_db_settings(session, userid2)
-                    usercachername = userthingidk.cacher_name
-                    discover_date = (
-                        int(datetime.strptime(discovery.discover_date, "%Y-%m-%d %H:%M:%S").timestamp())
-                        if discovery.discover_date
-                        else "N/A"
-                    )
-                    discover_log = discovery.discover_log or "No log provided."
+                    cacher_name = await get_db_settings(session, discovery.user_id if discovery else None).cacher_name
+                    discover_date = int(datetime.strptime(discovery.discover_date, "%Y-%m-%d %H:%M:%S").timestamp()) if discovery.discover_date else "N/A"
                     embed.add_field(
-                        name=f"Discovered by {usercachername}",
-                        value=f"**Date:** {f'<t:{discover_date}:f> (<t:{discover_date}:R>)' if discover_date != 'N/A' else 'N/A'}\n**Log:** {discover_log}",
+                        name=f"Discovered by {cacher_name}",
+                        value=f"**Date:** {f'<t:{discover_date}:f> (<t:{discover_date}:R>)' if discover_date != 'N/A' else 'N/A'}\n**Log:** {discovery.discover_log or "No log provided."}",
                         inline=False
                     )
             else:
@@ -511,13 +484,13 @@ class Economy(app_commands.Group):
     async def tb_discover(self, interaction: discord.Interaction, private_code: str, log: str):
         """
         Discover a trackable using its private code.
+
+        Args:
+            private_code (str): The private code of the trackable to discover.
+            log (str): The message to go with the discovery.
         """
-        user_id = interaction.user.id
-        async with Session() as session:            
-            result = await session.execute(
-                select(Trackables).where(Trackables.private_code == private_code)
-            )
-            trackable = result.scalars().first()
+        async with Session() as session:
+            trackable = await get_trackable(session, private_code)
 
             if trackable:
                 if trackable.user_id == interaction.user.id:
@@ -541,13 +514,7 @@ class Economy(app_commands.Group):
                 )
                 return
 
-            discovery_check = await session.execute(
-                select(TBDiscover).where(
-                    TBDiscover.user_id == user_id,
-                    TBDiscover.tb_private_code == private_code
-                )
-            )
-            existing_discovery = discovery_check.scalars().first()
+            existing_discovery = await get_trackable_discoveries(session, private_code).scalars().first()
 
             if existing_discovery:
                 await interaction.response.send_message(
@@ -557,10 +524,9 @@ class Economy(app_commands.Group):
                 return
 
             discover_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            await add_tb_discovery(session, user_id, private_code, discover_date, log)
-            tbdisrn = await get_trackables_discovered(session, user_id)
-            tbnew = tbdisrn + 1
-            await update_trackables_discovered(session, user_id, tbnew)
+            await add_tb_discovery(session, interaction.user.id, private_code, discover_date, log)
+            tbdis = await get_trackables_discovered(session, interaction.user.id)
+            await update_trackables_discovered(session, interaction.user.id, tbdis + 1)
 
             if existing_discovery:
                 existing_discovery.discover_date = discover_date
@@ -624,6 +590,80 @@ eco_commands = Economy(name="game", description="Geocaching Game Commands.")
 class Game_Admin(app_commands.Group):
     """Geocaching Game Admin Commands!"""
     
+    # TO DO: COMMAND WHERE ONLY SELECT A USER OR USER ID AND 
+    # THEN BRINGS UP BUTTONED MENU OF ACTIONS FOR THUS USER. 
+    # LIKELY DO LAST SINCE ITS AFTER ALL FUNCTIONS AND CURRENCY ETC ARE MADE
+
+    # i ignored that because nuking people is fun
+
+    @app_commands.command()
+    @is_dev()
+    async def userpanel(self, interaction: discord.Interaction, dc_user: discord.Member = None, user_id: str = None, cacher_name: str = None):
+        """
+        Open an Admin panel for the specified member.
+        
+        Args:
+            dc_user (discord.Member): The user to manage. 
+            user_id (str): The ID of the user to manage. 
+            cacher_name (str): The cacher name of the user to manage.
+        """
+        if not (dc_user or user_id or cacher_name): # If no fields entered
+            await interaction.response.send_message("You must provide either a user, user ID, or cacher name.", ephemeral=True)
+            return
+
+        async with Session() as session:
+            #if cacher_name:
+            #   cacher_name_info = await get_cacher_info(session, cacher_name)
+           #    cacher_name_user_id = cacher_name_info.user_id
+          #  user = dc_user if dc_user else self.bot.get_user(int(user_id)) if user_id else self.bot.get_user(cacher_name_user_id) if cacher_name else None # Establish User Variable
+           # user_id = user.id # Establish User ID Variable
+            #if not user: # If User Var could not be established
+             #   await interaction.response.send_message(f"USER VARIABLE NOT ESTABLISHED.", ephemeral=True)
+
+            if dc_user: # If user field was used
+                cacher_data = await get_db_settings(session, dc_user.id)
+                user_id = dc_user.id
+                user = dc_user
+            elif user_id: # If user wasnt, was user id?
+                cacher_data = await get_db_settings(session, int(user_id))
+                user = self.bot.get_user(int(user_id))
+            elif cacher_name: # Rip, they didnt work, so maybe cacher_name works?
+                cacher_data = await get_cacher_info(session, cacher_name)
+                user = self.bot.get_user(cacher_data.user_id) 
+                user_id = user.id            
+                if not cacher_data:
+                    await interaction.response.send_message(f"No user found with cacher name `{cacher_name}`.", ephemeral=True)
+                    return
+            else:
+                await interaction.response.send_message("No user found with the provided details.", ephemeral=True)
+                return
+            
+            embed = discord.Embed(title=f"Game Admin Panel for {cacher_data.cacher_name}",
+                      description=f"ID: {user_id} | <@{user_id}> | {user.name}\nStarted on {cacher_data.time_started} (make timestamp)",
+                      colour=0xfb3737)
+            embed.add_field(name="Balance",
+                            value="G$"+str(cacher_data.balance),
+                            inline=True)
+            embed.add_field(name="Hides",
+                            value=cacher_data.hides,
+                            inline=True)
+            embed.add_field(name="Finds",
+                            value=cacher_data.finds,
+                            inline=True)
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        original_response = await interaction.original_response()
+        await original_response.edit(embed=embed, view=UserManagerView(interaction.user, user, original_response))
+
+
+
+
+
+
+
+
+
+
     @app_commands.command()
     @is_dev()
     async def add_money(self, interaction: discord.Interaction, amount: str, user: discord.Member = None):

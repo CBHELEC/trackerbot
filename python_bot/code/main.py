@@ -104,9 +104,9 @@ async def guilds(request: Request):
     user = await api.get_user(token)
     if datetime.now() > token_expires_at or user.get("code") == 0:
         if await api.reload(session_id, refresh_token):
-            RedirectResponse(url="/guilds")
+            return RedirectResponse(url="/guilds")
         else:
-            RedirectResponse(url="/logout")
+            return RedirectResponse(url="/logout")
 
     if "id" not in user:
         return RedirectResponse(url="/logout")
@@ -328,6 +328,6 @@ async def error_redirect(_, __):
 
 
 if __name__ == "__main__":
-  #  uvicorn.run(app, host="0.0.0.0", port=8000)
-    uvicorn.run(app, host="localhost", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+    #uvicorn.run(app, host="localhost", port=8000)
     # uvicorn.run("main:app", host="localhost", port=8000, reload=True)

@@ -99,7 +99,6 @@ class HelpView(View):
         for item in self.children:
             item.disabled = True
         if self.message:
-            print(self.message.id)
             await self.message.edit(view=self)
 
 class Dev(app_commands.Group):

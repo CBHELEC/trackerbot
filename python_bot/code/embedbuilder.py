@@ -1037,7 +1037,6 @@ class BaseView(discord.ui.View):
     elif isinstance(error, (ValueError, TypeError, AssertionError)):
       embed.description = embed.description.format(str(error))
     else:
-      # print('unhandled error:', interaction, error, item, error.__class__.__mro__, sep = '\n')
       raise error
     embed.description = embed.description or 'No reason provided.'
     if hasattr(error, 'interaction'): # use interaction if available e.g. .convert() failed

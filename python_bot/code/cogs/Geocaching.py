@@ -73,17 +73,45 @@ class Geocaching(commands.Cog):
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def gc_info(self, interaction: discord.Interaction, codes: str):
         """Sends info about GC/TB code(s)."""
+        guildiddm = interaction.guild.id if interaction.guild else 0
         succ, gc_codes, tb_codes = find_gc_tb_codes(codes)
+        guildsettings = get_guild_settings(guildiddm)
 
         if succ:
             guildid = interaction.guild.id if interaction.guild else 0
             finalmessage, deadcode = get_cache_basic_info(guildid, gc_codes, tb_codes)
-            if not deadcode:
-                await interaction.response.send_message(finalmessage) 
-            elif deadcode and not interaction.guild:
-                await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
-            elif deadcode and interaction.guild:
-                await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!** | This message has been disabled by the guild Administrator.", ephemeral=True)
+            if not guildsettings.detection_status:
+                # detection_status is disabled (not normal)
+                if not deadcode:
+                    # detection_status is disabled, deadcode is disabled
+                    if not interaction.guild:
+                        # detection_status is disabled, deadcode is disabled, no guild
+                        await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
+                    else:
+                        # detection_status is disabled, deadcode is enabled, yes guild
+                        await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!** | This message has been disabled by the guild Administrator.", ephemeral=True)
+                else:
+                    # detection_status is disabled, deadcode is disabled, any guild
+                    if interaction.guild:
+                        await interaction.response.send_message(finalmessage + "\n" + "**This message has been disabled by the guild Administrator.**", ephemeral=True)
+                    else:
+                        await interaction.response.send_message(finalmessage)
+            else:
+                # detection_status is enabled (normal)
+                if deadcode:
+                    # detection_status is enabled, deadcode is disabled
+                    if not interaction.guild:
+                        # detection_status is enabled, deadcode is disabled, no guild
+                        await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
+                    else:
+                        # detection_status is enabled, deadcode is disabled, yes guild
+                        await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!** | This message has been disabled by the guild Administrator.", ephemeral=True)
+                else:
+                    # detection_status is enabled, deadcode is enabled, any guild
+                    if interaction.guild:
+                        await interaction.response.send_message(finalmessage)
+                    else:
+                        await interaction.response.send_message(finalmessage)
         else:
             await interaction.response.defer(ephemeral=True, thinking=True)
             await interaction.followup.send("I couldn't find any valid Geocache or Trackable codes in your input. Please try again.")

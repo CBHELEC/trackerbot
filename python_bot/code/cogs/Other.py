@@ -126,7 +126,7 @@ class Other(commands.Cog):
         link_embed_status = bool(settings.link_embed_status) if hasattr(settings, 'link_embed_status') else True
         fun_commands = bool(settings.fun_set) if hasattr(settings, 'fun_set') else True
         message_commands = bool(settings.message_set) if hasattr(settings, 'message_set') else True
-        show_dead_codes = bool(settings.show_dead_codes) if hasattr(settings, 'show_dead_codes') else True
+        deadcode = bool(settings.deadcode) if hasattr(settings, 'deadcode') else True
 
         embed.add_field(
             name="Perm Roles",
@@ -135,11 +135,11 @@ class Other(commands.Cog):
         )
         embed.add_field(name="Skullboard Enabled", value="Yes" if settings.skullboard_status else "No", inline=False)
         embed.add_field(name="Skullboard Channel", value=f"<#{settings.skullboard_channel_id}>" if settings.skullboard_channel_id else "Not set", inline=False)
-        embed.add_field(name="Code Detection Status", value="Enabled" if detection_status else "Disabled", inline=False)
-        embed.add_field(name="Link Embed Removal Status", value="Enabled" if link_embed_status else "Disabled", inline=False)
-        embed.add_field(name="Message Commands Status", value="Enabled" if message_commands else "Disabled", inline=False)
-        embed.add_field(name="Fun Commands Status", value="Enabled" if fun_commands else "Disabled", inline=False)
-        embed.add_field(name="'Code Not Found' Message Status", value="Enabled" if show_dead_codes else "Disabled", inline=False)
+        embed.add_field(name="Code Detection Status", value="Enabled" if detection_status else "Disabled", inline=True)
+        embed.add_field(name="Link Embed Removal Status", value="Enabled" if link_embed_status else "Disabled", inline=True)
+        embed.add_field(name="Message Commands Status", value="Enabled" if message_commands else "Disabled", inline=True)
+        embed.add_field(name="Fun Commands Status", value="Enabled" if fun_commands else "Disabled", inline=True)
+        embed.add_field(name="'Code Not Found' Message Status", value="Enabled" if deadcode else "Disabled", inline=True)
         embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
         await interaction.response.send_message(embed=embed, view=DashboardLinkView()) 
 
