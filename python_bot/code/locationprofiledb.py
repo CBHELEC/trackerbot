@@ -1,8 +1,8 @@
-import dateparser
 import discord
 from sqlalchemy import Column, String, Integer, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
 
 DATABASE_URL = f"sqlite:///{Path(__file__).parent.resolve() / 'data' / 'locationprofile.db'}"
 
@@ -81,6 +81,11 @@ class CreateProfile(discord.ui.Modal, title="Create a Location Profile"):
         )
         update_user_profile(str(self.interaction.user.id), country, timezone)
 
-def time_in_tz(tz_string: str) -> str:
-    dt = dateparser.parse("now " + tz_string)
-    return dt
+def time_in_tz(tz_string: str) -> datetime | None:
+    if tz_string.startswith("GMT") and len(tz_string) > 3:
+        try:
+            offset_hours = int(tz_string[3:])
+            return datetime.now(timezone(timedelta(hours=offset_hours)))
+        except ValueError:
+            return None
+    return None
