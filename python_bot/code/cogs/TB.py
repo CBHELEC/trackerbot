@@ -1,14 +1,12 @@
 import discord
 import asyncio
-from discord import app_commands
 import sqlite3
-
-from functions import *
 import re
+from discord import app_commands
+from discord.ui import View, Button
+from functions import *
 from bot import bot
 from datetime import datetime
-from functions import *
-from bs4 import BeautifulSoup
 from logger import log
 
 conn1 = sqlite3.connect(DATA_DIR / "trackables.db")
@@ -61,7 +59,6 @@ def ensure_columns_exist_trackables():
                 cursor1.execute("""ALTER TABLE trackables ADD COLUMN tb_code TEXT NOT NULL""")
 
     conn1.commit()
-    conn1.close()
     
 class TBDatabase(app_commands.Group):
     """Commands for the public TB database."""
@@ -74,13 +71,13 @@ class TBDatabase(app_commands.Group):
                             colour=0xad7e66)
 
         embed.add_field(name="Everyone:",
-                        value="/tb add <code> - Adds a TB to the public database.\n\n/tb bulkadd - Bulk adds TBs to the public database as long as they are separated.\n⮡   They MUST be separated via eg. space, comma etc.\n\n/tb remove - Removes a TB from the public database.\n⮡   You MUST contact the Dev to get it removed.\n\n/tb view - Shows the public TB database.\n⮡   Shows 5 codes in one embed. You must use the pagination (reactions) to move to the next page, if there is one.\n\n/tb bulkview - Sends all codes in the public TB database to your DMs.\n⮡   DMs you ALL codes in one message. They are separated by commas, so they are suitable for [logthemall](<https://www.logthemall.org/>) or the [PGC trackable tool](<https://project-gc.com/Tools/DiscoverTrackables>).",
+                        value="/tb add <code> - Adds a TB to the public database.\n\n/tb bulkadd - Bulk adds TBs to the public database as long as they are separated.\n⮡   They MUST be separated via eg. space, comma etc.\n\n/tb remove - Removes a TB from the public database.\n⮡   You MUST contact the Dev to get it removed.\n\n/tb view - Shows the public TB database.\n⮡   Shows 5 codes in one embed. You must use the pagination buttons to move to the next page, if there is one.\n\n/tb bulkview - Sends all codes in the public TB database to your DMs.\n⮡   DMs you ALL codes in one message. They are separated by commas, so they are suitable for [logthemall](<https://www.logthemall.org/>) or the [PGC trackable tool](<https://project-gc.com/Tools/DiscoverTrackables>).",
                         inline=False)
         embed.add_field(name="Staff Only:",
-                        value="/tb forceremove <code> - Smash crash forces a TB out of the public database.\n⮡   Meant for the Dev to be able to remove codes which no longer exist, or violate the rules etc.\n\n/tb purge <name> - Smash crash forces all TBs owned by a specified user out of the public database.\n⮡   Meant for the Dev to be able to bulk remove codes faster, in case they were accidentally added etc.",
+                        value="/tb forceremove <code> - Smash crash forces a TB out of the public database.\n⮡   Meant for the Dev to be able to remove codes which no longer exist, or violate the rules etc.\n\n/tb purge <username|user> - Smash crash forces all TBs owned by a specified Geocaching username or added by a Discord user out of the public database.\n⮡   Meant for the Dev to be able to bulk remove codes faster, in case they were accidentally added etc.",
                         inline=False)
         
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
     
 # TB ADD
     @app_commands.command()
@@ -88,9 +85,8 @@ class TBDatabase(app_commands.Group):
     async def add(self, interaction: discord.Interaction, code: str):
         """Adds a TB to the public database."""
         code = code.upper()
-        code = code.upper()
         if code.lower().startswith("tb"):
-            await interaction.response.send_message(f"Please try again with the private code (this can be found on the TB itself) as the code, instead of `{code}`. If you believe this to be an error, please contact staff.")
+            await interaction.response.send_message(f"Please try again with the private code (this can be found on the TB itself) as the code, instead of `{code}`. If you believe this to be an error, please contact the Developer @not.cbh (<@820297275448098817>).", ephemeral=True)
             await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb add` but entered the public code instead of the private one: `{code}`.")
             return
 
@@ -98,15 +94,15 @@ class TBDatabase(app_commands.Group):
             tb = g_obj.get_trackable(code)
             try:
                 tb.load()
-            except:
-                await interaction.response.send_message(f"The TB code you entered (`{code}`) was not valid or is not activated. Please try again with a valid, activated TB code.")
+            except Exception:
+                await interaction.response.send_message(f"The TB code you entered (`{code}`) was not valid or is not activated. Please try again with a valid, activated TB code.", ephemeral=True)
                 await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add` but the TB code was not valid or unactivated.")
                 return
 
             cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
             existing_entry = cursor1.fetchone()
             if existing_entry:
-                await interaction.response.send_message(f"This TB code (`{code}`) is already in the database.")
+                await interaction.response.send_message(f"This TB code (`{code}`) is already in the database.", ephemeral=True)
                 return
 
             user_id = interaction.user.id
@@ -115,12 +111,12 @@ class TBDatabase(app_commands.Group):
                 VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
             """, (code, tb.owner, user_id, tb.tid))
             conn1.commit()
-            await interaction.response.send_message(f"This TB (`{code}`) has been added to the public database - thanks for sharing!")
+            await interaction.response.send_message(f"This TB (`{code}`) has been added to the public database - thanks for sharing!", ephemeral=True)
             await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
             await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
 
         except Exception as e:
-            await interaction.response.send_message(f"An unknown error occured whilst processing code `{code}`. The Dev has been notified.")
+            await interaction.response.send_message(f"An unknown error occured whilst processing code `{code}`. The Dev has been notified.", ephemeral=True)
             await log_error(interaction.guild, bot, interaction.command.name, 
                 f"User: {interaction.user.mention} ({interaction.user.name}) adding TB `{code}` to the database. Error: \n```\n{str(e)}\n```"
             )
@@ -130,9 +126,13 @@ class TBDatabase(app_commands.Group):
     @app_commands.describe(codes="The PRIVATE codes of the TBs you want to add, separated by commas, spaces, or colons")
     async def bulkadd(self, interaction: discord.Interaction, codes: str):
         """Adds multiple TBs to the public database."""
-        tb_codes = [ code.upper() for code in re.split(r"[,\s:]+", codes.strip()) ]
+        tb_codes = list(dict.fromkeys([code.upper().strip() for code in re.split(r"[,\s:]+", codes.strip()) if code.strip()]))
 
-        await interaction.response.send_message(f"Processing {len(tb_codes)} TB code(s)... this may take a while.", ephemeral=True)
+        if not tb_codes:
+            await interaction.response.send_message("No valid TB codes found. Please provide at least one code separated by commas, spaces, or colons.", ephemeral=True)
+            return
+
+        await interaction.response.send_message(f"Processing {len(tb_codes)} TB code(s)... this may take a while. \n**Please keep this message open!**", ephemeral=True)
 
         successful_codes = []
         failed_codes = []
@@ -149,7 +149,7 @@ class TBDatabase(app_commands.Group):
                 tb = g_obj.get_trackable(code)
                 try:
                     tb.load()
-                except:
+                except Exception:
                     await master_log_message(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd` but the TB code was invalid or unactivated for code: `{code}`."
                     )
@@ -183,8 +183,16 @@ class TBDatabase(app_commands.Group):
                 )
                 failed_codes.append(code)
 
-        successful_str = ", ".join(successful_codes) if successful_codes else "None"
-        failed_str = ", ".join(failed_codes) if failed_codes else "None"
+        max_codes_display = 20
+        if len(successful_codes) > max_codes_display:
+            successful_str = ", ".join(successful_codes[:max_codes_display]) + f" ... and {len(successful_codes) - max_codes_display} more"
+        else:
+            successful_str = ", ".join(successful_codes) if successful_codes else "None"
+            
+        if len(failed_codes) > max_codes_display:
+            failed_str = ", ".join(failed_codes[:max_codes_display]) + f" ... and {len(failed_codes) - max_codes_display} more"
+        else:
+            failed_str = ", ".join(failed_codes) if failed_codes else "None"
 
         await interaction.followup.send(
             f"Finished processing TB codes!\n"
@@ -197,44 +205,85 @@ class TBDatabase(app_commands.Group):
 # TB PURGE
     @app_commands.command()
     @is_dev()
-    @app_commands.describe(username="The username of the owner of the TBs you want to remove")
-    async def purge(self, interaction: discord.Interaction, username: str):
-        """Removes all TBs associated with the given gc_username."""
+    @app_commands.describe(
+        username="The Geocaching username of the owner of the TBs you want to remove",
+        user="The Discord user who added the TBs you want to remove"
+    )
+    async def purge(self, interaction: discord.Interaction, username: str = None, user: discord.User = None):
+        """Removes all TBs associated with the given gc_username or Discord user ID."""
+        if not username and not user:
+            await interaction.response.send_message(
+                "Please provide either a `username` (Geocaching username) or `user` (Discord user) to purge TBs.",
+                ephemeral=True
+            )
+            return
+        
+        if username and user:
+            await interaction.response.send_message(
+                "Please provide only one: either `username` (Geocaching username) or `user` (Discord user), not both.",
+                ephemeral=True
+            )
+            return
+        
         try:
-            cursor1.execute("SELECT COUNT(*) FROM trackables WHERE gc_username = ?", (username,))
-            count = cursor1.fetchone()[0]
+            if user:
+                user_id = user.id
+                cursor1.execute("SELECT COUNT(*) FROM trackables WHERE user_id = ?", (user_id,))
+                count = cursor1.fetchone()[0]
 
-            if count > 0:
-                cursor1.execute("DELETE FROM trackables WHERE gc_username = ?", (username,))
-                conn1.commit()
+                if count > 0:
+                    cursor1.execute("DELETE FROM trackables WHERE user_id = ?", (user_id,))
+                    conn1.commit()
 
-                await interaction.response.send_message(
-                    f"Successfully purged {count} TB(s) associated with the username `{username}`."
-                )
-                await master_log_message(bot, interaction.command.name,
-                    f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) associated with the username `{username}`."
-                )
-                await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) associated with the username `{username}`.")
+                    await interaction.response.send_message(
+                        f"Successfully purged {count} TB(s) added by {user.mention} ({user.name}).", ephemeral=True
+                    )
+                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                        f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) added by {user.mention} ({user.name}, ID: {user_id})."
+                    )
+                    await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) added by {user.mention} ({user.name}, ID: {user_id}).")
+                else:
+                    await interaction.response.send_message(
+                        f"No TBs were found added by {user.mention} ({user.name}).", ephemeral=True
+                    )
+                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                        f"{interaction.user.mention} ({interaction.user.name}) attempted to purge TBs for {user.mention} ({user.name}, ID: {user_id}), but none were found."
+                    )
             else:
-                await interaction.response.send_message(
-                    f"No TBs were found associated with the username `{username}`."
-                )
-                await master_log_message(bot, interaction.command.name,
-                    f"{interaction.user.mention} ({interaction.user.name}) attempted to purge TBs for `{username}`, but none were found."
-                )
+                cursor1.execute("SELECT COUNT(*) FROM trackables WHERE gc_username = ?", (username,))
+                count = cursor1.fetchone()[0]
+
+                if count > 0:
+                    cursor1.execute("DELETE FROM trackables WHERE gc_username = ?", (username,))
+                    conn1.commit()
+
+                    await interaction.response.send_message(
+                        f"Successfully purged {count} TB(s) associated with the username `{username}`.", ephemeral=True
+                    )
+                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                        f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) associated with the username `{username}`."
+                    )
+                    await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) associated with the username `{username}`.")
+                else:
+                    await interaction.response.send_message(
+                        f"No TBs were found associated with the username `{username}`.", ephemeral=True
+                    )
+                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                        f"{interaction.user.mention} ({interaction.user.name}) attempted to purge TBs for `{username}`, but none were found."
+                    )
         except Exception as e:
             await interaction.response.send_message(
-                f"An error occurred while attempting to purge TBs. The Dev has been alerted."
+                f"An error occurred while attempting to purge TBs. The Dev has been alerted.", ephemeral=True
             )
             await log_error(interaction.guild, bot, interaction.command.name,
-                f"{interaction.user.mention} ({interaction.user.name}) tried to purge TBs for `{username}`. Error: `{e}`"
+                f"{interaction.user.mention} ({interaction.user.name}) tried to purge TBs. Error: `{e}`"
             )
       
 # TB REMOVE      
     @app_commands.command()
     async def remove(self, interaction: discord.Interaction):
         """Removes a TB from the public database."""
-        await interaction.response.send_message(f"If you want a TB to be removed from the database, please contact the Developer `@not.cbh` (<@820297275448098817>).")
+        await interaction.response.send_message(f"If you want a TB to be removed from the database, please contact the Developer `@not.cbh` (<@820297275448098817>).", ephemeral=True)
             
 # TB FORCEREMOVE
     @app_commands.command()
@@ -249,97 +298,144 @@ class TBDatabase(app_commands.Group):
             if existing_entry:
                 cursor1.execute("DELETE FROM trackables WHERE code = ?", (code,))
                 conn1.commit()
-                await interaction.response.send_message(f"The TB with code `{code}` has been forcibly removed from the database.")
+                await interaction.response.send_message(f"The TB with code `{code}` has been forcibly removed from the database.", ephemeral=True)
                 await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) forcibly removed TB `{code}` from the database.")
                 await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) forcibly removed TB `{code}` from the database.")
             else:
-                await interaction.response.send_message(f"No TB with the code `{code}` was found in the database.")
+                await interaction.response.send_message(f"No TB with the code `{code}` was found in the database.", ephemeral=True)
                 await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}` from the database but it wasn't there.")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred while trying to remove the TB. The Dev has been notified.")
+            await interaction.response.send_message(f"An error occurred while trying to remove the TB. The Dev has been notified.", ephemeral=True)
             await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}`. Error: {e}")
             
 # TB VIEW
     @app_commands.command()
     async def view(self, interaction: discord.Interaction):
         """Shows the public TB database."""
-        cursor1.execute("SELECT * FROM trackables")
-        trackables = cursor1.fetchall()
+        try:
+            cursor1.execute("SELECT * FROM trackables")
+            trackables = cursor1.fetchall()
+        except Exception as e:
+            await interaction.response.send_message(
+                "An error occurred while retrieving the TB database. Please try again later.",
+                ephemeral=True
+            )
+            await log_error(interaction.guild, bot, interaction.command.name,
+                f"{interaction.user.mention} ({interaction.user.name}) used `view`. Error: {e}"
+            )
+            return
         
         items_per_page = 5
         pages = [trackables[i:i + items_per_page] for i in range(0, len(trackables), items_per_page)]
         
-        page_number = 0
-        embed = discord.Embed(title="Public TB Database", colour=0xad7e66)
+        if not pages:
+            await interaction.response.send_message("The database is empty.", ephemeral=True)
+            return
         
-        for entry in pages[page_number]:
-            tb_code = entry[3]  
-            code = entry[4]   
-            cleaned_owner_name = entry[1] 
-            added_at_time = entry[2]  
+        def create_embed(page_num):
+            embed = discord.Embed(title="Public TB Database", colour=0xad7e66)
+            embed.set_footer(text=f"Page {page_num + 1} of {len(pages)}")
             
-            added_at_dt = datetime.strptime(added_at_time, "%Y-%m-%d %H:%M:%S")
-            added_at_unix = int(added_at_dt.timestamp())
-
-            discord_timestamp = f"<t:{added_at_unix}>"
-            
-            embed.add_field(
-                name=f"{tb_code} - {cleaned_owner_name}",
-                value=f"**CODE**: {code}\n**OWNER**: {cleaned_owner_name}\n**ADDED**: {discord_timestamp}",
-                inline=False
-            )
-
-        await interaction.response.send_message(embed=embed)
-        message = await interaction.original_response()
-
-        if len(pages) > 1: 
-            await message.add_reaction("⏮️") 
-            await message.add_reaction("◀️")  
-            await message.add_reaction("▶️") 
-            await message.add_reaction("⏭️") 
-
-        def check(reaction, user):
-            return user == interaction.user and reaction.message.id == message.id and str(reaction.emoji) in ["⏮️", "◀️", "▶️", "⏭️"]
-
-        while True:
-            try:
-                reaction, user = await interaction.client.wait_for("reaction_add", timeout=60.0, check=check)
-
-                await message.remove_reaction(reaction, user)
-
-                if reaction.emoji == "⏮️":  # First page
-                    page_number = 0
-                elif reaction.emoji == "◀️":  # Previous page
-                    if page_number > 0:
-                        page_number -= 1
-                elif reaction.emoji == "▶️":  # Next page
-                    if page_number < len(pages) - 1:
-                        page_number += 1
-                elif reaction.emoji == "⏭️":  # Last page
-                    page_number = len(pages) - 1
-
-                embed = discord.Embed(title="Public TB Database", colour=0xad7e66)
-                for entry in pages[page_number]:
-                    code = entry[4]
-                    cleaned_owner_name = entry[1]
+            for entry in pages[page_num]:
+                try:
+                    tb_code = entry[3]  
+                    code = entry[4]   
+                    cleaned_owner_name = entry[1] 
                     added_at_time = entry[2]  
-                    tb_code = entry[3]
                     
-                    added_at_dt = datetime.strptime(added_at_time, "%Y-%m-%d %H:%M:%S")
-                    added_at_unix = int(added_at_dt.timestamp())
-
-                    discord_timestamp = f"<t:{added_at_unix}>"
+                    try:
+                        added_at_dt = datetime.strptime(added_at_time, "%Y-%m-%d %H:%M:%S")
+                        added_at_unix = int(added_at_dt.timestamp())
+                        discord_timestamp = f"<t:{added_at_unix}>"
+                    except (ValueError, TypeError):
+                        discord_timestamp = added_at_time  
+                    
                     embed.add_field(
                         name=f"{tb_code} - {cleaned_owner_name}",
                         value=f"**CODE**: {code}\n**OWNER**: {cleaned_owner_name}\n**ADDED**: {discord_timestamp}",
                         inline=False
                     )
-
-                await message.edit(embed=embed)
-
-            except asyncio.TimeoutError:
-                await message.clear_reactions()
-                break
+                except (IndexError, TypeError):
+                    continue
+            
+            return embed
+        
+        class PaginationView(View):
+            def __init__(self, pages, user_id):
+                super().__init__(timeout=60.0)
+                self.pages = pages
+                self.page_number = 0
+                self.user_id = user_id
+                self.update_buttons()
+            
+            def update_buttons(self):
+                self.first_page.disabled = self.page_number == 0
+                self.prev_page.disabled = self.page_number == 0
+                self.next_page.disabled = self.page_number >= len(self.pages) - 1
+                self.last_page.disabled = self.page_number >= len(self.pages) - 1
+            
+            @discord.ui.button(label="⏮️ First", style=discord.ButtonStyle.secondary, row=0)
+            async def first_page(self, interaction: discord.Interaction, button: Button):
+                if interaction.user.id != self.user_id:
+                    await interaction.response.send_message("This pagination is not for you!", ephemeral=True)
+                    return
+                
+                self.page_number = 0
+                self.update_buttons()
+                embed = create_embed(self.page_number)
+                await interaction.response.edit_message(embed=embed, view=self)
+            
+            @discord.ui.button(label="◀️ Previous", style=discord.ButtonStyle.secondary, row=0)
+            async def prev_page(self, interaction: discord.Interaction, button: Button):
+                if interaction.user.id != self.user_id:
+                    await interaction.response.send_message("This pagination is not for you!", ephemeral=True)
+                    return
+                
+                if self.page_number > 0:
+                    self.page_number -= 1
+                    self.update_buttons()
+                    embed = create_embed(self.page_number)
+                    await interaction.response.edit_message(embed=embed, view=self)
+            
+            @discord.ui.button(label="Next ▶️", style=discord.ButtonStyle.secondary, row=0)
+            async def next_page(self, interaction: discord.Interaction, button: Button):
+                if interaction.user.id != self.user_id:
+                    await interaction.response.send_message("This pagination is not for you!", ephemeral=True)
+                    return
+                
+                if self.page_number < len(self.pages) - 1:
+                    self.page_number += 1
+                    self.update_buttons()
+                    embed = create_embed(self.page_number)
+                    await interaction.response.edit_message(embed=embed, view=self)
+            
+            @discord.ui.button(label="Last ⏭️", style=discord.ButtonStyle.secondary, row=0)
+            async def last_page(self, interaction: discord.Interaction, button: Button):
+                if interaction.user.id != self.user_id:
+                    await interaction.response.send_message("This pagination is not for you!", ephemeral=True)
+                    return
+                
+                self.page_number = len(self.pages) - 1
+                self.update_buttons()
+                embed = create_embed(self.page_number)
+                await interaction.response.edit_message(embed=embed, view=self)
+            
+            async def on_timeout(self):
+                for item in self.children:
+                    item.disabled = True
+                try:
+                    await self.message.edit(view=self)
+                except:
+                    pass
+        
+        embed = create_embed(0)
+        
+        if len(pages) > 1:
+            view = PaginationView(pages, interaction.user.id)
+            await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+            view.message = await interaction.original_response()
+        else:
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
 # TB BULKVIEW
     @app_commands.command()
