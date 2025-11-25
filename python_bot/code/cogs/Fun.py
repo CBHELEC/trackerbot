@@ -72,10 +72,11 @@ class Fun(app_commands.Group):
         """Shows all of the Fun commands."""
         embed = discord.Embed(title="Fun Commands",
                       colour=0xad7e66)
-
-        embed.add_field(name="",
-                value="/fun 8ball <question> <potato_mode> - Asks the magic 8ball a question\n/fun avatar <user:optional> - Shows the avatar of a user\n/fun cat - Sends a random Cat image\n/fun coinflip - Flips a coin\n/fun define <word> - Sends the definition of a word\n/fun dog - Sends a random Dog image\n/fun google <query> - Search Google for web results\n/fun image <query> - Search Google for image results\n/fun math <expression> - Solves a math equation\n/fun roll <maxroll> - Rolls a random number\n/fun servericon - Send the server's icon\n/fun serverinfo - Shows some generic server info\n/fun userinfo <user:optional> - Shows some generic user info\n/fun petpet <user:optional> - Creates a PetPet gif for a user.\n/fun furry - Sends a random Furry gif :3\n/fun fakedoxx <user:optional> - Sends fake info about a user.\n/fun help - Shows all of the Fun commands",
-                inline=False)
+        embed.description("/fun 8ball <question> <potato_mode> - Asks the magic 8ball a question\n/fun avatar <user:optional> - Shows the avatar of a user\n/fun cat - Sends a random Cat image\n"
+        "/fun coinflip - Flips a coin\n/fun define <word> - Sends the definition of a word\n/fun dog - Sends a random Dog image\n/fun google <query> - Search Google for web results\n"
+        "/fun image <query> - Search Google for image results\n/fun math <expression> - Solves a math equation\n/fun roll <maxroll> - Rolls a random number\n/fun servericon - Send the server's icon\n"
+        "/fun serverinfo - Shows some generic server info\n/fun userinfo <user:optional> - Shows some generic user info\n/fun petpet <user:optional> - Creates a PetPet gif for a user.\n"
+        "/fun furry - Sends a random Furry gif :3\n/fun fakedoxx <user:optional> - Sends fake info about a user.\n/fun help - Shows all of the Fun commands")
         embed.set_footer(text="Help | Tracker",
                          icon_url="https://i.imgur.com/UrJoUHP.png")
         await interaction.response.send_message(embed=embed)
