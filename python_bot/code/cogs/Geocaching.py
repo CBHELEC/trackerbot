@@ -46,9 +46,9 @@ class Geocaching(commands.Cog):
         intDay = now.day
         quotetimeusa = f"{intYear}/{intMonth:02d}/{intDay:02d}"
         if labcaches == None or labcaches.value == "2":
-            await interaction.response.send_message(f"https://cdn2.project-gc.com/statbar.php?quote=discord.gg/pmuuVNptg3+-+{quotetimeusa}&includeLabcaches&user={user}")
+            await interaction.response.send_message(f"https://cdn2.project-gc.com/statbar.php?quote=trackerbot.xyz+-+{quotetimeusa}&includeLabcaches&user={user}")
         else:
-            await interaction.response.send_message(f"https://cdn2.project-gc.com/statbar.php?quote=discord.gg/pmuuVNptg3+-+{quotetimeusa}&user={user}")
+            await interaction.response.send_message(f"https://cdn2.project-gc.com/statbar.php?quote=trackerbot.xyz+-+{quotetimeusa}&user={user}")
         
 # BADGEBAR
     @app_commands.user_install()
