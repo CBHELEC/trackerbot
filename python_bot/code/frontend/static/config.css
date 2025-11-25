@@ -262,7 +262,7 @@ input[type="submit"] {
     color: white;
     padding: 10px 16px;
     font-size: 1rem;
-    border-radius: 6px;
+    border-radius: 6px !important;
     cursor: pointer;
     transition: background 0.3s ease;
 }
@@ -279,9 +279,11 @@ input[type="submit"]:hover {
 }
 
 .dashboard-content {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 0 1rem;
+    max-width: 800px !important;
+    margin: 0 auto !important;
+    padding: 0 1rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 .top-bar {
@@ -294,11 +296,15 @@ input[type="submit"]:hover {
 }
 
 .settings-container {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    margin: 1.5rem 0;
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07) !important;
+    margin: 2rem 0 0 0 !important;
+    border: 1px solid #ececec !important;
+    padding-top: 2rem !important;
+    padding-right: 2rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 2rem !important;
 }
 
 .settings-container.disabled {
@@ -319,64 +325,185 @@ input[type="submit"]:hover {
     border: 1px solid black !important;
 }
 
+/* Force all white boxes to be exactly the same width - AGGRESSIVE PADDING ENFORCEMENT */
+.settings-container,
+.settings-toggle-row,
+.bottom-toggle-card,
+.verification-card,
+div.settings-container,
+div.settings-toggle-row,
+div.bottom-toggle-card,
+div.verification-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-top: 2rem !important;
+    padding-right: 2rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 2rem !important;
+    border: 1px solid #ececec !important;
+}
+
+.verifysettings .bottom-toggle-container {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: none !important;
+}
+
 .settings-toggle-row {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-    margin: 2rem 0 0 0;
-    padding: 1.5rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 70px;
-    border: 1px solid #ececec;
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07) !important;
+    margin: 2rem 0 0 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 3rem !important;
+    border: 1px solid #ececec !important;
+    padding-top: 2rem !important;
+    padding-right: 2rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 2rem !important;
+}
+
+/* Single toggle row (like Verification) should only use one column */
+.settings-toggle-row:has(.toggle-block:only-child) {
+    grid-template-columns: 1fr !important;
+}
+
+/* Verification toggle row is outside dashboard-content - SPLIT THE DIFFERENCE */
+body > .settings-toggle-row {
+    max-width: 770px !important;
+    margin: 2rem auto 0 auto !important;
+    padding-top: 2rem !important;
+    padding-right: 2rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 2rem !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+/* Main verification toggle - buttons to the right of title */
+body > .settings-toggle-row .toggle-block {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1.5rem !important;
+}
+
+body > .settings-toggle-row .toggle-label {
+    margin-bottom: 0 !important;
+    width: auto !important;
+    flex-shrink: 0 !important;
+}
+
+body > .settings-toggle-row .toggle-buttons {
+    width: auto !important;
+    flex-shrink: 0 !important;
+}
+
+/* Main verification toggle buttons - narrower width */
+body > .settings-toggle-row .toggle-btn,
+body > .settings-toggle-row .toggle-buttons .toggle-btn,
+body > .settings-toggle-row button.toggle-btn {
+    padding-right: 0.5rem !important;
+    padding-left: 0.5rem !important;
+    min-width: 40px !important;
+    flex: 0 1 auto !important;
+}
+
+.toggle-block {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 1rem !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
 }
 
 .toggle-label {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #222;
-    letter-spacing: 0.01em;
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+    color: #222 !important;
+    letter-spacing: 0.01em !important;
+    width: 100% !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    margin-bottom: 0.5rem !important;
+    box-sizing: border-box !important;
 }
 
 .toggle-buttons {
-    display: flex;
-    gap: 1.2rem;
-    align-items: center;
+    display: flex !important;
+    gap: 1rem !important;
+    align-items: center !important;
+    width: 100% !important;
+    flex-shrink: 0 !important;
+    flex-wrap: nowrap !important;
+    box-sizing: border-box !important;
 }
 
-.toggle-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #f5f7fa;
-    border: 2px solid #d1d1d1;
-    border-radius: 8px;
-    padding: 0.5rem 1.2rem 0.5rem 0.9rem;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #333;
-    cursor: pointer;
-    transition: background 0.18s, border 0.18s, color 0.18s;
-    min-width: 90px;
-    outline: none;
+/* ALL BUTTONS SAME THICKNESS - DOUBLE HEIGHT */
+.toggle-btn,
+button.toggle-btn,
+.toggle-buttons .toggle-btn,
+.settings-toggle-row .toggle-btn,
+.bottom-toggle-card .toggle-btn,
+.verification-card .toggle-btn,
+.toggle-buttons button,
+button[class*="toggle"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.25rem !important;
+    background: #f5f7fa !important;
+    border: 1px solid #d1d1d1 !important;
+    border-radius: 8px !important;
+    padding-top: 0.6rem !important;
+    padding-bottom: 0.6rem !important;
+    padding-right: 0.5rem !important;
+    padding-left: 0.5rem !important;
+    font-size: 1.3rem !important;
+    font-weight: 600 !important;
+    color: #333 !important;
+    cursor: pointer !important;
+    transition: background 0.18s, border 0.18s, color 0.18s !important;
+    flex: 1 1 0% !important;
+    min-width: 50px !important;
+    max-width: none !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
 }
 
-.toggle-btn img.toggle-icon {
-    width: 22px;
-    height: 22px;
-    margin-right: 0.2rem;
+.toggle-btn img.toggle-icon,
+button.toggle-btn img.toggle-icon,
+.toggle-btn .toggle-icon,
+.toggle-buttons img.toggle-icon {
+    width: 1.3rem !important;
+    height: 1.3rem !important;
+    flex-shrink: 0 !important;
+    display: inline-block !important;
 }
 
 .toggle-btn.active {
-    background: #eafbe7;
-    border-color: #3ec46d;
-    color: #1a7a36;
-    font-weight: 700;
+    background: #eafbe7 !important;
+    border-color: #3ec46d !important;
+    color: #1a7a36 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 0 8px rgba(62, 196, 109, 0.6), 0 0 12px rgba(62, 196, 109, 0.4) !important;
 }
 
 .toggle-btn.active img.toggle-icon {
-    filter: drop-shadow(0 0 2px #3ec46d);
+    filter: drop-shadow(0 0 4px #3ec46d) drop-shadow(0 0 6px #3ec46d) !important;
 }
 
 .toggle-btn:not(.active):hover {
@@ -385,33 +512,26 @@ input[type="submit"]:hover {
 }
 
 .toggle-btn:last-child.active {
-    background: #ffeaea;
-    border-color: #e74c3c;
-    color: #a12a1a;
+    background: #ffeaea !important;
+    border-color: #e74c3c !important;
+    color: #a12a1a !important;
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.6), 0 0 12px rgba(231, 76, 60, 0.4) !important;
 }
 
 .toggle-btn:last-child.active img.toggle-icon {
-    filter: drop-shadow(0 0 2px #e74c3c);
+    filter: drop-shadow(0 0 4px #e74c3c) drop-shadow(0 0 6px #e74c3c) !important;
 }
 
 .bottom-toggle-container {
-    width: 100%;
-    display: flex;
-    justify-content: center; /* horizontally center the card */
-    margin-top: 2rem;
+    width: 100% !important;
+    max-width: 800px !important;
+    margin: 2rem auto 0 auto !important;
+    padding: 0 1rem !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    box-sizing: border-box !important;
 }
 
-.bottom-toggle-card {
-    display: flex;
-    align-items: center;     /* vertically align label + buttons */
-    gap: 1.5rem;             /* space between label and buttons */
-    background: #fff;        /* white card */
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-    padding: 1rem 2rem;
-    border: 1px solid #ececec;
-    max-width: 500px;        /* prevents stretching too wide */
-}
 
 
 @media (max-width: 768px) {
@@ -447,10 +567,9 @@ input[type="submit"]:hover {
     }
 
     .settings-toggle-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        padding: 1rem;
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+        padding: 2rem !important;
     }
 
     .toggle-buttons {
@@ -462,10 +581,312 @@ input[type="submit"]:hover {
     .bottom-toggle-card {
         flex-direction: column;
         align-items: flex-start;
-        padding: 1rem;
+        padding: 2rem !important;
         gap: 1rem;
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
+    }
+}
+
+
+.bottom-toggle-container {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    flex-wrap: wrap !important;
+    margin-top: 2rem !important;
+    box-sizing: border-box !important;
+}
+
+.bottom-toggle-card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 1.5rem !important;
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07) !important;
+    border: 1px solid #ececec !important;
+    padding-top: 2rem !important;
+    padding-right: 2rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 2rem !important;
+}
+
+.bottom-toggle-card .toggle-label {
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+    color: #222 !important;
+    width: auto !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.bottom-toggle-card .toggle-buttons {
+    width: auto !important;
+    flex-shrink: 0 !important;
+}
+
+.bottom-toggle-card .toggle-btn,
+.bottom-toggle-card button.toggle-btn {
+    padding-top: 0.6rem !important;
+    padding-bottom: 0.6rem !important;
+    padding-right: 0.5rem !important;
+    padding-left: 0.5rem !important;
+    font-size: 1.3rem !important;
+    min-width: 40px !important;
+    flex: 0 1 auto !important;
+}
+
+@media (max-width: 768px) {
+    .bottom-toggle-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    .bottom-toggle-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 2rem !important;
+        width: 100%;
+    }
+
+    .toggle-buttons {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+}
+
+.verification-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07) !important;
+    border: 1px solid #ececec !important;
+    margin-bottom: 0 !important;
+    padding-top: 2rem !important;
+    padding-right: 2rem !important;
+    padding-bottom: 2rem !important;
+    padding-left: 2rem !important;
+}
+
+.verification-card .toggle-label {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 0.5rem;
+}
+
+.verification-card select {
+    width: 100%; /* full width */
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: #fff;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.verification-card .toggle-buttons {
+    width: 100%;
+    display: flex;
+    gap: 1rem;
+}
+
+.verification-card .choices {
+    width: 100% !important;
+}
+
+.verification-card .choices__inner {
+    min-height: 2.5rem; /* keeps it readable */
+}
+
+.verification-card .choices__list--multiple {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.verification-card .choices__list {
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+.verification-card .choices__list--dropdown {
+    width: 100% !important;
+    min-width: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+}
+
+.verifysettings {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 800px !important;
+    margin: 2rem auto 0 auto !important;
+    padding: 0 1rem !important;
+    box-sizing: border-box !important;
+}
+
+.verifysettings .settings-container {
+    margin: 2rem 0 0 0 !important;
+    background: white !important;
+    border: 1px solid #ececec !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07) !important;
+    border-radius: 12px !important;
+}
+
+.verifysettings .bottom-toggle-container {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2rem !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+}
+
+.verifysettings.disabled {
+    opacity: 0.5;
+    position: relative;
+    cursor: not-allowed;
+    filter: grayscale(0.3);
+    user-select: none;
+}
+
+/* Completely disable all interactive elements when verifysettings is disabled */
+.verifysettings.disabled form,
+.verifysettings.disabled .verification-card,
+.verifysettings.disabled select,
+.verifysettings.disabled input,
+.verifysettings.disabled button,
+.verifysettings.disabled textarea,
+.verifysettings.disabled label,
+.verifysettings.disabled .choices,
+.verifysettings.disabled .choices__inner,
+.verifysettings.disabled .choices__input,
+.verifysettings.disabled .choices__list,
+.verifysettings.disabled .choices__item,
+.verifysettings.disabled .choices__button,
+.verifysettings.disabled .choices__dropdown,
+.verifysettings.disabled .choices__list--dropdown,
+.verifysettings.disabled option {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.7;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Blocking overlay that captures all pointer events when disabled */
+.verifysettings.disabled::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    pointer-events: auto;
+    cursor: not-allowed;
+    z-index: 1000;
+}
+
+/* Border animation for verification-enable button */
+#verification-enable {
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: visible !important;
+    isolation: isolate;
+}
+
+#verification-enable.highlight {
+    animation: pulseScale 1.2s ease-in-out infinite !important;
+    z-index: 100 !important;
+    border-color: #ea461e !important;
+    border-width: 3px !important;
+    box-shadow: 
+        0 0 15px rgba(234, 70, 30, 0.6),
+        0 0 30px rgba(234, 70, 30, 0.4) !important;
+}
+
+/* Animated border rings using pseudo-elements for better visibility */
+#verification-enable.highlight::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border: 4px solid #ea461e;
+    border-radius: 12px;
+    animation: borderPulse 1.2s ease-in-out infinite;
+    pointer-events: none;
+    z-index: -1;
+    box-shadow: 
+        0 0 20px rgba(234, 70, 30, 0.8),
+        0 0 40px rgba(234, 70, 30, 0.6),
+        0 0 60px rgba(234, 70, 30, 0.4);
+}
+
+#verification-enable.highlight::after {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    border: 3px solid rgba(234, 70, 30, 0.6);
+    border-radius: 14px;
+    animation: borderPulse 1.2s ease-in-out infinite 0.3s;
+    pointer-events: none;
+    z-index: -2;
+    box-shadow: 
+        0 0 30px rgba(234, 70, 30, 0.5),
+        0 0 50px rgba(234, 70, 30, 0.3);
+}
+
+@keyframes borderPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: 
+            0 0 20px rgba(234, 70, 30, 0.8),
+            0 0 40px rgba(234, 70, 30, 0.6),
+            0 0 60px rgba(234, 70, 30, 0.4);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1);
+        box-shadow: 
+            0 0 30px rgba(234, 70, 30, 1),
+            0 0 60px rgba(234, 70, 30, 0.8),
+            0 0 90px rgba(234, 70, 30, 0.6);
+    }
+}
+
+@keyframes pulseScale {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 
+            0 0 0 0 rgba(234, 70, 30, 0.7),
+            0 0 0 0 rgba(234, 70, 30, 0.5);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 
+            0 0 0 10px rgba(234, 70, 30, 0),
+            0 0 0 20px rgba(234, 70, 30, 0);
     }
 }

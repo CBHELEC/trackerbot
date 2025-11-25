@@ -166,6 +166,14 @@ async def server(request: Request, guild_id: int):
         fun_set = int(setting.fun_set) if hasattr(setting, 'fun_set') else 1
         game_set = int(setting.game_set) if hasattr(setting, 'game_set') else 1
         cnf_status = int(setting.deadcode) if hasattr(setting, 'deadcode') else 1
+        verify_channel_id = str(setting.verify_channel_id)
+        verify_verified_role_id = str(setting.verify_verified_role_id)
+        verify_unverified_role_id = str(setting.verify_unverified_role_id)
+        verify_admin_role_id = str(setting.verify_admin_role_id) if setting.verify_admin_role_id else ""
+        verify_fasttrack_status = int(setting.verify_fasttrack_status) if hasattr(setting, 'verify_fasttrack_status') else 1
+        verify_muggle_role_id = str(setting.verify_muggle_role_id)
+        # Handle None values - if verification_status is None, treat as False
+        verification_enabled = bool(setting.verification_status) if hasattr(setting, 'verification_status') and setting.verification_status is not None else False
     else:
         feature_txt = "Feature is not set."
         selected_roles = []
@@ -176,6 +184,13 @@ async def server(request: Request, guild_id: int):
         fun_set = 1
         game_set = 1
         cnf_status = 1
+        verify_channel_id = "Feature is not set."
+        verify_verified_role_id = "Feature is not set."
+        verify_unverified_role_id = "Feature is not set."
+        verify_admin_role_id = []
+        verify_fasttrack_status = 1
+        verify_muggle_role_id = "Feature is not set."
+        verification_enabled = False
 
     session_id = request.cookies.get("session_id")
     session = await db.get_session(session_id)
@@ -222,6 +237,13 @@ async def server(request: Request, guild_id: int):
             "fun_set": fun_set,
             "game_set": game_set,
             "cnf_status": cnf_status,
+            "verify_channel_id": verify_channel_id,
+            "verify_verified_role_id": verify_verified_role_id,
+            "verify_unverified_role_id": verify_unverified_role_id,
+            "verify_admin_role_id": verify_admin_role_id,
+            "verify_fasttrack_status": verify_fasttrack_status,
+            "verify_muggle_role_id": verify_muggle_role_id,
+            "verification_enabled": verification_enabled
         },
     )
 
@@ -303,6 +325,22 @@ async def set_channel(guild_id: int, set: str, status: int, session_id: str = Co
     if not perms.response.get("perms"):
         return {"error": "You do not have access to this server"}
     update_guild_settings(guild_id, **{set: bool(status)})
+    return RedirectResponse(url=f"/server/{guild_id}")
+
+@app.get("/server/{guild_id}/settings/set_verify/{setting}/{channel_id}")
+async def set_channel(guild_id: int, setting: str, channel_id: str, session_id: str = Cookie(None)):
+    user_id = await db.get_user_id(session_id)
+    if not session_id or not user_id:
+        raise HTTPException(status_code=401, detail="no auth")
+
+    perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
+    if not perms.response.get("perms"):
+        return {"error": "You do not have access to this server"}
+
+    if channel_id == "none":
+        update_guild_settings(guild_id, **{setting: False})
+    else:
+        update_guild_settings(guild_id, **{setting: str(channel_id)})
     return RedirectResponse(url=f"/server/{guild_id}")
 
 @app.get("/logout")

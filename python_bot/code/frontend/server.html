@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Tracker Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', path='choices.min.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='config.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='config.css') }}?v=25">
     <link rel="icon" type="image/ico" href="/static/favicon.ico">
 </head>
-<body>
+<body data-verification-enabled="{{ verification_enabled | default(false) | tojson }}">
     <div class="dashboard-content">
         <div class="top-bar">
             <div class="text">
@@ -147,193 +147,531 @@
         </div>
     </div>
 
+    <div class="settings-toggle-row">
+        <div class="toggle-block">
+            <span class="toggle-label">Verification Main Toggle</span>
+            <div class="toggle-buttons">
+                <button id="verification-enable" class="toggle-btn {% if verification_enabled %}active{% endif %}">
+                    <img src="{{ url_for('static', path='tick.png') }}" alt="Enable" class="toggle-icon"> Enable
+                </button>
+                <button id="verification-disable" class="toggle-btn {% if not verification_enabled %}active{% endif %}">
+                    <img src="{{ url_for('static', path='cross.png') }}" alt="Disable" class="toggle-icon"> Disable
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="verifysettings">
+    <div class="settings-container">
+    <div class="bottom-toggle-container">
+
+        <form class="verification-card" data-detail="verify_channel_id">
+        <span class="toggle-label">Verification Log/Queue Channel</span>
+        <select id="verify-channel" name="verify_channel_id">
+            <option value="none" {% if verify_channel_id == 'none' %}selected{% endif %}>🚫 | None</option>
+            {% for channel in channels if not channel.category_id %}
+            <option value="{{ channel.id }}" {% if verify_channel_id|string == channel.id|string %}selected{% endif %}>
+                {{ channel.name }}
+            </option>
+            {% endfor %}
+            {% for category in categories %}
+            <optgroup label="{{ category.name }}">
+                {% for channel in category.channels %}
+                <option value="{{ channel.id }}" {% if verify_channel_id|string == channel.id|string %}selected{% endif %}>
+                    {{ channel.name }}
+                </option>
+                {% endfor %}
+            </optgroup>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Set Channel">
+        </form>
+
+        <form class="verification-card" data-detail="verify_verified_role_id">
+        <span class="toggle-label">Verified Role</span>
+        <select id="verify-verified-role" name="verify_verified_role_id">
+            {% for role in roles %}
+            <option value="{{ role.id }}" {% if role.id == verify_verified_role_id %}selected{% endif %}>{{ role.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Set Role">
+        </form>
+
+        <form class="verification-card" data-detail="verify_unverified_role_id">
+        <span class="toggle-label">Unverified Role</span>
+        <select id="verify-unverified-role" name="verify_unverified_role_id">
+            {% for role in roles %}
+            <option value="{{ role.id }}" {% if role.id == verify_unverified_role_id %}selected{% endif %}>{{ role.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Set Role">
+        </form>
+
+        <form class="verification-card" data-detail="verify_admin_role_id">
+        <span class="toggle-label">Admin Roles</span>
+        <select id="verify-admin-role" name="verify_admin_role_id" multiple size="5">
+            {% for role in roles %}
+            <option value="{{ role.id }}" {% if role.id in verify_admin_role_id %}selected{% endif %}>{{ role.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Set Roles">
+        </form>
+
+        <div class="verification-card">
+        <span class="toggle-label">Fasttrack Status</span>
+        <div class="toggle-buttons">
+            <button id="fasttrack-enable" class="toggle-btn {% if verify_fasttrack_status == 1 %}active{% endif %}">
+            <img src="{{ url_for('static', path='tick.png') }}" alt="Enable" class="toggle-icon"> Enable
+            </button>
+            <button id="fasttrack-disable" class="toggle-btn {% if verify_fasttrack_status == 0 %}active{% endif %}">
+            <img src="{{ url_for('static', path='cross.png') }}" alt="Disable" class="toggle-icon"> Disable
+            </button>
+        </div>
+        </div>
+
+        <form class="verification-card" data-detail="verify_muggle_role_id">
+        <span class="toggle-label">Muggle Role</span>
+        <select id="verify-muggle-role" name="verify_muggle_role_id">
+            {% for role in roles %}
+            <option value="{{ role.id }}" {% if role.id == verify_muggle_role_id %}selected{% endif %}>{{ role.name }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Set Role">
+        </form>
+
+    </div>
+    </div>
+    </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const roleSelect = document.getElementById('role');
-        if (roleSelect) {
-            new Choices(roleSelect, {
-                removeItemButton: true,
-                searchResultLimit: 10,
-                shouldSort: false,
-                placeholder: true,
-                placeholderValue: false
+        const guildId = "{{ id }}";
+
+        // Store Choices instances globally for later access
+        const choicesInstancesMap = new Map();
+        
+        const choiceSelectors = ['#role', '#verify-admin-role'];
+        choiceSelectors.forEach(selector => {
+            const el = document.querySelector(selector);
+            if (el) {
+                const choicesInstance = new Choices(el, {
+                    removeItemButton: el.hasAttribute('multiple'),
+                    searchResultLimit: 10,
+                    shouldSort: false,
+                    placeholder: true,
+                    placeholderValue: false
+                });
+                // Store the instance for later access
+                choicesInstancesMap.set(selector, choicesInstance);
+                // Also store it on the element for easy access
+                el._choicesInstance = choicesInstance;
+            }
+        });
+
+        const channelForm = document.getElementById('channelForm');
+        if (channelForm) {
+            channelForm.onsubmit = e => {
+                e.preventDefault();
+                const channelId = document.getElementById('channel').value;
+                window.location.href = `/server/${guildId}/settings/set_channel/${channelId}`;
+            };
+        }
+
+        const permRoleForm = document.getElementById('permroleForm');
+        if (permRoleForm) {
+            permRoleForm.onsubmit = async e => {
+                e.preventDefault();
+                const select = document.getElementById('role');
+                const selected = Array.from(select.selectedOptions).map(opt => opt.value);
+                await fetch(`/server/${guildId}/settings/set_perm_roles`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ role_ids: selected })
+                });
+                location.reload();
+            };
+        }
+
+        const verifyForms = [
+            { id: 'verify-channel', detail: 'verify_channel_id' },
+            { id: 'verify-verified-role', detail: 'verify_verified_role_id' },
+            { id: 'verify-unverified-role', detail: 'verify_unverified_role_id' },
+            { id: 'verify-muggle-role', detail: 'verify_muggle_role_id' },
+            { id: 'verify-admin-role', detail: 'verify_admin_role_id', multi: true }
+        ];
+
+        verifyForms.forEach(({ id, detail, multi }) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const form = el.closest('form');
+            if (!form) return;
+
+            form.onsubmit = e => {
+                e.preventDefault();
+                let value = multi
+                    ? Array.from(el.selectedOptions).map(o => o.value).join(',')
+                    : el.value;
+                window.location.href = `/server/${guildId}/settings/set_verify/${detail}/${value}`;
+            };
+        });
+
+        function setupToggle(enableId, disableId, route) {
+            const enable = document.getElementById(enableId);
+            const disable = document.getElementById(disableId);
+            if (!enable || !disable) return;
+
+            enable.addEventListener('click', e => {
+                e.preventDefault();
+                if (!enable.classList.contains('active')) {
+                    window.location.href = `/server/${guildId}/settings/${route}/1`;
+                }
+            });
+            disable.addEventListener('click', e => {
+                e.preventDefault();
+                if (!disable.classList.contains('active')) {
+                    window.location.href = `/server/${guildId}/settings/${route}/0`;
+                }
             });
         }
+
+        setupToggle('detection-enable', 'detection-disable', 'toggle_detection');
+        setupToggle('embed-enable', 'embed-disable', 'toggle_embed');
+        setupToggle('message-enable', 'message-disable', 'toggle_set/message_set');
+        setupToggle('fun-enable', 'fun-disable', 'toggle_set/fun_set');
+        setupToggle('cnf-enable', 'cnf-disable', 'toggle_set/deadcode');
+        setupToggle('fasttrack-enable', 'fasttrack-disable', 'toggle_set/verify_fasttrack_status');
+        setupToggle('verification-enable', 'verification-disable', 'toggle_set/verification_status');
+
+        const verifySection = document.querySelector('.verifysettings');
+        const verificationEnabled = (() => {
+            try {
+                const raw = document.body.dataset.verificationEnabled;
+                return raw === undefined ? false : JSON.parse(raw);
+            } catch (e) {
+                return false;
+            }
+        })();
+
+        // Comprehensive event handler for all interaction types
+        function handleVerifySectionInteraction(e) {
+            if (!verifySection || !verifySection.classList.contains('disabled')) {
+                return; // Section is enabled, allow normal behavior
+            }
+            
+            // Section is disabled - prevent ALL interactions
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            // Scroll to enable button (debounce to avoid multiple scrolls)
+            if (!handleVerifySectionInteraction.scrolling) {
+                handleVerifySectionInteraction.scrolling = true;
+                scrollToEnableButton();
+                setTimeout(() => {
+                    handleVerifySectionInteraction.scrolling = false;
+                }, 500);
+            }
+            
+            return false;
+        }
+        handleVerifySectionInteraction.scrolling = false;
+
+        function disableChoicesInstances() {
+            // Disable verify-admin-role Choices instance
+            const verifyAdminRole = document.getElementById('verify-admin-role');
+            if (verifyAdminRole && verifyAdminRole._choicesInstance) {
+                try {
+                    verifyAdminRole._choicesInstance.disable();
+                    // Close any open dropdown
+                    if (verifyAdminRole._choicesInstance.dropdown && verifyAdminRole._choicesInstance.dropdown.isActive) {
+                        verifyAdminRole._choicesInstance.hideDropdown();
+                    }
+                } catch (e) {
+                    console.log('Could not disable Choices instance:', e);
+                }
+            }
+            
+            // Also try to disable via the Choices container
+            const choicesContainers = verifySection.querySelectorAll('.choices');
+            choicesContainers.forEach(container => {
+                // Find the original select element
+                const selectEl = container.querySelector('select');
+                if (selectEl && selectEl._choicesInstance) {
+                    try {
+                        const instance = selectEl._choicesInstance;
+                        instance.disable();
+                        // Close any open dropdown
+                        if (instance.dropdown && instance.dropdown.isActive) {
+                            instance.hideDropdown();
+                        }
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                }
+                // Also disable the select directly
+                if (selectEl) {
+                    selectEl.disabled = true;
+                }
+                // Prevent interaction with Choices container
+                container.style.pointerEvents = 'none';
+                container.style.cursor = 'not-allowed';
+            });
+            
+            // Close any open Choices dropdowns globally that might be from verify section
+            const allChoicesDropdowns = document.querySelectorAll('.choices__list--dropdown');
+            allChoicesDropdowns.forEach(dropdown => {
+                const choicesContainer = dropdown.closest('.choices');
+                if (choicesContainer && verifySection.contains(choicesContainer)) {
+                    dropdown.style.display = 'none';
+                    dropdown.style.pointerEvents = 'none';
+                }
+            });
+        }
+
+        function enableChoicesInstances() {
+            // Re-enable verify-admin-role Choices instance
+            const verifyAdminRole = document.getElementById('verify-admin-role');
+            if (verifyAdminRole && verifyAdminRole._choicesInstance) {
+                try {
+                    verifyAdminRole._choicesInstance.enable();
+                } catch (e) {
+                    console.log('Could not enable Choices instance:', e);
+                }
+            }
+            
+            // Also try to enable via the Choices container
+            const choicesContainers = verifySection.querySelectorAll('.choices');
+            choicesContainers.forEach(container => {
+                const selectEl = container.querySelector('select');
+                if (selectEl && selectEl._choicesInstance) {
+                    try {
+                        selectEl._choicesInstance.enable();
+                    } catch (e) {
+                        // Ignore errors
+                    }
+                }
+                // Also enable the select directly
+                if (selectEl) {
+                    selectEl.disabled = false;
+                }
+                // Restore interaction with Choices container
+                container.style.pointerEvents = '';
+                container.style.cursor = '';
+            });
+        }
+
+        // Create blocking overlay element
+        let blockingOverlay = null;
+        
+        function createBlockingOverlay() {
+            if (blockingOverlay) return blockingOverlay;
+            
+            blockingOverlay = document.createElement('div');
+            blockingOverlay.className = 'verify-blocking-overlay';
+            blockingOverlay.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: 10px;
+                pointer-events: auto;
+                cursor: not-allowed;
+                z-index: 10000;
+            `;
+            blockingOverlay.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                scrollToEnableButton();
+            });
+            return blockingOverlay;
+        }
+
+        function updateVerifySection() {
+            if (!verifySection) return;
+            if (!verificationEnabled) {
+                verifySection.classList.add('disabled');
+                
+                // Disable all form elements directly
+                const allInteractiveElements = verifySection.querySelectorAll(
+                    'input, select, button, textarea'
+                );
+                allInteractiveElements.forEach(el => {
+                    el.disabled = true;
+                    el.setAttribute('readonly', 'readonly');
+                    el.setAttribute('tabindex', '-1');
+                    el.style.pointerEvents = 'none';
+                });
+                
+                // Disable all forms and prevent submission
+                const forms = verifySection.querySelectorAll('form');
+                forms.forEach(form => {
+                    const inputs = form.querySelectorAll('input, select, button, textarea');
+                    inputs.forEach(input => {
+                        input.disabled = true;
+                        input.setAttribute('readonly', 'readonly');
+                        input.setAttribute('tabindex', '-1');
+                        input.style.pointerEvents = 'none';
+                    });
+                });
+                
+                // Disable Choices.js instances
+                setTimeout(() => {
+                    disableChoicesInstances();
+                }, 150);
+                
+                // Add blocking overlay
+                const overlay = createBlockingOverlay();
+                if (!verifySection.contains(overlay)) {
+                    verifySection.style.position = 'relative';
+                    verifySection.appendChild(overlay);
+                }
+                
+            } else {
+                verifySection.classList.remove('disabled');
+                
+                // Remove blocking overlay
+                if (blockingOverlay && blockingOverlay.parentNode) {
+                    blockingOverlay.parentNode.removeChild(blockingOverlay);
+                }
+                
+                // Re-enable all form elements
+                const allInteractiveElements = verifySection.querySelectorAll(
+                    'input, select, button, textarea'
+                );
+                allInteractiveElements.forEach(el => {
+                    el.disabled = false;
+                    el.removeAttribute('readonly');
+                    el.removeAttribute('tabindex');
+                    el.style.pointerEvents = '';
+                });
+                
+                // Re-enable all forms
+                const forms = verifySection.querySelectorAll('form');
+                forms.forEach(form => {
+                    const inputs = form.querySelectorAll('input, select, button, textarea');
+                    inputs.forEach(input => {
+                        input.disabled = false;
+                        input.removeAttribute('readonly');
+                        input.removeAttribute('tabindex');
+                        input.style.pointerEvents = '';
+                    });
+                });
+                
+                // Re-enable Choices.js instances
+                enableChoicesInstances();
+            }
+        }
+
+        function scrollToEnableButton() {
+            const enableBtn = document.getElementById('verification-enable');
+            if (enableBtn) {
+                enableBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Force restart animation by removing and re-adding the class
+                enableBtn.classList.remove('highlight');
+                // Force a reflow to ensure the class removal is processed
+                void enableBtn.offsetWidth;
+                // Add the class back to restart the animation
+                enableBtn.classList.add('highlight');
+                
+                setTimeout(() => {
+                    enableBtn.classList.remove('highlight');
+                }, 2000); // Animation duration - 2 seconds
+            }
+        }
+
+        // Add comprehensive event listeners for all interaction types
+        if (verifySection) {
+            // Capture phase events to intercept before they reach targets
+            const captureEvents = ['click', 'mousedown', 'mouseup', 'touchstart', 'touchend', 
+                                  'submit', 'change', 'input', 'focus', 'focusin', 'keydown', 
+                                  'keypress', 'keyup', 'select', 'selectstart', 'contextmenu',
+                                  'dblclick', 'drag', 'dragstart', 'drop'];
+            
+            captureEvents.forEach(eventType => {
+                verifySection.addEventListener(eventType, handleVerifySectionInteraction, {
+                    capture: true,
+                    passive: false
+                });
+            });
+            
+            // Global handler for Choices.js dropdowns that might be rendered outside the section
+            document.addEventListener('click', function(e) {
+                if (!verifySection || !verifySection.classList.contains('disabled')) {
+                    return; // Section is enabled, allow normal behavior
+                }
+                
+                const target = e.target;
+                // Check if click is on a Choices dropdown
+                const choicesDropdown = target.closest('.choices__list--dropdown, .choices__item, .choices__input');
+                if (choicesDropdown) {
+                    // Check all Choices containers in verify section to see if this dropdown belongs to one
+                    const verifyChoicesContainers = verifySection.querySelectorAll('.choices');
+                    for (let container of verifyChoicesContainers) {
+                        const selectEl = container.querySelector('select');
+                        if (selectEl) {
+                            // This dropdown likely belongs to verify section - block it
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                            scrollToEnableButton();
+                            // Hide any open dropdowns
+                            if (selectEl._choicesInstance) {
+                                try {
+                                    selectEl._choicesInstance.hideDropdown();
+                                } catch (err) {
+                                    // Ignore
+                                }
+                            }
+                            return false;
+                        }
+                    }
+                }
+            }, true);
+        }
+
+        updateVerifySection();
     });
 
-    document.getElementById('channelForm').onsubmit = function(e) {
-        e.preventDefault();
-        const channelId = document.getElementById('channel').value;
-        const guildId = "{{ id }}";
-        window.location.href = `/server/${guildId}/settings/set_channel/${channelId}`;
-    };
-
-    document.getElementById('permroleForm').onsubmit = async function(e) {
-        e.preventDefault();
-        const select = document.getElementById('role');
-        const selected = Array.from(select.selectedOptions).map(opt => opt.value);
-        const guildId = "{{ id }}";
-        await fetch(`/server/${guildId}/settings/set_perm_roles`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ role_ids: selected })
-        });
-        location.reload();
-    };
-
-    // Detection toggle logic
-    const enableBtn = document.getElementById('detection-enable');
-    const disableBtn = document.getElementById('detection-disable');
-    if (enableBtn && disableBtn) {
-        enableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!enableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_detection/1`;
-            }
-        });
-        disableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!disableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_detection/0`;
-            }
-        });
-    };
-
-    
-
-    // Detection toggle logic
-    const EenableBtn = document.getElementById('embed-enable');
-    const EdisableBtn = document.getElementById('embed-disable');
-    if (EenableBtn && EdisableBtn) {
-        EenableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!EenableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_embed/1`;
-            }
-        });
-        EdisableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!EdisableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_embed/0`;
-            }
-        });
-    }
-
-    // Message toggle logic
-    const messageEnableBtn = document.getElementById('message-enable');
-    const messageDisableBtn = document.getElementById('message-disable');
-    if (messageEnableBtn && messageDisableBtn) {
-        messageEnableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!messageEnableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_set/message_set/1`;
-            }
-        });
-        messageDisableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!messageDisableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_set/message_set/0`;
-            }
-        });
-    }
-
-    // Fun Command Set toggle logic
-    const funEnableBtn = document.getElementById('fun-enable');
-    const funDisableBtn = document.getElementById('fun-disable');
-    if (funEnableBtn && funDisableBtn) {
-        funEnableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!funEnableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_set/fun_set/1`;
-            }
-        });
-        funDisableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!funDisableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_set/fun_set/0`;
-            }
-        });
-    }
-    </script>
-
-    <script>
     const userBox = document.getElementById('userBox');
-    const arrow = userBox.querySelector('.user-arrow');
-    const dropdown = userBox.querySelector('.dropdown');
-    const container = document.querySelector('.settings-container');
+    if (userBox) {
+        const arrow = userBox.querySelector('.user-arrow');
+        const dropdown = userBox.querySelector('.dropdown');
+        const container = document.querySelector('.settings-container');
+        let dropdownOpen = false;
 
-    let dropdownOpen = false;
+        userBox.addEventListener('click', e => {
+            if (dropdown.contains(e.target)) return;
+            dropdownOpen = !dropdownOpen;
+            if (dropdownOpen) openDropdown();
+            else closeDropdown();
+        });
 
-    userBox.addEventListener('click', function (e) {
-        // Prevent toggling when clicking inside the dropdown
-        if (dropdown.contains(e.target)) return;
-
-        dropdownOpen = !dropdownOpen;
-
-        if (dropdownOpen) {
+        function openDropdown() {
             arrow.classList.add('rotated');
             dropdown.style.display = 'block';
             userBox.classList.add('disabled');
             container.classList.add('disabled');
-            // Make all clickable guilds look grayed out and unclickable
-            document.querySelectorAll('.container .link:not(.grayed-out)').forEach(link => {
-                link.classList.add('dropdown-active');
-                link.style.pointerEvents = 'none';
-            });
-            // Also make grayed-out (+) guilds unclickable and unhoverable
-            document.querySelectorAll('.container .link.grayed-out').forEach(link => {
-                link.style.pointerEvents = 'none';
-                link.style.cursor = 'default';
-            });
             document.addEventListener('click', outsideClick);
-        } else {
-            closeDropdown();
         }
-    });
 
-    function outsideClick(e) {
-        if (!userBox.contains(e.target)) {
-            closeDropdown();
+        function outsideClick(e) {
+            if (!userBox.contains(e.target)) closeDropdown();
+        }
+
+        function closeDropdown() {
+            dropdown.style.display = 'none';
+            arrow.classList.remove('rotated');
+            userBox.classList.remove('disabled');
+            container.classList.remove('disabled');
+            dropdownOpen = false;
+            document.removeEventListener('click', outsideClick);
         }
     }
-
-    function closeDropdown() {
-        dropdown.style.display = 'none';
-        arrow.classList.remove('rotated');
-        userBox.classList.remove('disabled');
-        container.classList.remove('disabled');
-        // Restore clickable guilds
-        document.querySelectorAll('.container .link.dropdown-active').forEach(link => {
-            link.classList.remove('dropdown-active');
-            link.style.pointerEvents = '';
-        });
-        // Restore grayed-out (+) guilds to be hoverable/clickable if needed
-        document.querySelectorAll('.container .link.grayed-out').forEach(link => {
-            link.style.pointerEvents = '';
-            link.style.cursor = '';
-        });
-        dropdownOpen = false;
-        document.removeEventListener('click', outsideClick);
-    }
-
-    const cnfEnableBtn = document.getElementById('cnf-enable');
-    const cnfDisableBtn = document.getElementById('cnf-disable');
-    if (cnfEnableBtn && cnfDisableBtn) {
-        cnfEnableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!cnfEnableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_set/deadcode/1`;
-            }
-        });
-        cnfDisableBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (!cnfDisableBtn.classList.contains('active')) {
-                window.location.href = `/server/{{ id }}/settings/toggle_set/deadcode/0`;
-            }
-        });
-    }
-
     </script>
 
 </body>
