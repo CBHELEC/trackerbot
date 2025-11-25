@@ -11,6 +11,7 @@ class Listeners(commands.Cog):
         self.bot = bot
         self.conn2 = sqlite3.connect(DATA_DIR / 'votes.db')
         self.c = self.conn2.cursor()
+        self.recently_processed_embeds = set()  # Track messages that recently had embeds removed
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -90,6 +91,15 @@ class Listeners(commands.Cog):
         if link_embed_status and len(message.embeds) and re.search(GC_LINK_SEARCH, message.content, re.IGNORECASE):
             if message.author.bot:
                 return
+            # Check if we've already processed this message recently
+            if message.id in self.recently_processed_embeds:
+                return
+            # Check if embeds are already suppressed
+            if message.flags.suppress_embeds:
+                return
+            self.recently_processed_embeds.add(message.id)
+            # Remove from set after 10 seconds to prevent memory buildup
+            asyncio.create_task(self._remove_from_processed(message.id, delay=10))
             await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info!", delete_after=5)
             await message.edit(suppress=True)
 
@@ -112,6 +122,15 @@ class Listeners(commands.Cog):
         if link_embed_status and len(after.embeds) and re.search(GC_LINK_SEARCH,after.content,re.IGNORECASE):
             if after.author.bot:
                 return
+            # Check if we've already processed this message recently
+            if after.id in self.recently_processed_embeds:
+                return
+            # Check if embeds are already suppressed
+            if after.flags.suppress_embeds:
+                return
+            self.recently_processed_embeds.add(after.id)
+            # Remove from set after 10 seconds to prevent memory buildup
+            asyncio.create_task(self._remove_from_processed(after.id, delay=10))
             await asyncio.sleep(2)
             await after.reply(
                 "Heya, I cleared the embed from your message since it doesn't show any extra info!",
@@ -147,6 +166,11 @@ class Listeners(commands.Cog):
         else:
             return
 
+    async def _remove_from_processed(self, message_id: int, delay: float):
+        """Remove a message ID from the recently processed set after a delay."""
+        await asyncio.sleep(delay)
+        self.recently_processed_embeds.discard(message_id)
+
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         embed = discord.Embed(title="New Server!",
@@ -159,9 +183,19 @@ class Listeners(commands.Cog):
         for channel in guild.text_channels:
             if channel.permissions_for(guild.me).send_messages:
                 try:
-                    aembed = discord.Embed(title="Heya, Thanks for adding me!",
-                      description="Configuration is easy, simply follow these commands and you're good to go!\n</setperm:1362738130918314149> - Add roles which can use Message commands\n</removeperm:1362738130918314150> - Remove roles from being able to use Message commands\n</setskullboard:1362738130918314151> - Set whether skullboard function is enabled, and if so what channel is used\n</settings:1362738130918314152> - Display guild configuration\n-----------------------------------------------------------------------------------------------\n</help:1323052604623683779> - View info on all commands!\n-----------------------------------------------------------------------------------------------\nIf you need more help, run </invite support:1362738130490490908> and join that server to get help, or simply message `not.cbh` (<@820297275448098817>)\n\nHope you enjoy having me in your server, I'm glad to be here! Any suggestions please also do the same as above, we listen to all suggestions.",
-                      colour=0xad7e66)
+                    aembed = discord.Embed(title="Hey! Thanks for adding me...",
+                                        description="If you want to configure me, I have a dashboard!\n" \
+                                        "LINK: [**CLICK ME**](<https://dashboard.trackerbot.xyz/>)\n" \
+                                        "If you want help, I have a command for that!\n" \
+                                        "COMMAND: </help:1370815537059205173> (<--- CLICK)\n" \
+                                        "If none of that has helped, join my support server!\n" \
+                                        "INVITE COMMAND: </invite support:1370815537151606928> (<--- CLICK)\n\n" \
+                                        "Hope you enjoy having me in your server, I'm glad to be here! \n" \
+                                        "Any suggestions please use:\n" \
+                                        "COMMAND: </misc suggest_report:1419276756874952828> (<--- CLICK)\n" \
+                                        "to send it straight to the Dev!\n" \
+                                        "All suggestions are listened to, and likely added.",
+                                        colour=0xad7e66)
                     await channel.send(embed=aembed)
                     break  
                 except discord.Forbidden:
