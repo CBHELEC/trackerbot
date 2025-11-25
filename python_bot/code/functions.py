@@ -574,45 +574,16 @@ def get_formatted_storage_usage():
     total_gb = disk.total / 1024 / 1024 / 1024
     return f"<:ssd:1363600388959506585> | Storage: **{used_gb:.1f} / {total_gb:.1f} GB**"
 
-async def get_current_vote_streak_topgg(interaction):
-    channel = interaction.client.get_channel(TOPGG_LOG_ID)
-    if not isinstance(channel, discord.TextChannel):
-        return None
-
-    async for message in channel.history(limit=100):  # Search last 100 messages
-        if interaction.user in message.mentions:
-            for embed in message.embeds:
-                if embed.fields:
-                    for field in embed.fields:
-                        if field.name.strip() == "Current Vote Streak:":
-                            return field.value
-    return None
-
-async def find_latest_topgg_vote(bot, interaction):
-    channel_id = TOPGG_LOG_ID
-    channel = bot.get_channel(channel_id) 
-    
-    if channel is None:
-        return "Channel not found."
-
-    async for message in channel.history(limit=None): 
-        if interaction.user.mention in message.content:
-            return message.created_at
-
-    return None
-
 REMINDER_FILE = DATA_DIR / "reminded_users.json"
 def load_reminded_users():
     if REMINDER_FILE.exists():
         with open(REMINDER_FILE, "r") as f:
             data = json.load(f)
-            # Convert timestamp strings back to datetime objects
             return {int(k): datetime.fromisoformat(v) for k, v in data.items()}
     return {}
 
 def save_reminded_users(cache):
     with open(REMINDER_FILE, "w") as f:
-        # Convert datetime objects to ISO strings
         json.dump({str(k): v.isoformat() for k, v in cache.items()}, f, indent=2)
 
 def get_command_counts(bot):
@@ -660,10 +631,10 @@ class FullModal(discord.ui.Modal, title="Suggest or Report"):
     )
 
     async def on_submit(self, modal_interaction: discord.Interaction):
+        select_value = self.select_label.component.values[0]
+        text_value = self.text_input_label.component.value
         msg = "suggestion" if select_value == "Suggest a Feature" else "bug report"
         msg2 = "Suggestion" if select_value == "Suggest a Feature" else "Bug Report"
-        text_value = self.text_input_label.component.value
-        select_value = self.select_label.component.values[0]
         await modal_interaction.response.send_message(
             f"Thank you for your {msg}! The Dev will review it ASAP.", ephemeral=True
         )
