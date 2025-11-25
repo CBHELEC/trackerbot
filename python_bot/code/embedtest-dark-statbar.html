@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+
+    @font-face {
+    font-family: 'gg sans';
+    src: url('https://raw.githubusercontent.com/CBHELEC/stupid_shit/main/gg-sans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    }
+
+    body {
+      background: transparent;
+      font-family: 'gg sans', 'Helvetica Neue', 'Whitney', sans-serif;
+      color: #dcddde;
+      padding: 20px;
+    }
+
+    .discord-message {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 20px;
+      max-width: 700px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #44444400;
+      flex-shrink: 0;
+    }
+
+    .content {
+      flex: 1;
+    }
+
+    .username {
+      font-weight: bold;
+      color: #00b0f4;
+    }
+
+    .username2 {
+      font-weight: bold;
+      color: #82219d;
+      margin-right: 6px;
+    }
+
+    .username3 {
+      font-weight: bold;
+      color: #ad7e66;
+      margin-right: 3px;
+    }
+
+    .timestamp {
+      color: #72767d;
+      font-size: 12px;
+    }
+
+    .message-text {
+      margin: 2px 0;
+      user-select: text;
+      white-space: pre-wrap;
+      color: #ffffff
+    }
+
+    .tag {
+      background-color: #2f3136;
+      color: white;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 4px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      margin-left: 4px;
+      line-height: 1;
+      transition: all 0.2s ease;
+    }
+
+    .tag:hover {
+      background-color: #5865F2;
+      color: white;
+    } 
+
+    .discord-command {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #2f3136;
+    color: #b9bbbe;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    }
+
+    .discord-command:hover {
+    background-color: #5865F2;
+    color: white;
+    }
+
+    .shifted-avatar {
+    transform: translateY(24px);
+    }
+
+    .message-header {
+      display: flex;
+      align-items: baseline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="discord-message">
+    <img src="https://assets.zyrosite.com/Yg2j8ZgJEvso0DLj/purrito-modified-YZ9jODWJbyh7aEjV.png" alt="User Avatar" class="avatar">
+    <div class="content">
+      <div><span class="username">シャドウキャット</span><span class="tag">🍂 TFTC</span> <span class="timestamp">19:00</span></div>
+      <div class="message-text">Yo, how many finds do you have?</div>
+    </div>
+  </div>
+
+  <div class="discord-message">
+    <img src="https://assets.zyrosite.com/Yg2j8ZgJEvso0DLj/15152c0a4e3e4b50868fdc2b212dea6c-modified-m6Lb3VJZZas4lzxz.png" alt="User 2 Avatar" class="avatar">
+    <div class="content">
+      <div class="message-header"><span class="username2">rawr</span><span class="timestamp">19:05</span></div>
+      <div class="message-text">No idea.. let me check rq</div>
+    </div>
+  </div>
+
+  <div class="discord-message">
+    <img src="https://assets.zyrosite.com/Yg2j8ZgJEvso0DLj/purrito-modified-YZ9jODWJbyh7aEjV.png" alt="User Avatar" class="avatar">
+    <div class="content">
+      <div><span class="username">シャドウキャット</span><span class="tag">🍂 TFTC</span> <span class="timestamp">19:06</span></div>
+      <div class="message-text">Let me save you some time-</div>
+    </div>
+  </div>
+
+    <div class="discord-message">
+    <img src="https://assets.zyrosite.com/Yg2j8ZgJEvso0DLj/finallogo_hq_nobg-dOqDWvZeazhLr8kx.png" alt="Tracker Avatar" class="avatar shifted-avatar">
+    <div class="content">
+        <div style="font-family: 'Consolas', monospace; font-size: 13px; color: #b9bbbe; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+        <div style="transform: translateX(-35px);">╭──────
+        <img src="https://cdn.discordapp.com/avatars/820297275448098817/344a08e109376b1d5cbf3c659a169b78.webp?size=16" 
+            alt="avatar" 
+            style="width: 16px; height: 16px; border-radius: 50%; vertical-align: middle;">
+        <span style="font-family: gg sans; color: #00b0f4; font-weight: 600;">シャドウキャット</span>
+        <span style="font-family: gg sans; color: #b9bbbe;">used</span>
+        <span class="discord-command" style="font-family: gg sans;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.06 7.61c-.25.95.31 1.92 1.26 2.18l4.3 1.15c.94.25 1.91-.31 2.17-1.26l1.15-4.3c.25-.94-.31-1.91-1.26-2.17l-4.3-1.15c-.94-.25-1.91.31-2.17 1.26l-1.15 4.3ZM12.98 7.87a2 2 0 0 0 1.75 2.95H20a2 2 0 0 0 1.76-2.95l-2.63-4.83a2 2 0 0 0-3.51 0l-2.63 4.83ZM5.86 13.27a.89.89 0 0 1 1.28 0l.75.77a.9.9 0 0 0 .54.26l1.06.12c.5.06.85.52.8 1.02l-.13 1.08c-.02.2.03.42.14.6l.56.92c.27.43.14 1-.28 1.26l-.9.58a.92.92 0 0 0-.37.48l-.36 1.02a.9.9 0 0 1-1.15.57l-1-.36a.89.89 0 0 0-.6 0l-1 .36a.9.9 0 0 1-1.15-.57l-.36-1.02a.92.92 0 0 0-.37-.48l-.9-.58a.93.93 0 0 1-.28-1.26l.56-.93c.11-.17.16-.38.14-.59l-.12-1.08c-.06-.5.3-.96.8-1.02l1.05-.12a.9.9 0 0 0 .54-.26l.75-.77ZM18.52 13.71a1.1 1.1 0 0 0-2.04 0l-.46 1.24c-.19.5-.57.88-1.07 1.07l-1.24.46a1.1 1.1 0 0 0 0 2.04l1.24.46c.5.19.88.57 1.07 1.07l.46 1.24c.35.95 1.7.95 2.04 0l.46-1.24c.19-.5.57-.88 1.07-1.07l1.24-.46a1.1 1.1 0 0 0 0-2.04l-1.24-.46a1.8 1.8 0 0 1-1.07-1.07l-.46-1.24Z"/>
+            </svg>
+            statbar
+        </span>
+        </div>
+        </div>
+        <div><span class="username3">Tracker</span> <span class="timestamp">19:06</span></div>
+        <img class="message-text" src="https://cdn2.project-gc.com/statbar.php?quote=discord.gg/pmuuVNptg3+-+2025/07/30&includeLabcaches&user=BooZac" alt="Statbar" style="border-radius: 5px; max-width: 100%;">
+    </div>
+    </div>
+
+  <div class="discord-message">
+    <img src="https://assets.zyrosite.com/Yg2j8ZgJEvso0DLj/15152c0a4e3e4b50868fdc2b212dea6c-modified-m6Lb3VJZZas4lzxz.png" alt="User 2 Avatar" class="avatar">
+    <div class="content">
+      <div class="message-header"><span class="username2">rawr</span><span class="timestamp">19:07</span></div>
+      <div class="message-text">Oh wow!</div>
+    </div>
+  </div>
+
+</body>
+</html>
