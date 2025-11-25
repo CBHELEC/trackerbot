@@ -8,6 +8,80 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
+def contains_mentions(text):
+    """Check if text contains @everyone or @here mentions."""
+    if not text:
+        return False
+    return '@everyone' in text or '@here' in text
+
+def sanitize_mentions(text):
+    """Remove @everyone and @here mentions from text."""
+    if not text:
+        return text
+    text = text.replace('@everyone', '@\u200beveryone')
+    text = text.replace('@here', '@\u200bhere')
+    return text
+
+def check_embed_for_mentions(embed):
+    """Check if an embed contains @everyone or @here mentions."""
+    if not embed:
+        return False
+    
+    # Check title
+    if embed.title and contains_mentions(embed.title):
+        return True
+    
+    # Check description
+    if embed.description and contains_mentions(embed.description):
+        return True
+    
+    # Check fields
+    for field in embed.fields:
+        if field.name and contains_mentions(field.name):
+            return True
+        if field.value and contains_mentions(field.value):
+            return True
+    
+    # Check footer
+    if embed.footer and embed.footer.text and contains_mentions(embed.footer.text):
+        return True
+    
+    # Check author
+    if embed.author and embed.author.name and contains_mentions(embed.author.name):
+        return True
+    
+    return False
+
+def sanitize_embed_mentions(embed):
+    """Sanitize all mentions in an embed."""
+    if not embed:
+        return embed
+    
+    # Sanitize title
+    if embed.title:
+        embed.title = sanitize_mentions(embed.title)
+    
+    # Sanitize description
+    if embed.description:
+        embed.description = sanitize_mentions(embed.description)
+    
+    # Sanitize fields
+    for field in embed.fields:
+        if field.name:
+            field.name = sanitize_mentions(field.name)
+        if field.value:
+            field.value = sanitize_mentions(field.value)
+    
+    # Sanitize footer
+    if embed.footer and embed.footer.text:
+        embed.footer.text = sanitize_mentions(embed.footer.text)
+    
+    # Sanitize author
+    if embed.author and embed.author.name:
+        embed.author.name = sanitize_mentions(embed.author.name)
+    
+    return embed
+
 class InputModal(discord.ui.Modal):
   def __init__(self, name, *text_inputs):
     super().__init__(title = '{} Modal'.format(name), timeout = 300.0)
@@ -237,7 +311,26 @@ class SendView(discord.ui.View):
         channel = guild.get_channel(channel_id)
         if not channel:
           channel = await guild.fetch_channel(channel_id)
-        await channel.send(content = self.base_view.content, embeds = self.base_view.embeds)
+        
+        # Check for mentions and sanitize if user doesn't have permission
+        content = self.base_view.content
+        embeds = copy.deepcopy(self.base_view.embeds)
+        
+        has_mention_permission = channel.permissions_for(interaction.user).mention_everyone
+        
+        # Check content for mentions
+        if content and contains_mentions(content):
+          if not has_mention_permission:
+            content = sanitize_mentions(content)
+        
+        # Check embeds for mentions
+        if embeds:
+          for embed in embeds:
+            if check_embed_for_mentions(embed):
+              if not has_mention_permission:
+                sanitize_embed_mentions(embed)
+        
+        await channel.send(content = content, embeds = embeds)
         
       except Exception as error:
         error.interaction = interaction
@@ -268,7 +361,29 @@ class SendView(discord.ui.View):
     webhook_url = text_input.value
     try:
       webhook = discord.Webhook.from_url(webhook_url, session = self.base_view.session)
-      await webhook.send(content = self.base_view.content, embeds = self.base_view.embeds)
+      
+      # Check for mentions and sanitize if user doesn't have permission
+      content = self.base_view.content
+      embeds = copy.deepcopy(self.base_view.embeds)
+      
+      # Check user's mention permission in their guild (if in a guild)
+      has_mention_permission = False
+      if interaction.guild:
+        has_mention_permission = interaction.user.guild_permissions.mention_everyone
+      
+      # Check content for mentions
+      if content and contains_mentions(content):
+        if not has_mention_permission:
+          content = sanitize_mentions(content)
+      
+      # Check embeds for mentions
+      if embeds:
+        for embed in embeds:
+          if check_embed_for_mentions(embed):
+            if not has_mention_permission:
+              sanitize_embed_mentions(embed)
+      
+      await webhook.send(content = content, embeds = embeds)
     except Exception as error:
       error.interaction = modal.interaction
       raise error
@@ -313,6 +428,24 @@ class SendView(discord.ui.View):
           now = datetime.datetime.now(datetime.timezone.utc)
           seconds_elapsed = (now - message.created_at).seconds
           assert seconds_elapsed < 300, 'Non-admins are disallowed from editing messages older than 5 minutes.'
+        
+        # Check for mentions and sanitize if user doesn't have permission
+        content = self.base_view.content
+        embeds = copy.deepcopy(self.base_view.embeds)
+        
+        has_mention_permission = channel.permissions_for(interaction.user).mention_everyone
+        
+        # Check content for mentions
+        if content and contains_mentions(content):
+          if not has_mention_permission:
+            content = sanitize_mentions(content)
+        
+        # Check embeds for mentions
+        if embeds:
+          for embed in embeds:
+            if check_embed_for_mentions(embed):
+              if not has_mention_permission:
+                sanitize_embed_mentions(embed)
           
         where = channel.mention
       else:
@@ -320,7 +453,19 @@ class SendView(discord.ui.View):
         message = await interaction.user.fetch_message(message_id)
         where = 'our DMs'
         
-      await message.edit(content = self.base_view.content, embeds = self.base_view.embeds)
+        # For DMs, sanitize mentions (no permission to mention in DMs)
+        content = self.base_view.content
+        embeds = copy.deepcopy(self.base_view.embeds)
+        
+        if content and contains_mentions(content):
+          content = sanitize_mentions(content)
+        
+        if embeds:
+          for embed in embeds:
+            if check_embed_for_mentions(embed):
+              sanitize_embed_mentions(embed)
+        
+      await message.edit(content = content, embeds = embeds)
       
     except Exception as error:
       error.interaction = modal.interaction

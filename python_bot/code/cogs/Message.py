@@ -64,7 +64,7 @@ class Message(app_commands.Group):
                     "Unknown error speaking. The Dev has been notified.",
                     ephemeral=True,
                 )
-        elif ("@everyone" in saying and "@here" in saying) and interaction.user.guild_permissions.mention_everyone:
+        elif ("@everyone" in saying or "@here" in saying) and interaction.user.guild_permissions.mention_everyone:
             try:
                 await interaction.response.send_message(
                     f"Message sent.", ephemeral=True
@@ -100,9 +100,33 @@ class Message(app_commands.Group):
         try:
             target_message = await interaction.channel.fetch_message(int(message_id))
             reply_content = message
-            await target_message.reply(reply_content)
-            await interaction.followup.send("I replied successfully.", ephemeral=True)
-            await log(interaction, f"I replied to message {target_message.id} with '{reply_content}' in {interaction.channel.id}")
+
+            if ("@everyone" in reply_content or "@here" in reply_content) and interaction.user.guild_permissions.mention_everyone:
+                        try:
+                            await interaction.response.send_message(
+                                f"Message sent.", ephemeral=True
+                            )
+                            await log(interaction, f"I replied with '{reply_content}' (HAS EVERYONE OR HERE PING) in {interaction.channel.id}")
+                        except discord.Forbidden:
+                            no_chan = f"<#{interaction.channel.id}>"
+                            await interaction.response.send_message(
+                                f"I do not have permission to send messages in {no_chan}. Please notify an Administrator and try again.",
+                                ephemeral=True,
+                            )
+                        except Exception as e:
+                            await log_error(interaction.guild, bot, interaction.command.name, 
+                                f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) replied with `{reply_content}`. Error: \n```\n{str(e)}\n```"
+                            )
+                            await interaction.response.send_message(
+                                "An unknown error occured. The Dev has been notified.",
+                                ephemeral=True,
+                            )
+            elif ("@everyone" in reply_content or "@here" in reply_content) and not interaction.user.guild_permissions.mention_everyone:
+                await interaction.response.send_message(f"Please do NOT put everyone or here pings in your message. If you should be allowed to, contact the server owner and try again.", ephemeral=True)  
+            else:
+                await target_message.reply(reply_content)
+                await interaction.followup.send("I replied successfully.", ephemeral=True)
+                await log(interaction, f"I replied to message {target_message.id} with '{reply_content}' in {interaction.channel.id}")
         except discord.NotFound:
             await interaction.followup.send("The specified message was not found.", ephemeral=True)
         except discord.Forbidden:
@@ -127,9 +151,11 @@ class Message(app_commands.Group):
         """Delete a specified message."""
         if messageid is None or messageid == "" or not (re.search(r"^\d{18,19}$", messageid)):
             await interaction.response.send_message("Invalid `/delete` Usage! messageID is invalid or blank!")
+            return
         origMessage = await interaction.channel.fetch_message(messageid)
         if origMessage.author != self.bot.user:
             await interaction.response.send_message("I can only delete my own messages.", f"{origMessage.jump_url} is owned by <@{origMessage.author.id}>.")
+            return
         if self.DELETE_TIME_DELAY > 0:
             await origMessage.delete(delay=self.DELETE_TIME_DELAY)
             await interaction.response.send_message(f"The message will be deleted in approximately {self.DELETE_TIME_DELAY} seconds.", ephemeral=True)
@@ -182,16 +208,42 @@ class Message(app_commands.Group):
     async def edit(self, interaction: discord.Interaction, messageid: str, newmessage: str):
         if messageid is None or messageid == "" or not (re.search(r"^\d{18,19}$", messageid)):
             await interaction.response.send_message("Invalid `/edit` Usage! messageID is invalid or blank.")
+            return
         origMessage = await interaction.channel.fetch_message(messageid)
         if origMessage.author != self.bot.user:
             await interaction.response.send_message(f"I can only edit my own messages. {origMessage.jump_url} is owned by <@{origMessage.author.id}>.")
             return
-        await origMessage.edit(content=newmessage)
-        await interaction.response.send_message("I edited the message!", ephemeral=True) 
-        await log(interaction, f"I edited message {origMessage.id} (content: '{origMessage.content}') in {interaction.channel.id} to '{newmessage}'")
+        
+        if ("@everyone" in newmessage or "@here" in newmessage) and interaction.user.guild_permissions.mention_everyone:
+                    try:
+                        await interaction.response.send_message(
+                            f"Message sent.", ephemeral=True
+                        )
+                        await log(interaction, f"I edited to '{newmessage}' (HAS EVERYONE OR HERE PING) in {origMessage.channel.id}")
+                    except discord.Forbidden:
+                        no_chan = f"<#{origMessage.channel.id}>"
+                        await interaction.response.send_message(
+                            f"I do not have permission to send messages in {no_chan}. Please notify an Administrator and try again.",
+                            ephemeral=True,
+                        )
+                    except Exception as e:
+                        await log_error(interaction.guild, bot, interaction.command.name, 
+                            f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) editing to `{newmessage}`. Error: \n```\n{str(e)}\n```"
+                        )
+                        await interaction.response.send_message(
+                            "An unknown error occured. The Dev has been notified.",
+                            ephemeral=True,
+                        )
+        elif ("@everyone" in newmessage or "@here" in newmessage) and not interaction.user.guild_permissions.mention_everyone:
+            await interaction.response.send_message(f"Please do NOT put everyone or here pings in your message. If you should be allowed to, contact the server owner and try again.", ephemeral=True)  
+        else:
+            await origMessage.edit(content=newmessage)
+            await interaction.response.send_message("I edited the message!", ephemeral=True) 
+            await log(interaction, f"I edited message {origMessage.id} (content: '{origMessage.content}') in {interaction.channel.id} to '{newmessage}'")
             
 # EMBEDBUILDER
     @app_commands.command()
+    @is_perm_mod()
     async def embedbuilder(self, interaction: discord.Interaction): 
         """Interactive embed builder."""
         view = BaseView(interaction, self.session)
