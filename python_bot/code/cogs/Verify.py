@@ -79,19 +79,20 @@ class Verification(app_commands.Group):
                     await interaction.response.defer(thinking=True, ephemeral=True)
                     
                     guild = interaction.guild
-                    member = guild.get_member(interaction.user.id)
-                    role = guild.get_role(guildsettings.verify_verified_role_id)
-                    
-                    if not member:
+                    try:
+                        member = await guild.fetch_member(interaction.user.id)
+                    except (discord.NotFound, discord.HTTPException):
                         await interaction.followup.send("Unable to find your member information. Please try again.", ephemeral=True)
                         return
                     
+                    role = guild.get_role(guildsettings.verify_verified_role_id)
                     if not role:
                         await interaction.followup.send("Verification role not found. Please contact a server Administrator.", ephemeral=True)
                         return
                     
-                    bot_member = guild.get_member(self.bot.user.id)
-                    if not bot_member:
+                    try:
+                        bot_member = await guild.fetch_member(self.bot.user.id)
+                    except (discord.NotFound, discord.HTTPException):
                         await interaction.followup.send("Bot member not found. Please contact a server Administrator.", ephemeral=True)
                         return
                     
@@ -158,7 +159,7 @@ class Verification(app_commands.Group):
                         if channel:
                             await channel.send(
                                 f"{member.mention} used `/verify {gc_username}` and their username matched a previous verification, so they have been automatically verified via fasttrack.\n"
-                                f"⛔ **NOTICE: To disable verification fasttracking, please get the Owner, or anyone with the Administrator or Manage Server permission to follow the steps [by clicking here](<https://docs.trackerbot.xyz/fasttrack#disable>).**"
+                                f"⛔ **NOTICE: To disable verification fasttracking, please get the Owner, or anyone with the Administrator or Manage Server permission to follow the steps [by clicking here](<https://docs.trackerbot.xyz/configuration/verification#disable-fasttrack>).**"
                             )
                         
                         try:
@@ -272,18 +273,22 @@ class Verification(app_commands.Group):
             message_id = verification_instance['message_id']
             gc_username = verification_instance['gc_username']
             guild = interaction.guild
-            member = guild.get_member(verification_instance['user_id'])
+            try:
+                member = await guild.fetch_member(verification_instance['user_id'])
+            except (discord.NotFound, discord.HTTPException):
+                await interaction.followup.send("User not found in server.", ephemeral=True)
+                return
+            
             role = guild.get_role(guildsettings.verify_verified_role_id)
-
-            if member:
-                if not role:
-                    await interaction.followup.send("Verification role not found. Please contact a server Administrator.", ephemeral=True)
-                    return
-                
-                bot_member = guild.get_member(self.bot.user.id)
-                if not bot_member:
-                    await interaction.followup.send("Bot member not found. Please contact a server Administrator.", ephemeral=True)
-                    return
+            if not role:
+                await interaction.followup.send("Verification role not found. Please contact a server Administrator.", ephemeral=True)
+                return
+            
+            try:
+                bot_member = await guild.fetch_member(self.bot.user.id)
+            except (discord.NotFound, discord.HTTPException):
+                await interaction.followup.send("Bot member not found. Please contact a server Administrator.", ephemeral=True)
+                return
                 
                 bot_perms = bot_member.guild_permissions
                 if not bot_perms.manage_roles:
@@ -441,8 +446,12 @@ class Verification(app_commands.Group):
             message_id = verification_instance['message_id']
             gc_username = verification_instance['gc_username']
             guild = interaction.guild
-            member = guild.get_member(verification_instance['user_id'])
-
+            try:
+                member = await guild.fetch_member(verification_instance['user_id'])
+            except (discord.NotFound, discord.HTTPException):
+                await interaction.followup.send("User not found in server.", ephemeral=True)
+                return
+            
             if member:
                 try:
                     await member.send(
@@ -527,38 +536,12 @@ class Verification(app_commands.Group):
     # UNVERIFIED
     @app_commands.command()
     async def unverified(self, interaction: discord.Interaction):
-        """Sends a list of unverified members."""
-        guildsettings = get_guild_settings(interaction.guild.id)
-        if isinstance(guildsettings.verify_admin_role_id, str):
-            validroles = {int(role) for role in guildsettings.verify_admin_role_id.split(",") if role.strip()}
-        elif isinstance(guildsettings.verify_admin_role_id, int):
-            validroles = {guildsettings.verify_admin_role_id}
-        else:
-            validroles = set()
-        has_permission = (
-            any(role.id in validroles for role in interaction.user.roles) or
-            interaction.user.guild_permissions.administrator or
-            interaction.user.guild_permissions.manage_guild
-        )
-        if not has_permission:
-            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
-            return
-
-        role_id_to_check = guildsettings.verify_verified_role_id 
-        missing_role_users = []
-
-        for member in interaction.guild.members:
-            if role_id_to_check not in [role.id for role in member.roles]: 
-                missing_role_users.append(member)
-
+        """Fetch a list of unverified members."""
         embed = discord.Embed(
             title="Unverified Users",
-            colour=0xad7e66
+            colour=0xad7e66,
+            description="This command had to be removed due to various Discord Limitations.\nInstead, please go to Server Settings → Roles → Unverified and click 'Members' to see a list of unverified members."
         )
-
-        for user in missing_role_users:
-            embed.add_field(name=user.name, value=user.mention, inline=False)
-
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @unverified.error
@@ -597,8 +580,9 @@ class Verification(app_commands.Group):
                 await interaction.response.send_message("Verification role not found. Please contact a server Administrator.", ephemeral=True)
                 return
             
-            bot_member = interaction.guild.get_member(self.bot.user.id)
-            if not bot_member:
+            try:
+                bot_member = await interaction.guild.fetch_member(self.bot.user.id)
+            except (discord.NotFound, discord.HTTPException):
                 await interaction.response.send_message("Bot member not found. Please contact a server Administrator.", ephemeral=True)
                 return
             

@@ -159,11 +159,9 @@ class Message(app_commands.Group):
         if self.DELETE_TIME_DELAY > 0:
             await origMessage.delete(delay=self.DELETE_TIME_DELAY)
             await interaction.response.send_message(f"The message will be deleted in approximately {self.DELETE_TIME_DELAY} seconds.", ephemeral=True)
-            await log(interaction, f"I deleted message {origMessage.id} (content: '{origMessage.content}') in {interaction.channel.id} after {self.DELETE_TIME_DELAY} seconds.")
         else:
             await origMessage.delete()
             await interaction.response.send_message(f"The message will be deleted shortly.", ephemeral=True)
-            await log(interaction, f"I deleted message {origMessage.id} (content: '{origMessage.content}') in {interaction.channel.id} immediately.")
             
 # REACT       
     @app_commands.command(name="react", description="React to a specified message.")
@@ -195,7 +193,6 @@ class Message(app_commands.Group):
         try:
             await origMessage.add_reaction(emoji)
             await interaction.response.send_message("Reacted!", ephemeral=True)
-            await log(interaction, f"I reacted to message {origMessage.id} (content: '{origMessage.content}') with '{emoji}' in {interaction.channel.id}")
         except discord.HTTPException:
             await interaction.response.send_message("Failed to react! Please try again.", ephemeral=True)
             return   
@@ -239,7 +236,6 @@ class Message(app_commands.Group):
         else:
             await origMessage.edit(content=newmessage)
             await interaction.response.send_message("I edited the message!", ephemeral=True) 
-            await log(interaction, f"I edited message {origMessage.id} (content: '{origMessage.content}') in {interaction.channel.id} to '{newmessage}'")
             
 # EMBEDBUILDER
     @app_commands.command()

@@ -11,7 +11,7 @@ class Listeners(commands.Cog):
         self.bot = bot
         self.conn2 = sqlite3.connect(DATA_DIR / 'votes.db')
         self.c = self.conn2.cursor()
-        self.recently_processed_embeds = set()  # Track messages that recently had embeds removed
+        self.recently_processed_embeds = set() 
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -91,20 +91,17 @@ class Listeners(commands.Cog):
         if link_embed_status and len(message.embeds) and re.search(GC_LINK_SEARCH, message.content, re.IGNORECASE):
             if message.author.bot:
                 return
-            # Check if we've already processed this message recently
             if message.id in self.recently_processed_embeds:
                 return
-            # Check if embeds are already suppressed
             if message.flags.suppress_embeds:
                 return
             self.recently_processed_embeds.add(message.id)
-            # Remove from set after 10 seconds to prevent memory buildup
             asyncio.create_task(self._remove_from_processed(message.id, delay=10))
             await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info!", delete_after=5)
             await message.edit(suppress=True)
 
-        if "good bot" in message.content.lower():
-            await message.reply("thank yous OwO")
+       # if "good bot" in message.content.lower():
+       #     await message.reply("thank yous OwO")
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -122,14 +119,11 @@ class Listeners(commands.Cog):
         if link_embed_status and len(after.embeds) and re.search(GC_LINK_SEARCH,after.content,re.IGNORECASE):
             if after.author.bot:
                 return
-            # Check if we've already processed this message recently
             if after.id in self.recently_processed_embeds:
                 return
-            # Check if embeds are already suppressed
             if after.flags.suppress_embeds:
                 return
             self.recently_processed_embeds.add(after.id)
-            # Remove from set after 10 seconds to prevent memory buildup
             asyncio.create_task(self._remove_from_processed(after.id, delay=10))
             await asyncio.sleep(2)
             await after.reply(
@@ -173,8 +167,10 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
+        # Use owner_id instead of owner to avoid requiring guild_members intent
+        owner_name = f"<@{guild.owner_id}>" if guild.owner_id else "Unknown"
         embed = discord.Embed(title="New Server!",
-                      description=f"Name: {guild.name}\nID: {guild.id}\nOwner: {guild.owner.name} ({guild.owner.id})\nMember Count: {guild.member_count} \nBoosts: {guild.premium_subscription_count}",
+                      description=f"Name: {guild.name}\nID: {guild.id}\nOwner: {owner_name} ({guild.owner_id})\nMember Count: {guild.member_count} \nBoosts: {guild.premium_subscription_count}",
                       colour=0x6ad2a2)
         if guild.icon:
             embed.set_thumbnail(url=guild.icon.url)

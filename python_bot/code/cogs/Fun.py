@@ -26,12 +26,12 @@ class Fun(app_commands.Group):
         super().__init__(name="fun", description="Fun Commands.")
         self.bot = bot
     
-        self.context_menu = app_commands.ContextMenu(
-            name="Decode OwO",
-            callback=self.decode_owo,
-            type=discord.AppCommandType.message
-        )
-        self.bot.tree.add_command(self.context_menu)
+#        self.context_menu = app_commands.ContextMenu(
+#            name="Decode OwO",
+#            callback=self.decode_owo,
+#            type=discord.AppCommandType.message
+#        )
+#        self.bot.tree.add_command(self.context_menu)
 
   #  async def interaction_check(self, interaction: discord.Interaction) -> bool:
    #     """Ensures commands in this group only run in a specific channel."""
@@ -60,11 +60,11 @@ class Fun(app_commands.Group):
         raise error
     
 # DECODE_OWO CONTEXT
-    async def decode_owo(self, interaction: discord.Interaction, message: discord.Message):
-        """Decodes OwO text."""
-        matches = re.findall(r'(?:[OoUuwW]+)', message.content)
-        last_sequence = matches[-1] if matches else None
-        await interaction.response.send_message(owodecode.decode(last_sequence), ephemeral=True)
+#    async def decode_owo(self, interaction: discord.Interaction, message: discord.Message):
+#        """Decodes OwO text."""
+#        matches = re.findall(r'(?:[OoUuwW]+)', message.content)
+#        last_sequence = matches[-1] if matches else None
+#        await interaction.response.send_message(owodecode.decode(last_sequence), ephemeral=True)
 
 # HELP
     @app_commands.command()
@@ -303,7 +303,7 @@ class Fun(app_commands.Group):
         embed.description = (
             f"**Server Name**: {server.name}\n"
             f"**Server ID**: `{server.id}`\n"
-            f"**Owner**: {server.owner.mention}\n"
+            f"**Owner**: <@{server.owner_id}> ({server.owner_id})\n"
             f"**Member Count**: {server.member_count}\n"
             f"**Created At**: <t:{creation_time}:f>"
         )

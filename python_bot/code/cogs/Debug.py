@@ -15,6 +15,7 @@ from database import *
 from discord.app_commands import Transform, Transformer
 from typing import List
 from logger import log
+from game_functions.database import dbsetup, dbfunctions
 
 class RoleTransformer(Transformer):
     async def transform(self, interaction: discord.Interaction, value: str) -> List[Role]:
@@ -185,7 +186,9 @@ class Debug(app_commands.Group):
             embed = Embed(title=guild.name, color=0xad7e66)
             embed.add_field(name="Guild ID", value=guild.id)
             embed.add_field(name="Members", value=guild.member_count or "Unknown")
-            embed.add_field(name="Owner", value=str(guild.owner) if guild.owner else "Unknown")
+            # Use owner_id instead of owner to avoid requiring guild_members intent
+            owner_value = f"<@{guild.owner_id}> ({guild.owner_id})" if guild.owner_id else "Unknown"
+            embed.add_field(name="Owner", value=owner_value)
             embed.set_footer(text=f"Page {i}")
             embeds.append(embed)
 
@@ -320,8 +323,12 @@ class Debug(app_commands.Group):
         
         user_id = user_id if user_id else str(user.id)
         user = user if user else await self.bot.fetch_user(user_id)
+        # Add vote crates to inventory
+        async with dbsetup.Session() as session:
+            for _ in range(amount):
+                await dbfunctions.add_inv_item(session, int(user_id), "48")
         await update_type_rewardtotal(user_id, type, amount)
-        await interaction.response.send_message(f"✅ Added {amount} vote crates to {user.mention}.", ephemeral=True)
+        await interaction.response.send_message(f"✅ Added {amount} vote crate(s) to {user.mention}.", ephemeral=True)
 
 # DEBUG EVAL
     @app_commands.command(name="eval", description="Evaluate Python code.")
@@ -339,14 +346,12 @@ class Debug(app_commands.Group):
             "random": random,
             "datetime": datetime,
         }
-        # Dynamically add all subdirectories to sys.path
         base_dir = Path(__file__).parent.parent.resolve()
         for root, dirs, files in os.walk(base_dir):
             if "__pycache__" in root:
                 continue
             if root not in sys.path:
                 sys.path.append(root)
-        # Import all .py files as modules and add their globals to env
         for file in base_dir.rglob("*.py"):
             if file.is_file() and not file.name.startswith("__"):
                 try:
@@ -357,23 +362,20 @@ class Debug(app_commands.Group):
                         if not k.startswith("__"):
                             env[k] = v
                 except Exception:
-                    pass  # Ignore import errors for now
+                    pass  
         code = code.strip("` ")
         if code.startswith("py\n"):
             code = code[3:]
-        # Async eval wrapper
         body = f"async def _eval_fn():\n    try:\n        return {code}\n    except Exception as e:\n        return e"
         try:
             exec(body, env)
             result = await env["_eval_fn"]()
         except Exception as e:
             result = e
-        # Redact sensitive info
         result_str = str(result)
         for secret in (getattr(self.bot, "token", None),):
             if secret:
                 result_str = result_str.replace(secret, "[REDACTED]")
-        # Truncate if too long
         if len(result_str) > 1900:
             result_str = result_str[:1900] + "..."
         await interaction.followup.send(f"```py\n{result_str}\n```", ephemeral=True)
