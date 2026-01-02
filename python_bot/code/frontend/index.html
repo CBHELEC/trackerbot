@@ -1,37 +1,324 @@
 <!DOCTYPE html>
-
-<!-- Primary Meta Tags -->
-<title>Tracker Dashboard | The ultimate Discord bot for Geocachers | Tracker Bot</title>
-<meta name="title" content="Tracker Dashboard | The ultimate Discord bot for Geocachers | Tracker Bot" />
-<meta name="description" content="Interactively configure Tracker, the ultimate Discord bot for Geocachers. Show off your stats, share trackables, detect GC and TB codes and have fun with friends, right from your server, anytime." />
-
-<!-- Open Graph / Facebook -->
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://dashboard.trackerbot.xyz" />
-<meta property="og:title" content="Tracker Dashboard | The ultimate Discord bot for Geocachers | Tracker Bot" />
-<meta property="og:description" content="Interactively configure Tracker, the ultimate Discord bot for Geocachers. Show off your stats, share trackables, detect GC and TB codes and have fun with friends, right from your server, anytime." />
-
-<!-- X (Twitter) -->
-<meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:url" content="https://dashboard.trackerbot.xyz" />
-<meta property="twitter:title" content="Tracker Dashboard | The ultimate Discord bot for Geocachers | Tracker Bot" />
-<meta property="twitter:description" content="Interactively configure Tracker, the ultimate Discord bot for Geocachers. Show off your stats, share trackables, detect GC and TB codes and have fun with friends, right from your server, anytime." />
-
-<!-- Meta Tags Generated with https://metatags.io -->
-
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tracker Dashboard</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='landing.css') }}">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Primary Meta Tags -->
+    <title>Tracker Dashboard | The ultimate Discord bot for Geocachers | Tracker Bot</title>
+    <meta name="title" content="Tracker Dashboard | The ultimate Discord bot for Geocachers | Tracker Bot" />
+    <meta name="description"
+        content="Interactively configure Tracker, the ultimate Discord bot for Geocachers. Show off your stats, share trackables, detect GC and TB codes and have fun with friends, right from your server, anytime." />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://dashboard.trackerbot.xyz" />
+    <meta property="og:title" content="Tracker Dashboard | The ultimate Discord bot for Geocachers | Tracker Bot" />
+    <meta property="og:description"
+        content="Interactively configure Tracker, the ultimate Discord bot for Geocachers. Show off your stats, share trackables, detect GC and TB codes and have fun with friends, right from your server, anytime." />
+
+    <!-- X (Twitter) -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://dashboard.trackerbot.xyz" />
+    <meta property="twitter:title"
+        content="Tracker Dashboard | The ultimate Discord bot for Geocachers | Tracker Bot" />
+    <meta property="twitter:description"
+        content="Interactively configure Tracker, the ultimate Discord bot for Geocachers. Show off your stats, share trackables, detect GC and TB codes and have fun with friends, right from your server, anytime." />
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
     <link rel="icon" type="image/ico" href="/static/favicon.ico">
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-    <h1> Tracker Dashboard </h1>
-    <h3> The Bot is in <strong> {{count}} </strong> Servers! </h3>
-    <a href="{{login_url}}">
-        <button class="button"> Login </button>
-    </a>
+
+<body class="bg-[#0f172a] text-white selection:bg-indigo-500/30 overflow-x-hidden font-sans antialiased">
+
+    <!-- Background Ambience -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div
+            class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse">
+        </div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]"></div>
+        <div class="absolute top-[20%] left-[30%] w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[100px]"></div>
+    </div>
+
+    <!-- Grid Pattern Overlay -->
+    <div
+        class="fixed inset-0 z-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 pointer-events-none">
+    </div>
+
+    <!-- Main Content -->
+    <div
+        class="relative z-10 container mx-auto px-4 min-h-[100dvh] flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-4 lg:gap-24 py-10">
+
+        <!-- Left Side: Hero Content -->
+        <div class="hidden lg:block flex-1 max-w-2xl text-center lg:text-left space-y-8">
+            <div class="space-y-4">
+                <h1 class="text-3xl lg:text-7xl font-bold tracking-tight text-white leading-[1.1]">
+                    Stats <span
+                        class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Accessible.</span>
+                    <br />
+                    Info <span
+                        class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Instantly.</span>
+                </h1>
+                <p class="text-lg text-slate-400 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                    The ultimate Discord bot for Geocachers. Setup, enable, disable, and manage features quickly and
+                    easily with the dashboard.
+                </p>
+            </div>
+
+            <div class="grid lg:grid grid-cols-2 gap-4 opacity-100 lg:opacity-80">
+                <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
+                    <div class="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                        <i data-lucide="radar" width="20" height="20"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-sm">Code Detection</h3>
+                        <p class="text-xs text-slate-500">Get info fast</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
+                    <div class="p-2 bg-cyan-500/20 rounded-lg text-cyan-400">
+                        <i data-lucide="bug" width="20" height="20"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-sm">Trackable DB</h3>
+                        <p class="text-xs text-slate-500">Share trackables easily</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Login Card -->
+        <div class="w-full max-w-md lg:flex-1">
+            <div class="relative group">
+                <!-- Glow effect behind card -->
+                <div
+                    class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200">
+                </div>
+
+                <div
+                    class="relative p-6 lg:p-8 bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl space-y-8">
+
+                    <div class="text-center space-y-2">
+                        <div class="mx-auto w-12 h-12 rounded-xl flex items-center justify-center shadow-lg mb-4">
+                            <img src="https://dashboard.trackerbot.xyz/static/finallogo_hq_nobg.png"
+                                alt="Tracker Logo" />
+                        </div>
+                        <h2 class="text-2xl font-bold text-white">Welcome</h2>
+                        <p class="text-slate-400 text-sm">Sign in with Discord to continue</p>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Form Elements -->
+                        <div class="space-y-4">
+                            <!-- Terms Checkbox -->
+                            <div class="flex items-center space-x-3 group cursor-pointer" onclick="toggleTos()">
+                                <div class="relative flex items-center">
+                                    <div id="tos-box"
+                                        class="w-5 h-5 border-2 rounded-md flex items-center justify-center transition-all duration-200 ease-in-out bg-slate-800/50 border-slate-600 group-hover:border-slate-500">
+                                        <i data-lucide="check" id="tos-check"
+                                            class="text-white transition-transform duration-200 scale-0" width="14"
+                                            height="14" stroke-width="3"></i>
+                                    </div>
+                                </div>
+                                <span
+                                    class="text-slate-300 text-sm leading-relaxed select-none group-hover:text-slate-200 transition-colors">
+                                    I agree to the <a href="https://trackerbot.xyz/terms"
+                                        class="text-indigo-400 hover:text-indigo-300 hover:underline"
+                                        onclick="event.stopPropagation()">Terms of Service</a> and <a
+                                        href="https://trackerbot.xyz/privacy"
+                                        class="text-indigo-400 hover:text-indigo-300 hover:underline"
+                                        onclick="event.stopPropagation()">Privacy Policy</a>.
+                                </span>
+                            </div>
+
+                            <!-- Support Server Checkbox -->
+                            <div class="flex items-center space-x-3 group cursor-pointer" onclick="toggleSupport()">
+                                <div class="relative flex items-center">
+                                    <div id="support-box"
+                                        class="w-5 h-5 border-2 rounded-md flex items-center justify-center transition-all duration-200 ease-in-out bg-slate-800/50 border-slate-600 group-hover:border-slate-500">
+                                        <i data-lucide="check" id="support-check"
+                                            class="text-white transition-transform duration-200 scale-0" width="14"
+                                            height="14" stroke-width="3"></i>
+                                    </div>
+                                </div>
+                                <span
+                                    class="text-slate-300 text-sm leading-relaxed select-none group-hover:text-slate-200 transition-colors">
+                                    <span class="flex items-center gap-2">
+                                        Join the Support Server for updates.
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button id="login-btn" onclick="handleLogin()" disabled
+                                class="relative w-full inline-flex items-center justify-center px-6 py-3 text-sm font-semibold tracking-wide transition-all duration-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 bg-[#5865F2] hover:bg-[#4752C4] text-white shadow-lg shadow-[#5865F2]/20 focus:ring-[#5865F2] grayscale-[0.5] cursor-not-allowed opacity-60">
+                                <span id="btn-text" class="flex items-center">
+                                    <!-- Discord SVG Icon -->
+                                    <svg width="20" height="20" viewBox="0 0 127 96" class="mr-2.5" fill="currentColor"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.11,77.11,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.89,105.89,0,0,0,126.6,80.22c1.24-23.28-5.83-47.5-22.17-71.85ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z" />
+                                    </svg>
+                                    Log in with Discord
+                                </span>
+                                <!-- Loading Spinner -->
+                                <span id="btn-loader" class="hidden">
+                                    <svg class="w-5 h-5 animate-spin text-white" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            stroke-width="4" fill="none"></circle>
+                                        <path class="opacity-75" fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                        </path>
+                                    </svg>
+                                </span>
+                            </button>
+
+                            <p id="error-msg" class="text-center text-xs text-slate-500 mt-3 animate-pulse">
+                                Please accept the terms to continue
+                            </p>
+                        </div>
+                    </div>
+
+                    <div
+                        class="pt-4 border-t border-slate-800 flex items-center justify-center gap-6 text-slate-500 text-xs">
+                        <a href="https://trackerbot.xyz"
+                            class="flex items-center gap-1.5 hover:text-slate-300 transition-colors">
+                            <i data-lucide="globe" width="12" height="12"></i>
+                            trackerbot.xyz
+                        </a>
+                        <span class="w-1 h-1 bg-slate-700 rounded-full"></span>
+                        <span>2025</span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // State
+        let state = {
+            agreedToTos: false,
+            joinSupport: false,
+            isLoggingIn: false
+        };
+
+        // Constants
+        const CHECKED_CLASSES = ['bg-indigo-600', 'border-indigo-600', 'shadow-[0_0_10px_rgba(79,70,229,0.4)]'];
+        const UNCHECKED_CLASSES = ['bg-slate-800/50', 'border-slate-600', 'group-hover:border-slate-500'];
+
+        // Functions
+        function toggleTos() {
+            if (state.isLoggingIn) return;
+            state.agreedToTos = !state.agreedToTos;
+            updateUI();
+        }
+
+        function toggleSupport() {
+            if (state.isLoggingIn) return;
+            state.joinSupport = !state.joinSupport;
+            updateUI();
+        }
+
+        function updateUI() {
+            // Update ToS Checkbox
+            const tosBox = document.getElementById('tos-box');
+            const tosCheck = document.getElementById('tos-check');
+
+            if (state.agreedToTos) {
+                tosBox.classList.remove(...UNCHECKED_CLASSES);
+                tosBox.classList.add(...CHECKED_CLASSES);
+                tosCheck.classList.remove('scale-0');
+                tosCheck.classList.add('scale-100');
+            } else {
+                tosBox.classList.remove(...CHECKED_CLASSES);
+                tosBox.classList.add(...UNCHECKED_CLASSES);
+                tosCheck.classList.remove('scale-100');
+                tosCheck.classList.add('scale-0');
+            }
+
+            // Update Support Checkbox
+            const supportBox = document.getElementById('support-box');
+            const supportCheck = document.getElementById('support-check');
+
+            if (state.joinSupport) {
+                supportBox.classList.remove(...UNCHECKED_CLASSES);
+                supportBox.classList.add(...CHECKED_CLASSES);
+                supportCheck.classList.remove('scale-0');
+                supportCheck.classList.add('scale-100');
+            } else {
+                supportBox.classList.remove(...CHECKED_CLASSES);
+                supportBox.classList.add(...UNCHECKED_CLASSES);
+                supportCheck.classList.remove('scale-100');
+                supportCheck.classList.add('scale-0');
+            }
+
+            // Update Button
+            const btn = document.getElementById('login-btn');
+            const errorMsg = document.getElementById('error-msg');
+
+            if (state.agreedToTos) {
+                btn.removeAttribute('disabled');
+                btn.classList.remove('grayscale-[0.5]', 'cursor-not-allowed', 'opacity-60');
+                errorMsg.classList.add('hidden');
+            } else {
+                btn.setAttribute('disabled', 'true');
+                btn.classList.add('grayscale-[0.5]', 'cursor-not-allowed', 'opacity-60');
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        function handleLogin() {
+            if (!state.agreedToTos) return;
+
+            state.isLoggingIn = true;
+
+            // Show loading state
+            const btn = document.getElementById('login-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnLoader = document.getElementById('btn-loader');
+
+            btn.setAttribute('disabled', 'true');
+            btn.classList.add('cursor-not-allowed'); // keep opacity normal-ish
+            btnText.classList.add('hidden');
+            btnLoader.classList.remove('hidden');
+
+            let loginUrl;
+            if (state.joinSupport) {
+                loginUrl = "{{ support_login_url | safe }}";
+            } else {
+                loginUrl = "{{ login_url | safe }}";
+            }
+
+            setTimeout(() => {
+                window.location.href = loginUrl;
+            }, 500);
+        }
+    </script>
 </body>
+
 </html>

@@ -1,144 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tracker Dashboard</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='guilds.css') }}">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="icon" type="image/ico" href="/static/favicon.ico">
 </head>
-<body>
-    <div class="top-bar">
-        <div class="text">
-            <h1>Tracker Dashboard</h1>
-            <p>Select a server to get started.</p>
+
+<body
+    class="bg-[#0f172a] text-white selection:bg-indigo-500/30 overflow-x-hidden font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Background Ambience -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+        <div
+            class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse">
+        </div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]"></div>
+        <div class="absolute top-[20%] left-[30%] w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[100px]"></div>
+    </div>
+
+    <!-- Grid Pattern Overlay -->
+    <div
+        class="fixed inset-0 z-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 pointer-events-none">
+    </div>
+
+    <!-- Navbar / Header -->
+    <div
+        class="relative z-20 px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6 w-[95%] 2xl:w-[90%] max-w-[2400px] mx-auto border-b border-slate-800/50 pb-12 mb-8">
+        <!-- Logo/Text -->
+        <div class="text-center md:text-left space-y-2">
+            <h1
+                class="flex items-center justify-center md:justify-start gap-4 text-4xl md:text-5xl font-bold tracking-tight text-white">
+                <img src="https://dashboard.trackerbot.xyz/static/finallogo_hq_nobg.png" alt="Tracker Logo"
+                    class="w-10 h-10 md:w-12 md:h-12 object-contain" />
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Tracker</span>
+            </h1>
+            <p class="text-slate-300 text-base max-w-lg">Manage and configure Tracker for your servers.</p>
+            <p class="text-slate-300 text-base max-w-lg">Select a server to get started.</p>
         </div>
 
-        <div class="user" id="userBox">
-            <p>
-                <img 
-                    src="https://cdn.discordapp.com/avatars/{{user_id}}/{{avatar_hash}}.webp?size=256" 
-                    class="user-avatar-icon"
-                    style="width: 25px; vertical-align: middle;"
-                    alt="user avatar">
-                <strong>{{global_name}}</strong>
-                <img 
-                    src="{{ url_for('static', path='arrow.svg') }}" 
-                    class="user-arrow"
-                    style="width: 25px; vertical-align: middle; margin-left: 5px;"
-                    alt="arrow">
-            </p>
-            <div class="dropdown" style="display: none;">
-                <a href="/logout" class="logout-button">
-                    <img src="{{ url_for('static', path='logout.svg') }}" alt="Logout" style="width: 20px; vertical-align: middle; margin-right: 8px;">
-                    Logout
-                </a>
+        <!-- User Profile -->
+        <div class="relative flex items-center gap-4" id="userBox">
+            <div class="text-right hidden md:block">
+                <p class="text-xs text-slate-400">Heya,</p>
+                <p class="text-sm font-semibold text-white">{{global_name}}</p>
+            </div>
+
+            <button
+                class="relative flex items-center justify-center p-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20 group transition-transform active:scale-95">
+                <div class="flex items-center bg-slate-900 rounded-full p-1 group-hover:bg-slate-800 transition-colors">
+                    <img src="https://cdn.discordapp.com/avatars/{{user_id}}/{{avatar_hash}}.webp?size=256"
+                        class="w-10 h-10 rounded-full object-cover" alt="Avatar">
+                    <i data-lucide="chevron-down" id="arrowIcon"
+                        class="w-4 h-4 text-slate-400 mx-2 transition-transform duration-200"></i>
+                </div>
+            </button>
+
+            <!-- Dropdown -->
+            <div id="dropdownMenu"
+                class="hidden absolute right-0 top-full mt-4 w-56 bg-slate-900 border border-slate-700/50 rounded-xl shadow-2xl overflow-hidden z-50 origin-top-right transition-all animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-white/5">
+                <div class="px-4 py-3 border-b border-slate-800 md:hidden">
+                    <p class="text-sm font-semibold text-white">{{global_name}}</p>
+                    <p class="text-xs text-slate-400">Logged in</p>
+                </div>
+                <div class="p-2">
+                    <a href="/logout"
+                        class="flex items-center px-3 py-2.5 text-sm font-medium text-slate-300 rounded-lg hover:bg-red-500/10 hover:text-red-400 transition-colors group">
+                        <i data-lucide="log-out" class="w-4 h-4 mr-3 group-hover:text-red-400 transition-colors"></i>
+                        Sign Out
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="container">
-        {% for guild in guilds_with_bot %}
-            <a href="{{ guild.url }}" class="link">
-                <div class="item">
-                    <img class="title" src="{{ guild.icon or '/static/default-icon.png' }}" alt="{{ guild.name }} icon">
-                    {%- set maxlen = 18 -%}
-                    {%- if guild.name|length > maxlen -%}
-                        <span class="guild-name"><b>{{ guild.name[:maxlen-5].rstrip() ~ '...' }}</b></span>
-                    {%- else -%}
-                        <span class="guild-name"><b>{{ guild.name }}</b></span>
-                    {%- endif -%}
-                    <span class="guild-symbol">&gt;</span>
+    <!-- Main Content Container -->
+    <div class="relative z-10 w-[95%] 2xl:w-[90%] max-w-[2400px] mx-auto px-6 pb-20 isolate">
+
+        <!-- Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
+
+            <!-- Jinja Loop: Guilds With Bot -->
+            {% for guild in guilds_with_bot %}
+            <a href="{{ guild.url }}" class="group block relative h-full">
+                <!-- Hover Glow -->
+                <div
+                    class="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-40 blur-md transition duration-500 group-hover:duration-200">
+                </div>
+
+                <!-- Card Body -->
+                <div
+                    class="relative h-full overflow-hidden bg-slate-900/90 border border-slate-800 group-hover:border-slate-700/50 rounded-2xl p-5 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-1 shadow-xl shadow-black/20">
+
+                    <!-- Top Section: Icon & Status -->
+                    <div class="flex items-start justify-between">
+                        <div class="relative">
+                            <img src="{{ guild.icon or '/static/default-icon.png' }}" alt="{{ guild.name }}"
+                                class="w-14 h-14 rounded-[18px] object-cover bg-slate-800 shadow-lg ring-1 ring-white/10 group-hover:ring-indigo-500/50 transition-all duration-300 group-hover:scale-105">
+                            <div
+                                class="absolute -bottom-1 -right-1 w-5 h-5 bg-slate-900 rounded-full flex items-center justify-center">
+                                <div class="w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900"></div>
+                            </div>
+                        </div>
+                        <div
+                            class="p-2 rounded-lg bg-slate-800/50 text-slate-400 group-hover:text-white group-hover:bg-indigo-500/20 transition-all duration-300">
+                            <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Section: Text -->
+                    <div class="mt-auto">
+                        <h3
+                            class="font-bold text-slate-200 truncate group-hover:text-white transition-colors text-lg tracking-tight">
+                            {{ guild.name }}</h3>
+                        <p class="text-xs text-slate-500 mt-1 group-hover:text-slate-400 transition-colors">View
+                            Dashboard</p>
+                    </div>
                 </div>
             </a>
-        {% endfor %}
-        {% for guild in guilds_without_bot %}
-            <a href="{{ guild.url }}" class="link grayed-out">
-                <div class="item">
-                
-                    <img class="title" src="{{ guild.icon or '/static/default-icon.png' }}" alt="{{ guild.name }} icon">
-                    {%- set maxlen = 18 -%}
-                    {%- if guild.name|length > maxlen -%}
-                        <span class="guild-name"><b>{{ guild.name[:maxlen-5].rstrip() ~ '...' }}</b></span>
-                    {%- else -%}
-                        <span class="guild-name"><b>{{ guild.name }}</b></span>
-                    {%- endif -%}
-                    <span class="guild-symbol">+</span>
+            {% endfor %}
+
+            <!-- Jinja Loop: Guilds Without Bot -->
+            {% for guild in guilds_without_bot %}
+            <a href="{{ guild.url }}" class="group block relative h-full">
+                <div
+                    class="relative h-full overflow-hidden bg-slate-900/40 border border-slate-800/50 border-dashed rounded-2xl p-5 flex flex-col gap-4 transition-all duration-300 hover:bg-slate-800/60 hover:border-slate-600 hover:shadow-lg">
+
+                    <div class="flex items-start justify-between">
+                        <div class="relative opacity-60 group-hover:opacity-100 transition-all duration-300">
+                            <img src="{{ guild.icon or '/static/default-icon.png' }}" alt="{{ guild.name }}"
+                                class="w-14 h-14 rounded-[18px] object-cover bg-slate-800/50">
+                        </div>
+                        <div
+                            class="w-8 h-8 rounded-full border border-slate-700 bg-slate-800/30 flex items-center justify-center text-slate-500 group-hover:text-white group-hover:bg-indigo-600 group-hover:border-indigo-500 transition-all duration-300">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto">
+                        <h3
+                            class="font-medium text-slate-500 truncate group-hover:text-slate-200 transition-colors text-lg tracking-tight">
+                            {{ guild.name }}</h3>
+                        <p
+                            class="text-xs text-slate-600 group-hover:text-indigo-400 transition-colors mt-1 font-medium">
+                            Invite Tracker</p>
+                    </div>
                 </div>
             </a>
-        {% endfor %}
+            {% endfor %}
+
+        </div>
     </div>
-</body>
 
-<script>
-const userBox = document.getElementById('userBox');
-const arrow = userBox.querySelector('.user-arrow');
-const dropdown = userBox.querySelector('.dropdown');
-const container = document.querySelector('.container');
+    <!-- Script -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
 
-let dropdownOpen = false;
+        // Dropdown Logic
+        const userBox = document.getElementById('userBox');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        const arrowIcon = document.getElementById('arrowIcon');
+        let isOpen = false;
 
-userBox.addEventListener('click', function (e) {
-    // Prevent toggling when clicking inside the dropdown
-    if (dropdown.contains(e.target)) return;
+        function toggleDropdown(show) {
+            isOpen = show;
+            if (show) {
+                dropdownMenu.classList.remove('hidden');
+                arrowIcon.style.transform = 'rotate(180deg)';
+            } else {
+                dropdownMenu.classList.add('hidden');
+                arrowIcon.style.transform = 'rotate(0deg)';
+            }
+        }
 
-    dropdownOpen = !dropdownOpen;
+        userBox.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown(!isOpen);
+        });
 
-    if (dropdownOpen) {
-        arrow.classList.add('rotated');
-        dropdown.style.display = 'block';
-        userBox.classList.add('disabled');
-        container.classList.add('disabled');
-        // Make all clickable guilds look grayed out and unclickable
-        document.querySelectorAll('.container .link:not(.grayed-out)').forEach(link => {
-            link.classList.add('dropdown-active');
-            link.style.pointerEvents = 'none';
-            // Change > to +
-            const symbol = link.querySelector('.guild-symbol');
-            if (symbol && symbol.textContent.trim() === '>') {
-                symbol.textContent = '+';
+        document.addEventListener('click', (e) => {
+            if (isOpen && !userBox.contains(e.target)) {
+                toggleDropdown(false);
             }
         });
-        // Also make grayed-out (+) guilds unclickable and unhoverable
-        document.querySelectorAll('.container .link.grayed-out').forEach(link => {
-            link.style.pointerEvents = 'none';
-            link.style.cursor = 'default';
-        });
-        document.addEventListener('click', outsideClick);
-    } else {
-        closeDropdown();
-    }
-});
-
-function outsideClick(e) {
-    if (!userBox.contains(e.target)) {
-        closeDropdown();
-    }
-}
-
-function closeDropdown() {
-    dropdown.style.display = 'none';
-    arrow.classList.remove('rotated');
-    userBox.classList.remove('disabled');
-    container.classList.remove('disabled');
-    // Restore clickable guilds
-    document.querySelectorAll('.container .link.dropdown-active').forEach(link => {
-        link.classList.remove('dropdown-active');
-        link.style.pointerEvents = '';
-        // Change + back to >
-        const symbol = link.querySelector('.guild-symbol');
-        if (symbol && symbol.textContent.trim() === '+') {
-            symbol.textContent = '>';
-        }
-    });
-    // Restore grayed-out (+) guilds to be hoverable/clickable if needed
-    document.querySelectorAll('.container .link.grayed-out').forEach(link => {
-        link.style.pointerEvents = '';
-        link.style.cursor = '';
-    });
-    dropdownOpen = false;
-    document.removeEventListener('click', outsideClick);
-}
-</script>
+    </script>
+</body>
 
 </html>
