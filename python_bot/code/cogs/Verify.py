@@ -21,7 +21,6 @@ class Verification(app_commands.Group):
             return False
             
         guildsettings = get_guild_settings(interaction.guild.id)
-        # Handle None values - if verification_status is None, treat as False
         verification_enabled = bool(guildsettings.verification_status) if hasattr(guildsettings, 'verification_status') and guildsettings.verification_status is not None else False
         
         if not verification_enabled:
@@ -79,11 +78,12 @@ class Verification(app_commands.Group):
                     await interaction.response.defer(thinking=True, ephemeral=True)
                     
                     guild = interaction.guild
-                    try:
-                        member = await guild.fetch_member(interaction.user.id)
-                    except (discord.NotFound, discord.HTTPException):
-                        await interaction.followup.send("Unable to find your member information. Please try again.", ephemeral=True)
-                        return
+                    member = guild.get_member(interaction.user.id)
+                    if member is None:
+                        try:
+                            member = await guild.fetch_member(interaction.user.id)
+                        except (discord.NotFound, discord.HTTPException):
+                            member = interaction.user
                     
                     role = guild.get_role(guildsettings.verify_verified_role_id)
                     if not role:
@@ -273,9 +273,24 @@ class Verification(app_commands.Group):
             message_id = verification_instance['message_id']
             gc_username = verification_instance['gc_username']
             guild = interaction.guild
-            try:
-                member = await guild.fetch_member(verification_instance['user_id'])
-            except (discord.NotFound, discord.HTTPException):
+            member = guild.get_member(verification_instance['user_id'])
+            if member is None:
+                try:
+                    member = await guild.fetch_member(verification_instance['user_id'])
+                except discord.NotFound:
+                    await interaction.followup.send("User not found in server.", ephemeral=True)
+                    return
+                except discord.HTTPException as e:
+                    member = guild.get_member(verification_instance['user_id'])
+                    if member is None:
+                        await interaction.followup.send(
+                            f"Unable to fetch user information. This may be due to missing Members intent or network issues. "
+                            f"Error: {str(e)}. Please ensure the bot has the Members intent enabled if you want to verify users who aren't in the cache.",
+                            ephemeral=True
+                        )
+                        return
+            
+            if member is None:
                 await interaction.followup.send("User not found in server.", ephemeral=True)
                 return
             
@@ -289,126 +304,124 @@ class Verification(app_commands.Group):
             except (discord.NotFound, discord.HTTPException):
                 await interaction.followup.send("Bot member not found. Please contact a server Administrator.", ephemeral=True)
                 return
-                
-                bot_perms = bot_member.guild_permissions
-                if not bot_perms.manage_roles:
-                    await interaction.followup.send(
-                        "❌ The bot does not have the 'Manage Roles' permission. Please grant this permission to the bot and try again.",
-                        ephemeral=True
-                    )
-                    return
-                
-                if not bot_perms.manage_nicknames:
-                    await interaction.followup.send(
-                        "❌ The bot does not have the 'Manage Nicknames' permission. Please grant this permission to the bot and try again.",
-                        ephemeral=True
-                    )
-                    return
-                
-                bot_top_role = bot_member.top_role
-                if role >= bot_top_role:
-                    await interaction.followup.send(
-                        f"❌ The verification role ({role.mention}) is higher than or equal to the bot's highest role ({bot_top_role.mention}). "
-                        "Please move the bot's role above the verification role in the server's role hierarchy.",
-                        ephemeral=True
-                    )
-                    return
-                
-                if role.managed:
-                    await interaction.followup.send(
-                        f"❌ The verification role ({role.mention}) is managed by an integration and cannot be assigned by the bot. "
-                        "Please use a different role that is not managed.",
-                        ephemeral=True
-                    )
-                    return
-                
-                if role == guild.default_role:
-                    await interaction.followup.send(
-                        "❌ Cannot use the @everyone role as a verification role. Please select a different role.",
-                        ephemeral=True
-                    )
-                    return
-                
-                if role in member.roles:
-                    unverified_role = guild.get_role(guildsettings.verify_unverified_role_id)
-                    try:
-                        if unverified_role and unverified_role in member.roles and unverified_role < bot_top_role:
-                            await member.remove_roles(unverified_role)
-                        await member.edit(nick=gc_username)
-                    except discord.Forbidden as e:
-                        await interaction.followup.send(
-                            f"❌ Missing Permissions: {str(e)}",
-                            ephemeral=True
-                        )
-                        return
-                    except discord.HTTPException as e:
-                        await interaction.followup.send(
-                            f"❌ Error: {str(e)}",
-                            ephemeral=True
-                        )
-                        return
-                else:
-                    unverified_role = guild.get_role(guildsettings.verify_unverified_role_id)
-                    
-                    try:
-                        await member.add_roles(role, reason=f"Verification approved by {interaction.user}")
-                        if unverified_role and unverified_role in member.roles and unverified_role < bot_top_role:
-                            await member.remove_roles(unverified_role, reason="User verified")
-                        await member.edit(nick=gc_username, reason="Verification nickname update")
-                    except discord.Forbidden as e:
-                        error_details = []
-                        error_details.append(f"**Error Code:** {e.code if hasattr(e, 'code') else 'Unknown'}")
-                        error_details.append(f"**Error Message:** {str(e)}")
-                        error_details.append(f"**Role:** {role.name} (ID: {role.id})")
-                        error_details.append(f"**Role Managed:** {role.managed}")
-                        error_details.append(f"**Bot Top Role:** {bot_top_role.name} (ID: {bot_top_role.id})")
-                        error_details.append(f"**Bot Has Manage Roles:** {bot_perms.manage_roles}")
-                        error_details.append(f"**Bot Has Manage Nicknames:** {bot_perms.manage_nicknames}")
-                        error_details.append(f"**Role Hierarchy Check:** {role < bot_top_role}")
-                        
-                        await interaction.followup.send(
-                            f"❌ **Missing Permissions Error**\n\n"
-                            f"{chr(10).join(error_details)}\n\n"
-                            "**Possible Solutions:**\n"
-                            "1. Ensure the bot's role is **above** the verification role in Server Settings → Roles\n"
-                            "2. Ensure the verification role is **not managed** by another bot/integration\n"
-                            "3. Ensure the bot has 'Manage Roles' and 'Manage Nicknames' permissions\n"
-                            "4. Try using a different role that is not managed",
-                            ephemeral=True
-                        )
-                        return
-                    except discord.HTTPException as e:
-                        await interaction.followup.send(
-                            f"❌ Error managing roles: {str(e)}. Please contact a server Administrator.",
-                            ephemeral=True
-                        )
-                        return
-
+            
+            bot_perms = bot_member.guild_permissions
+            if not bot_perms.manage_roles:
+                await interaction.followup.send(
+                    "❌ The bot does not have the 'Manage Roles' permission. Please grant this permission to the bot and try again.",
+                    ephemeral=True
+                )
+                return
+            
+            if not bot_perms.manage_nicknames:
+                await interaction.followup.send(
+                    "❌ The bot does not have the 'Manage Nicknames' permission. Please grant this permission to the bot and try again.",
+                    ephemeral=True
+                )
+                return
+            
+            bot_top_role = bot_member.top_role
+            if role >= bot_top_role:
+                await interaction.followup.send(
+                    f"❌ The verification role ({role.mention}) is higher than or equal to the bot's highest role ({bot_top_role.mention}). "
+                    "Please move the bot's role above the verification role in the server's role hierarchy.",
+                    ephemeral=True
+                )
+                return
+            
+            if role.managed:
+                await interaction.followup.send(
+                    f"❌ The verification role ({role.mention}) is managed by an integration and cannot be assigned by the bot. "
+                    "Please use a different role that is not managed.",
+                    ephemeral=True
+                )
+                return
+            
+            if role == guild.default_role:
+                await interaction.followup.send(
+                    "❌ Cannot use the @everyone role as a verification role. Please select a different role.",
+                    ephemeral=True
+                )
+                return
+            
+            if role in member.roles:
+                unverified_role = guild.get_role(guildsettings.verify_unverified_role_id)
                 try:
-                    await member.send(
-                        f"Congratulations, {gc_username} - You have been verified! Your nickname has been updated, and you now have access to the rest of the server."
+                    if unverified_role and unverified_role in member.roles and unverified_role < bot_top_role:
+                        await member.remove_roles(unverified_role)
+                    await member.edit(nick=gc_username)
+                except discord.Forbidden as e:
+                    await interaction.followup.send(
+                        f"❌ Missing Permissions: {str(e)}",
+                        ephemeral=True
                     )
-                except discord.Forbidden:
-                    pass
-
-                channel = self.bot.get_channel(guildsettings.verify_channel_id)
-                if channel:
-                    await channel.send(
-                        f"{member.mention} has been verified by {interaction.user.mention} ({interaction.user.name}) with username {gc_username}."
+                    return
+                except discord.HTTPException as e:
+                    await interaction.followup.send(
+                        f"❌ Error: {str(e)}",
+                        ephemeral=True
                     )
-
-                try:
-                    if channel:
-                        message = await channel.fetch_message(message_id)
-                        await message.delete()
-                except Exception as e:
-                    await log_error(guild, self.bot, "verify", f"Error deleting message: {e}")
-
-                await update_verification_status(interaction.guild.id, verification_id, "approved")
-
-                await interaction.followup.send(f"Verification ID {verification_id} with username {gc_username} has been approved.")
+                    return
             else:
-                await interaction.followup.send("The user is no longer in the server.", ephemeral=True)
+                unverified_role = guild.get_role(guildsettings.verify_unverified_role_id)
+                
+                try:
+                    await member.add_roles(role, reason=f"Verification approved by {interaction.user}")
+                    if unverified_role and unverified_role in member.roles and unverified_role < bot_top_role:
+                        await member.remove_roles(unverified_role, reason="User verified")
+                    await member.edit(nick=gc_username, reason="Verification nickname update")
+                except discord.Forbidden as e:
+                    error_details = []
+                    error_details.append(f"**Error Code:** {e.code if hasattr(e, 'code') else 'Unknown'}")
+                    error_details.append(f"**Error Message:** {str(e)}")
+                    error_details.append(f"**Role:** {role.name} (ID: {role.id})")
+                    error_details.append(f"**Role Managed:** {role.managed}")
+                    error_details.append(f"**Bot Top Role:** {bot_top_role.name} (ID: {bot_top_role.id})")
+                    error_details.append(f"**Bot Has Manage Roles:** {bot_perms.manage_roles}")
+                    error_details.append(f"**Bot Has Manage Nicknames:** {bot_perms.manage_nicknames}")
+                    error_details.append(f"**Role Hierarchy Check:** {role < bot_top_role}")
+                    
+                    await interaction.followup.send(
+                        f"❌ **Missing Permissions Error**\n\n"
+                        f"{chr(10).join(error_details)}\n\n"
+                        "**Possible Solutions:**\n"
+                        "1. Ensure the bot's role is **above** the verification role in Server Settings → Roles\n"
+                        "2. Ensure the verification role is **not managed** by another bot/integration\n"
+                        "3. Ensure the bot has 'Manage Roles' and 'Manage Nicknames' permissions\n"
+                        "4. Try using a different role that is not managed",
+                        ephemeral=True
+                    )
+                    return
+                except discord.HTTPException as e:
+                    await interaction.followup.send(
+                        f"❌ Error managing roles: {str(e)}. Please contact a server Administrator.",
+                        ephemeral=True
+                    )
+                    return
+
+            try:
+                await member.send(
+                    f"Congratulations, {gc_username} - You have been verified! Your nickname has been updated, and you now have access to the rest of the server."
+                )
+            except discord.Forbidden:
+                pass
+
+            channel = self.bot.get_channel(guildsettings.verify_channel_id)
+            if channel:
+                await channel.send(
+                    f"{member.mention} has been verified by {interaction.user.mention} ({interaction.user.name}) with username {gc_username}."
+                )
+
+            try:
+                if channel:
+                    message = await channel.fetch_message(message_id)
+                    await message.delete()
+            except Exception as e:
+                await log_error(guild, self.bot, "verify", f"Error deleting message: {e}")
+
+            await update_verification_status(interaction.guild.id, verification_id, "approved")
+
+            await interaction.followup.send(f"Verification ID {verification_id} with username {gc_username} has been approved.")
         else:
             await interaction.followup.send("Invalid verification ID.", ephemeral=True)
 
@@ -446,11 +459,22 @@ class Verification(app_commands.Group):
             message_id = verification_instance['message_id']
             gc_username = verification_instance['gc_username']
             guild = interaction.guild
-            try:
-                member = await guild.fetch_member(verification_instance['user_id'])
-            except (discord.NotFound, discord.HTTPException):
-                await interaction.followup.send("User not found in server.", ephemeral=True)
-                return
+            member = guild.get_member(verification_instance['user_id'])
+            if member is None:
+                try:
+                    member = await guild.fetch_member(verification_instance['user_id'])
+                except discord.NotFound:
+                    await interaction.followup.send("User not found in server.", ephemeral=True)
+                    return
+                except discord.HTTPException as e:
+                    member = guild.get_member(verification_instance['user_id'])
+                    if member is None:
+                        await interaction.followup.send(
+                            f"Unable to fetch user information. This may be due to missing Members intent or network issues. "
+                            f"Error: {str(e)}. Please ensure the bot has the Members intent enabled if you want to verify users who aren't in the cache.",
+                            ephemeral=True
+                        )
+                        return
             
             if member:
                 try:
