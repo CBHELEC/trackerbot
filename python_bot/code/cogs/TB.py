@@ -8,6 +8,7 @@ from functions import *
 from bot import bot
 from datetime import datetime
 from logger import log
+from discord.app_commands import CheckFailure
 
 conn1 = sqlite3.connect(DATA_DIR / "trackables.db")
 cursor1 = conn1.cursor()
@@ -59,10 +60,69 @@ def ensure_columns_exist_trackables():
                 cursor1.execute("""ALTER TABLE trackables ADD COLUMN tb_code TEXT NOT NULL""")
 
     conn1.commit()
-    
+
+class TBRemoveConfirmView(View):
+    def __init__(self, code: str, user_id: int):
+        super().__init__(timeout=60)
+        self.code = code
+        self.user_id = user_id
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.danger)
+    async def confirm(self, interaction: discord.Interaction, button: Button):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("This is not your button.", ephemeral=True)
+            return
+
+        try:
+            cursor1.execute("DELETE FROM trackables WHERE code = ?", (self.code,))
+            conn1.commit()
+            await interaction.response.send_message(f"TB `{self.code}` has been removed from the database.", ephemeral=True)
+            await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has removed TB `{self.code}` from the database.")
+            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has removed TB `{self.code}` from the database.")
+        except Exception as e:
+            await interaction.response.send_message(f"An error occurred while trying to remove the TB. The Dev has been notified.", ephemeral=True)
+            await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB `{self.code}`. Error: {e}")
+
+        self.stop()
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    async def cancel(self, interaction: discord.Interaction, button: Button):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("This is not your button.", ephemeral=True)
+            return
+
+        await interaction.response.send_message("Removal cancelled.", ephemeral=True)
+        self.stop()
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.message.edit(view=self)
+        except:
+            pass
+
 class TBDatabase(app_commands.Group):
     """Commands for the public TB database."""
     
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """User Blacklist Check."""
+        users = os.getenv("TB_BLACKLIST").split(",")
+        if str(interaction.user.id) in users:
+            raise CheckFailure("TB_BLACKLIST")
+        return True
+
+    async def on_error(self, interaction: discord.Interaction, error: Exception) -> None:
+        if isinstance(error, CheckFailure) and str(error) == "TB_BLACKLIST":
+            devid = os.getenv("DEV_USER_ID")
+            msg = f"You have been blacklisted from using the TB database commands. To discuss this, please DM <@{devid}>."
+            if not interaction.response.is_done():
+                await interaction.response.send_message(msg, ephemeral=True)
+            else:
+                await interaction.followup.send(msg, ephemeral=True)
+            return
+        raise error
+
 # TB HELP
     @app_commands.command()
     async def help(self, interaction: discord.Interaction):
@@ -281,9 +341,26 @@ class TBDatabase(app_commands.Group):
       
 # TB REMOVE      
     @app_commands.command()
-    async def remove(self, interaction: discord.Interaction):
+    @app_commands.describe(private_code="The PRIVATE code of the TB you want to remove")
+    async def remove(self, interaction: discord.Interaction, private_code: str):
         """Removes a TB from the public database."""
-        await interaction.response.send_message(f"If you want a TB to be removed from the database, please contact the Developer `@not.cbh` (<@820297275448098817>).", ephemeral=True)
+        try:
+            cursor1.execute("SELECT * FROM trackables WHERE code = ?", (private_code,))
+            existing_entry = cursor1.fetchone()
+
+            if existing_entry:
+                print(existing_entry)
+                if existing_entry[0] == interaction.user.id:
+                    await interaction.response.send_message(f"Are you sure you want to remove TB `{private_code}` from the database?", view=TBRemoveConfirmView(private_code, interaction.user.id), ephemeral=True)
+                else:
+                    await interaction.response.send_message(f"This command only lets you remove TBs that you have added yourself. Please DM the Developer `@not.cbh` (<@820297275448098817>) to remove this if it is yours.", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"The TB with code `{private_code}` was not found in the database.", ephemeral=True)
+
+        except Exception as e:
+            await interaction.response.send_message(f"An error occurred while trying to find the TB. The Dev has been notified.", ephemeral=True)
+            await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB `{private_code}`. Error: {e}")
+            return
             
 # TB FORCEREMOVE
     @app_commands.command()
