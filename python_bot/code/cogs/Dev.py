@@ -224,6 +224,7 @@ class HelpCMD(commands.Cog):
             title="📘 Help Menu",
             description="'Tracker' brought to you by <@820297275448098817> w/ help from friends (!about)\n"
                         "**__[Click for Bot Invite](https://discord.com/oauth2/authorize?client_id=1322305662973116486)__**\n"
+                        "**__[Click for Website Link](https://trackerbot.xyz)__**\n"
                         "**__[Click for Dashboard Link](https://dashboard.trackerbot.xyz)__**\n\n"
                         "***Press a button below to view a section.***",
             color=0xad7e66

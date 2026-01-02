@@ -85,7 +85,7 @@ def update_guild_settings(guild_id, **kwargs):
             for key, value in kwargs.items():
                 setattr(settings, key, value)
         session.commit()
-        session.refresh(settings)  # Refresh to ensure values are properly loaded
+        session.refresh(settings)  
         session.close()
         
 def get_log_channel(guild, bot):
