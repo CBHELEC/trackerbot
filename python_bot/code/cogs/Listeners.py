@@ -68,11 +68,23 @@ class Listeners(commands.Cog):
         if detection_status:
             if message.author.bot:
                 return
+            
+            # GC / TB
             succ, gc_codes, tb_codes = find_gc_tb_codes(message.content)
             if succ:
                 finalmessage, deadcode = get_cache_basic_info(message.guild.id, gc_codes, tb_codes)
                 if deadcode:
                     return
+                await message.reply(finalmessage)
+            # PR
+            pr_codes = await find_pr_codes(message.content)
+            if pr_codes:
+                finalmessage = await get_pr_code_info(pr_codes, self.bot)
+                await message.reply(finalmessage)
+            # GL / TL
+            gl_codes, tl_codes = await find_gl_tl_codes(message.content)
+            if gl_codes or tl_codes:
+                finalmessage = await get_gl_tl_code_info(gl_codes, tl_codes)
                 await message.reply(finalmessage)
 
         if message.poll:
@@ -100,8 +112,8 @@ class Listeners(commands.Cog):
             await message.reply("Heya, I cleared the embed from your message since it doesn't show any extra info!", delete_after=5)
             await message.edit(suppress=True)
 
-       # if "good bot" in message.content.lower():
-       #     await message.reply("thank yous OwO")
+        if "good bot" in message.content.lower():
+            await message.reply("thank yous OwO")
 
     @commands.Cog.listener()
     async def on_message_edit(self, before: discord.Message, after: discord.Message):
@@ -167,7 +179,6 @@ class Listeners(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        # Use owner_id instead of owner to avoid requiring guild_members intent
         owner_name = f"<@{guild.owner_id}>" if guild.owner_id else "Unknown"
         embed = discord.Embed(title="New Server!",
                       description=f"Name: {guild.name}\nID: {guild.id}\nOwner: {owner_name} ({guild.owner_id})\nMember Count: {guild.member_count} \nBoosts: {guild.premium_subscription_count}",

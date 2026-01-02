@@ -26,12 +26,12 @@ class Fun(app_commands.Group):
         super().__init__(name="fun", description="Fun Commands.")
         self.bot = bot
     
-#        self.context_menu = app_commands.ContextMenu(
-#            name="Decode OwO",
-#            callback=self.decode_owo,
-#            type=discord.AppCommandType.message
-#        )
-#        self.bot.tree.add_command(self.context_menu)
+        self.context_menu = app_commands.ContextMenu(
+            name="Decode OwO",
+            callback=self.decode_owo,
+            type=discord.AppCommandType.message
+        )
+        self.bot.tree.add_command(self.context_menu)
 
   #  async def interaction_check(self, interaction: discord.Interaction) -> bool:
    #     """Ensures commands in this group only run in a specific channel."""
@@ -60,11 +60,11 @@ class Fun(app_commands.Group):
         raise error
     
 # DECODE_OWO CONTEXT
-#    async def decode_owo(self, interaction: discord.Interaction, message: discord.Message):
-#        """Decodes OwO text."""
-#        matches = re.findall(r'(?:[OoUuwW]+)', message.content)
-#        last_sequence = matches[-1] if matches else None
-#        await interaction.response.send_message(owodecode.decode(last_sequence), ephemeral=True)
+    async def decode_owo(self, interaction: discord.Interaction, message: discord.Message):
+        """Decodes OwO text."""
+        matches = re.findall(r'(?:[OoUuwW]+)', message.content)
+        last_sequence = matches[-1] if matches else None
+        await interaction.response.send_message(owodecode.decode(last_sequence), ephemeral=True)
 
 # HELP
     @app_commands.command()
@@ -72,7 +72,7 @@ class Fun(app_commands.Group):
         """Shows all of the Fun commands."""
         embed = discord.Embed(title="Fun Commands",
                       colour=0xad7e66)
-        embed.description("/fun 8ball <question> <potato_mode> - Asks the magic 8ball a question\n/fun avatar <user:optional> - Shows the avatar of a user\n/fun cat - Sends a random Cat image\n"
+        embed.description = ("/fun 8ball <question> <potato_mode> - Asks the magic 8ball a question\n/fun avatar <user:optional> - Shows the avatar of a user\n/fun cat - Sends a random Cat image\n"
         "/fun coinflip - Flips a coin\n/fun define <word> - Sends the definition of a word\n/fun dog - Sends a random Dog image\n/fun google <query> - Search Google for web results\n"
         "/fun image <query> - Search Google for image results\n/fun math <expression> - Solves a math equation\n/fun roll <maxroll> - Rolls a random number\n/fun servericon - Send the server's icon\n"
         "/fun serverinfo - Shows some generic server info\n/fun userinfo <user:optional> - Shows some generic user info\n/fun petpet <user:optional> - Creates a PetPet gif for a user.\n"
