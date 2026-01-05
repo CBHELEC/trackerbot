@@ -88,6 +88,12 @@ class Listeners(commands.Cog):
                 finalmessage = await get_gl_tl_code_info(gl_codes, tl_codes)
                 if finalmessage:
                     await message.reply(finalmessage)
+            # GT
+            gt_codes = await find_gt_codes(message.content)
+            if gt_codes:
+                finalmessage = await get_gt_code_info(gt_codes)
+                if finalmessage:
+                    await message.reply(finalmessage)
 
         if message.poll:
             if message.guild.id != 1368978029056888943:

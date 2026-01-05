@@ -409,6 +409,7 @@ TL_BLACKLIST = ["TL"]
 GL_BLACKLIST = ["GL"]
 PR_BLACKLIST = ["PR"]
 TB_BLACKLIST = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
+GT_BLACKLIST = ["GT"]
 
 POLL_JSON_FILE = DATA_DIR / "poll_dates.json"
 
@@ -483,6 +484,21 @@ async def find_pr_codes(s: str) -> set[str]:
 
     return pr_codes
 
+async def find_gt_codes(s: str) -> set[str]:
+    """Find PR codes in a string.
+
+    Args:
+        s (str): string to find pr codes in
+
+    Returns:
+        set[str]: a set of pr codes found
+    """
+    gt_matches: list[str] = re.findall(r'(?<!:)\b(GT[A-Z0-9]{1,3})(?:\b|_)', s, re.IGNORECASE)
+
+    gt_codes = {item.upper() for item in gt_matches if item.upper() not in GT_BLACKLIST}
+
+    return gt_codes
+
 async def find_gl_tl_codes(s: str) -> tuple[set[str], set[str]]:
     """Find GL/TL codes in a string.
 
@@ -500,6 +516,21 @@ async def find_gl_tl_codes(s: str) -> tuple[set[str], set[str]]:
     return gl_codes, tl_codes
 
 g_obj = pycaching.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
+
+async def get_gt_code_info(gt_codes: Iterable[str]):
+    messages = []
+
+    for code in list(gt_codes)[:3]:
+        try:
+            gt = g_obj.get_geotour(code)
+            name = gt['name']
+            fp_count = gt['fp_count']
+            location_name = gt['location_name']
+            messages.append(f"<:geotour:1457794800714514707> {name} | 🩵 {fp_count} |📍 {location_name}")
+        except Exception as e:
+            messages.append(f"<:DNF:1368989100220092516> **That GeoTour doesn't exist!**")
+
+    return "\n".join(messages)  
 
 async def get_gl_tl_code_info(gl_codes: Iterable[str], tl_codes: Iterable[str]):
     messages = []
