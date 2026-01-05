@@ -2,9 +2,8 @@ import discord
 from functions import *
 from discord.ext import commands
 from discord import app_commands, Role
-from discord.app_commands import Transform, Transformer
+from discord.app_commands import Transformer
 from database import get_guild_settings, update_guild_settings
-from datetime import datetime
 from typing import List
 from logger import log
 
@@ -25,123 +24,7 @@ class DashboardLinkView(discord.ui.View):
 
 class Other(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
-
-# SETPERM
-    @app_commands.command()
-    @app_commands.describe(roles="The roles to add as permission roles.")
-    async def setperm(self, interaction: discord.Interaction, roles: Transform[List[Role], RoleTransformer]):
-        """Add roles to the permission roles."""
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
-            return
-        
-        for role in roles:
-            if isinstance(role, (discord.User, discord.Member)):
-                await interaction.response.send_message("❌ You must specify at least one role! Users cannot be added.", ephemeral=True)
-                return
-        
-        guild_id = interaction.guild.id
-        settings = get_guild_settings(guild_id)
-
-        existing_roles = set(settings.perm_role_ids.split(",")) if settings.perm_role_ids else set()
-        new_roles = {str(role.id) for role in roles}
-        updated_roles = existing_roles.union(new_roles)
-
-        update_guild_settings(guild_id, perm_role_ids=",".join(updated_roles))
-        embed = discord.Embed(title="✅ | Permission Roles Updated", description=f"Added permission roles: {', '.join(role.mention for role in roles)}", color=0xad7e66)
-        embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
-        await interaction.response.send_message(embed=embed, view=DashboardLinkView())
-        await log(interaction, f"Added permission roles: {', '.join(role.mention for role in roles)}")
-
-# REMOVEPERM
-    @app_commands.command()
-    @app_commands.describe(roles="The roles to remove from permission roles.")
-    async def removeperm(self, interaction: discord.Interaction, roles: Transform[List[Role], RoleTransformer]):
-        """Remove roles from the permission roles."""
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
-            return
-        guild_id = interaction.guild.id
-        settings = get_guild_settings(guild_id)
-
-        existing_roles = set(settings.perm_role_ids.split(",")) if settings.perm_role_ids else set()
-        roles_to_remove = {str(role.id) for role in roles}
-        updated_roles = existing_roles - roles_to_remove
-
-        update_guild_settings(guild_id, perm_role_ids=",".join(updated_roles))
-        embed = discord.Embed(title="✅ | Permission Roles Updated", description=f"Removed permission roles: {', '.join(role.mention for role in roles)}", color=0xad7e66)
-        embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
-        await interaction.response.send_message(embed=embed, view=DashboardLinkView())
-        await log(interaction, f"Removed permission roles: {', '.join(role.mention for role in roles)}")
-
-# SETSKULLBOARD
-    @app_commands.command()
-    @app_commands.choices(status=[
-        app_commands.Choice(name="Enable ", value="1"),
-        app_commands.Choice(name="Disable", value="2")
-    ])
-    @commands.has_permissions(administrator=True)
-    @app_commands.describe(channel="The channel to send skullboard messages to if enabled.")
-    @app_commands.describe(status="Enable or disable the skullboard feature.")
-    async def setskullboard(self, interaction: discord.Interaction, status: app_commands.Choice[str], channel: discord.TextChannel = None):
-        """Enable or disable the skullboard feature."""
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
-            return
-        if status.value == "1" and not channel:
-            await ctx.reply("❌ You must specify a channel when enabling Skullboard!", ephemeral=True)
-            return
-
-        skullboard_status = True if status.value == "1" else False
-
-        update_guild_settings(interaction.guild.id, skullboard_status=skullboard_status, skullboard_channel_id=channel.id if status.value == "1" else None)
-        
-        if status.value == "1":
-            embed = discord.Embed(title="✅ | Skullboard Enabled", description=f"Skullboard has been enabled in {channel.mention}", color=0xad7e66)
-            embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
-            await interaction.response.send_message(embed=embed, view=DashboardLinkView())
-            await log(interaction, f"Skullboard enabled in {channel.mention}")
-        else:
-            embed = discord.Embed(title="✅ | Skullboard Disabled", description=f"Skullboard has been disabled", color=0xad7e66)
-            embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
-            await interaction.response.send_message(embed=embed, view=DashboardLinkView())
-            await log(interaction, "Skullboard disabled")
-
-# SETTINGS          
-    @app_commands.command()
-    @commands.has_permissions(administrator=True)
-    async def settings(self, interaction: discord.Interaction):
-        """Fetch and display the guild settings."""
-        if not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
-            return
-        guild_id = interaction.guild.id
-        settings = get_guild_settings(guild_id)
-
-        embed = discord.Embed(title="Guild Settings", color=0xad7e66)
-        
-        perm_roles = settings.perm_role_ids.split(",") if settings.perm_role_ids else []
-        detection_status = bool(settings.detection_status) if hasattr(settings, 'detection_status') else True
-        link_embed_status = bool(settings.link_embed_status) if hasattr(settings, 'link_embed_status') else True
-        fun_commands = bool(settings.fun_set) if hasattr(settings, 'fun_set') else True
-        message_commands = bool(settings.message_set) if hasattr(settings, 'message_set') else True
-        deadcode = bool(settings.deadcode) if hasattr(settings, 'deadcode') else True
-
-        embed.add_field(
-            name="Perm Roles",
-            value=", ".join(f"<@&{role_id}>" for role_id in sorted(set(perm_roles))) if perm_roles else "None",
-            inline=False
-        )
-        embed.add_field(name="Skullboard Enabled", value="Yes" if settings.skullboard_status else "No", inline=False)
-        embed.add_field(name="Skullboard Channel", value=f"<#{settings.skullboard_channel_id}>" if settings.skullboard_channel_id else "Not set", inline=False)
-        embed.add_field(name="Code Detection Status", value="Enabled" if detection_status else "Disabled", inline=True)
-        embed.add_field(name="Link Embed Removal Status", value="Enabled" if link_embed_status else "Disabled", inline=True)
-        embed.add_field(name="Message Commands Status", value="Enabled" if message_commands else "Disabled", inline=True)
-        embed.add_field(name="Fun Commands Status", value="Enabled" if fun_commands else "Disabled", inline=True)
-        embed.add_field(name="'Code Not Found' Message Status", value="Enabled" if deadcode else "Disabled", inline=True)
-        embed.set_footer(text="Did you know we have a dashboard? dashboard.trackerbot.xyz")
-        await interaction.response.send_message(embed=embed, view=DashboardLinkView()) 
+        self.bot = bot 
 
 # TOGGLES
     @app_commands.command()
