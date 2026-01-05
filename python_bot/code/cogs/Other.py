@@ -26,6 +26,12 @@ class Other(commands.Cog):
     def __init__(self, bot):
         self.bot = bot 
 
+# CONFIG
+    @app_commands.command()
+    async def config(self, interaction: discord.Interaction):
+        """Configure bot settings."""
+        await interaction.response.send_message(f"To configure settings, go to https://dashboard.trackerbot.xyz or hit the button below!", view=DashboardLinkView())
+
 # TOGGLES
     @app_commands.command()
     async def toggles(self, interaction: discord.Interaction):
