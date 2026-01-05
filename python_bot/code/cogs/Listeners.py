@@ -80,12 +80,14 @@ class Listeners(commands.Cog):
             pr_codes = await find_pr_codes(message.content)
             if pr_codes:
                 finalmessage = await get_pr_code_info(pr_codes, self.bot)
-                await message.reply(finalmessage)
+                if finalmessage:
+                    await message.reply(finalmessage)
             # GL / TL
             gl_codes, tl_codes = await find_gl_tl_codes(message.content)
             if gl_codes or tl_codes:
                 finalmessage = await get_gl_tl_code_info(gl_codes, tl_codes)
-                await message.reply(finalmessage)
+                if finalmessage:
+                    await message.reply(finalmessage)
 
         if message.poll:
             if message.guild.id != 1368978029056888943:

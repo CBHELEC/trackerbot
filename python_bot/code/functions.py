@@ -7,6 +7,7 @@ CODE_DIR = Path(__file__).parent
 DATA_DIR = CODE_DIR / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+import asyncio
 import re
 import pycaching
 import json
@@ -15,11 +16,11 @@ import os
 import psutil
 import discord
 import re
-import random
+import requests
 from google_images_search import GoogleImagesSearch
 from googleapiclient.discovery import build
 from discord import app_commands
-from datetime import datetime, date
+from datetime import datetime, date, time
 from typing import Iterable
 from database import get_guild_settings, get_log_channel
 
@@ -404,6 +405,9 @@ def save_skullboarded_messages(message_ids):
 skullboarded_messages = load_skullboarded_messages()
 
 GC_BLACKLIST = ["GC", "GCHQ", "GCFAQ", "GCC"]
+TL_BLACKLIST = ["TL"]
+GL_BLACKLIST = ["GL"]
+PR_BLACKLIST = ["PR"]
 TB_BLACKLIST = ["TB", "TBF", "TBH", "TBS", "TBDISCOVER", "TBDROP", "TBGRAB", "TBMISSING", "TBRETRIEVE", "TBVISIT"]
 
 POLL_JSON_FILE = DATA_DIR / "poll_dates.json"
@@ -425,6 +429,17 @@ def save_poll_date(date: date):
         json.dump({"last_poll_date": date.isoformat()}, f)
 
 last_poll_date = load_poll_date()
+
+INVITE_REGEX = re.compile(
+    r'(https?:\/\/)?(www\.)?(discord\.gg|discord\.com\/invite)\/([A-Za-z0-9-]+)',
+    re.IGNORECASE
+)
+
+def redact_discord_invites(text: str) -> str:
+    return INVITE_REGEX.sub(
+        lambda m: f"https​:/​/​discord​.gg​/rеdаctеd",
+        text
+    )
 
 with (DATA_DIR / 'name-icon.json').open("r", encoding="utf-8") as file:
     emoji_names: dict[str, dict[str, str]] = json.load(file)
@@ -453,7 +468,153 @@ def find_gc_tb_codes(s: str) -> tuple[bool, set[str], set[str]]:
 
     return True, gc_codes, tb_codes
 
+async def find_pr_codes(s: str) -> set[str]:
+    """Find PR codes in a string.
+
+    Args:
+        s (str): string to find pr codes in
+
+    Returns:
+        set[str]: a set of pr codes found
+    """
+    pr_matches: list[str] = re.findall(r'(?<!:)\b(PR[A-Z0-9]{1,5})(?:\b|_)', s, re.IGNORECASE)
+
+    pr_codes = {item.upper() for item in pr_matches if item.upper() not in PR_BLACKLIST}
+
+    return pr_codes
+
+async def find_gl_tl_codes(s: str) -> tuple[set[str], set[str]]:
+    """Find GL/TL codes in a string.
+
+    Args:
+        s (str): string to find GL/TL codes in
+
+    Returns:
+        tuple[set[str], set[str]]: a tuple of gl codes and tl codes found
+    """
+    gl_matches: list[str] = re.findall(r'\bGL[A-Za-z0-9]{1,9}\b', s, re.IGNORECASE)
+    tl_matches: list[str] = re.findall(r'\bTL[A-Za-z0-9]{1,9}\b', s, re.IGNORECASE)
+    gl_codes = {item.upper() for item in gl_matches if item.upper() not in GL_BLACKLIST}
+    tl_codes = {item.upper() for item in tl_matches if item.upper() not in TL_BLACKLIST}
+
+    return gl_codes, tl_codes
+
 g_obj = pycaching.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
+
+async def get_gl_tl_code_info(gl_codes: Iterable[str], tl_codes: Iterable[str]):
+    messages = []
+
+    for code, code_type in [(c, "GL") for c in list(gl_codes)[:3]] + [(c, "TL") for c in list(tl_codes)[:3]]:
+        try:
+            log = g_obj.get_log(code)
+
+            author = log.author or "Unknown"
+            logtype = log.type.name if log.type else "Unknown"
+            date = log.visited.strftime('%Y-%m-%d') if log.visited else "Unknown"
+            text = log.text or "Unknown"
+
+            if code_type == "GL":
+                display_code = log.geocache_code
+            else:
+                display_code = log.trackable_code
+
+            # Map log type to emoji
+            logtype_map = {
+                "discovered_it": "<:TBDiscover:1369015617176207421>",
+                "announcement": "📢",
+                "archive": "<:Archive:1369015619231420497>",
+                "attended": "<:Attended:1369015554257719334>",
+                "didnt_find_it": "<:DNF:1368989100220092516>",
+                "enable_listing": "<:Enabled:1369010377815494708>",
+                "found_it": "<:Found:1368989281909215302>",
+                "grabbed_it": "<:TBGrab:1369015569151430687>",
+                "marked_missing": "<:TBMissing:1369015565171298335>",
+                "needs_archive": "<:NeedsArchive:1369015557323755730>",
+                "needs_maintenance": "<:NeedsMaintenence:1369010381774651504>",
+                "note": "<:WriteNote:1369010379815911565>",
+                "oc_team_comment": "💬",
+                "owner_maintenance": "<:OwnerMaintenence:1369010374631751832>",
+                "placed_it": "<:TBDrop:1369015563388584017>",
+                "post_reviewer_note": "<:ReviewerNote:1369015567062667404>",
+                "publish_listing": "<:Upload:1369010376662056970>",
+                "retract": "<:ReviewerDeny:1369015615561666560>",
+                "retrieved_it": "<:TBRetrieve:1369015561660399620>",
+                "submit_for_review": "<:ReviewerNote:1369015567062667404>",
+                "temp_disable_listing": "<:Disabled:1369009017552371902>",
+                "unarchive": "<:Unarchive:1369015555570270409>",
+                "update_coordinates": "<:Relocate:1369015572183908462>",
+                "visit": "<:TBVisit:1369016734161309706>",
+                "webcam_photo_taken": "<:LogImage:1369015560662417500>",
+                "will_attend": "<:WillAttend:1369015558909071411>"
+            }
+
+            logtype_display = logtype_map.get(logtype, logtype)
+
+            messages.append(
+                f"[{code}](<https://coord.info/{code}>) - {logtype_display} | {author}\n"
+                f"🗓️ {date} | {display_code}\n"
+                f"Log Contents: {redact_discord_invites(text)}"
+            )
+
+        except Exception as e:
+            return
+
+    return "\n\n".join(messages)
+
+async def get_pr_code_info(pr_codes: Iterable[str], bot):
+    messages = []
+    for code in list(pr_codes)[:3]:
+        try:
+            try:
+                profile = g_obj.get_user(pr_code=code)
+            except AttributeError as e:
+                g_obj.logout()
+                g_obj.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
+                profile = g_obj.get_user(pr_code=code) 
+            except Exception as e:
+                raise e
+
+            name = profile.name
+            joined_date = profile.joined_date
+            location = profile.location
+            profile_picture_url = profile.profile_picture_url
+            membership_status = profile.membership_status
+            favorite_points_received = profile.favorite_points_received
+            finds_count = profile.found_count
+            hides_count = profile.hidden_count
+            last_visited_date = profile.last_visited_date
+
+            joined_ts = int(datetime.combine(joined_date, time.min).timestamp())
+            last_visited_ts = int(datetime.combine(last_visited_date, time.min).timestamp())
+
+            emoji_guild = bot.get_guild(int(os.getenv("EMOJI_GUILD_ID")) if os.getenv("EMOJI_GUILD_ID") else None)
+            emoji = None
+            if emoji_guild:
+                emoji2 = await emoji_guild.create_custom_emoji(name=f"PR_{name}", image=requests.get(profile_picture_url).content)
+                emoji = await emoji_guild.fetch_emoji(emoji2.id)
+
+            pmo = "<:Premium:1368989525405335552>" if str(membership_status) == "MembershipStatus.premium" else ""
+            emoji_str = f"<:{emoji.name}:{emoji.id}>" if emoji else f"👤"
+
+            finalmessage = f"""<:user:1453018988362731601> {code} | {pmo} {emoji_str} [{name}](<https://geocaching.com/p/?u={name}>)
+<:join:1453020390803898438> <t:{joined_ts}:R> | 🛂 <t:{last_visited_ts}:R>
+📍 {location} | <:Found:1368989281909215302> {finds_count} | <:OwnedCache:1368989502281875536> {hides_count} | 🩵 {favorite_points_received}"""
+            
+            if emoji:
+                async def delete_emoji_later():
+                    await asyncio.sleep(60)
+                    try:
+                        await emoji.delete()
+                    except:
+                        pass 
+                asyncio.create_task(delete_emoji_later())
+
+            messages.append(finalmessage)
+
+        except Exception as e:
+            return
+    
+    return "\n\n".join(messages)
 
 def get_cache_basic_info(guild_id: int, geocache_codes: Iterable[str]=[], tb_codes: Iterable[str]=[]):
     deadcode = False
