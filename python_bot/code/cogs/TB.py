@@ -76,11 +76,13 @@ class TBRemoveConfirmView(View):
         try:
             cursor1.execute("DELETE FROM trackables WHERE code = ?", (self.code,))
             conn1.commit()
-            await interaction.response.send_message(f"TB `{self.code}` has been removed from the database.", ephemeral=True)
+            await interaction.response.edit_message(content=f"TB `{self.code}` has been removed from the database.", view=None)
             await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has removed TB `{self.code}` from the database.")
-            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has removed TB `{self.code}` from the database.")
         except Exception as e:
-            await interaction.response.send_message(f"An error occurred while trying to remove the TB. The Dev has been notified.", ephemeral=True)
+            if not interaction.response.is_done():
+                await interaction.response.send_message(f"An error occurred while trying to remove the TB. The Dev has been notified.", ephemeral=True)
+            else:
+                await interaction.followup.send(f"An error occurred while trying to remove the TB. The Dev has been notified.", ephemeral=True)
             await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB `{self.code}`. Error: {e}")
 
         self.stop()
@@ -91,7 +93,42 @@ class TBRemoveConfirmView(View):
             await interaction.response.send_message("This is not your button.", ephemeral=True)
             return
 
-        await interaction.response.send_message("Removal cancelled.", ephemeral=True)
+        await interaction.response.edit_message(content="Removal cancelled.", view=None)
+        self.stop()
+
+    async def on_timeout(self):
+        for item in self.children:
+            item.disabled = True
+        try:
+            await self.message.edit(view=self)
+        except:
+            pass
+
+class TBOwnershipConfirmView(View):
+    def __init__(self, user_id: int, callback, codes: list = None, single_code: str = None):
+        super().__init__(timeout=60)
+        self.user_id = user_id
+        self.callback = callback
+        self.codes = codes
+        self.single_code = single_code
+
+    @discord.ui.button(label="I own this/these TB(s)", style=discord.ButtonStyle.success)
+    async def confirm(self, interaction: discord.Interaction, button: Button):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("This is not your button.", ephemeral=True)
+            return
+        
+        await interaction.response.edit_message(content="Confirmation received! Processing...", view=None)
+        await self.callback(interaction)
+        self.stop()
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    async def cancel(self, interaction: discord.Interaction, button: Button):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("This is not your button.", ephemeral=True)
+            return
+
+        await interaction.response.edit_message(content="Addition cancelled.", view=None)
         self.stop()
 
     async def on_timeout(self):
@@ -150,36 +187,41 @@ class TBDatabase(app_commands.Group):
             await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb add` but entered the public code instead of the private one: `{code}`.")
             return
 
-        try:
-            tb = g_obj.get_trackable(code)
+        async def confirm_callback(intx: discord.Interaction):
             try:
-                tb.load()
-            except Exception:
-                await interaction.response.send_message(f"The TB code you entered (`{code}`) was not valid or is not activated. Please try again with a valid, activated TB code.", ephemeral=True)
-                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add` but the TB code was not valid or unactivated.")
-                return
+                tb = g_obj.get_trackable(code)
+                try:
+                    tb.load()
+                except Exception:
+                    await intx.followup.send(f"The TB code you entered (`{code}`) was not valid or is not activated. Please try again with a valid, activated TB code.", ephemeral=True)
+                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add` but the TB code was not valid or unactivated.")
+                    return
 
-            cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
-            existing_entry = cursor1.fetchone()
-            if existing_entry:
-                await interaction.response.send_message(f"This TB code (`{code}`) is already in the database.", ephemeral=True)
-                return
+                cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
+                existing_entry = cursor1.fetchone()
+                if existing_entry:
+                    await intx.followup.send(f"This TB code (`{code}`) is already in the database.", ephemeral=True)
+                    return
 
-            user_id = interaction.user.id
-            cursor1.execute("""
-                INSERT INTO trackables (code, gc_username, uploaded_time, user_id, tb_code) 
-                VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
-            """, (code, tb.owner, user_id, tb.tid))
-            conn1.commit()
-            await interaction.response.send_message(f"This TB (`{code}`) has been added to the public database - thanks for sharing!", ephemeral=True)
-            await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
-            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
+                user_id = interaction.user.id
+                cursor1.execute("""
+                    INSERT INTO trackables (code, gc_username, uploaded_time, user_id, tb_code) 
+                    VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
+                """, (code, tb.owner, user_id, tb.tid))
+                conn1.commit()
+                await intx.followup.send(f"This TB (`{code}`) has been added to the public database - thanks for sharing!\nOwner Name: {tb.owner}. If this is NOT you, please immediately </tb remove:1370815537151606925> it. Failure to do so could lead to blacklists or suspensions.", ephemeral=True)
+                await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
+                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
 
-        except Exception as e:
-            await interaction.response.send_message(f"An unknown error occured whilst processing code `{code}`. The Dev has been notified.", ephemeral=True)
-            await log_error(interaction.guild, bot, interaction.command.name, 
-                f"User: {interaction.user.mention} ({interaction.user.name}) adding TB `{code}` to the database. Error: \n```\n{str(e)}\n```"
-            )
+            except Exception as e:
+                await intx.followup.send(f"An unknown error occured whilst processing code `{code}`. The Dev has been notified.", ephemeral=True)
+                await log_error(interaction.guild, bot, interaction.command.name, 
+                    f"User: {interaction.user.mention} ({interaction.user.name}) adding TB `{code}` to the database. Error: \n```\n{str(e)}\n```"
+                )
+
+        view = TBOwnershipConfirmView(user_id=interaction.user.id, callback=confirm_callback, single_code=code)
+        await interaction.response.send_message(f"Please confirm that you own the TB with code `{code}` before it is added to the public database.", view=view, ephemeral=True)
+        view.message = await interaction.original_response()
     
 # TB BULKADD        
     @app_commands.command()
@@ -192,75 +234,90 @@ class TBDatabase(app_commands.Group):
             await interaction.response.send_message("No valid TB codes found. Please provide at least one code separated by commas, spaces, or colons.", ephemeral=True)
             return
 
-        await interaction.response.send_message(f"Processing {len(tb_codes)} TB code(s)... this may take a while. \n**Please keep this message open!**", ephemeral=True)
+        async def bulk_confirm_callback(intx: discord.Interaction):
+            await intx.followup.send(f"Processing {len(tb_codes)} TB code(s)... this may take a while. \n**Please keep this message open!**", ephemeral=True)
 
-        successful_codes = []
-        failed_codes = []
+            successful_codes = []
+            failed_codes = []
+            added_owners = set()
 
-        for code in tb_codes:
-            if code.lower().startswith("tb"):
-                await master_log_message(interaction.guild, bot, interaction.command.name,
-                    f"{interaction.user.mention} ({interaction.user.name}) tried to use `bulkadd` but entered the public code instead of the private one: `{code}`."
-                )
-                failed_codes.append(code)
-                continue
-
-            try:
-                tb = g_obj.get_trackable(code)
-                try:
-                    tb.load()
-                except Exception:
+            for code in tb_codes:
+                if code.lower().startswith("tb"):
                     await master_log_message(interaction.guild, bot, interaction.command.name,
-                        f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd` but the TB code was invalid or unactivated for code: `{code}`."
-                    )
-                    failed_codes.append(code)
-                    continue 
-
-                cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
-                existing_entry = cursor1.fetchone()
-                if existing_entry:
-                    await master_log_message(interaction.guild, bot, interaction.command.name,
-                        f"{interaction.user.mention} ({interaction.user.name}) attempted to bulkadd TB `{code}`, but it already exists in the database."
+                        f"{interaction.user.mention} ({interaction.user.name}) tried to use `bulkadd` but entered the public code instead of the private one: `{code}`."
                     )
                     failed_codes.append(code)
                     continue
 
-                user_id = interaction.user.id
-                cursor1.execute("""
-                    INSERT INTO trackables (code, gc_username, uploaded_time, user_id, tb_code) 
-                    VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
-                """, (code, tb.owner, user_id, tb.tid))
-                conn1.commit()
-                await master_log_message(interaction.guild, bot, interaction.command.name,
-                    f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!"
-                )
-                await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
-                successful_codes.append(code)
+                try:
+                    tb = g_obj.get_trackable(code)
+                    try:
+                        tb.load()
+                    except Exception:
+                        await master_log_message(interaction.guild, bot, interaction.command.name,
+                            f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd` but the TB code was invalid or unactivated for code: `{code}`."
+                        )
+                        failed_codes.append(code)
+                        continue 
 
-            except Exception as e:
-                await log_error(interaction.guild, bot, interaction.command.name,
-                    f"{interaction.user.mention} ({interaction.user.name}) tried to bulkadd TB `{code}`: {e}"
-                )
-                failed_codes.append(code)
+                    cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
+                    existing_entry = cursor1.fetchone()
+                    if existing_entry:
+                        await master_log_message(interaction.guild, bot, interaction.command.name,
+                            f"{interaction.user.mention} ({interaction.user.name}) attempted to bulkadd TB `{code}`, but it already exists in the database."
+                        )
+                        failed_codes.append(code)
+                        continue
 
-        max_codes_display = 20
-        if len(successful_codes) > max_codes_display:
-            successful_str = ", ".join(successful_codes[:max_codes_display]) + f" ... and {len(successful_codes) - max_codes_display} more"
-        else:
-            successful_str = ", ".join(successful_codes) if successful_codes else "None"
+                    user_id = interaction.user.id
+                    cursor1.execute("""
+                        INSERT INTO trackables (code, gc_username, uploaded_time, user_id, tb_code) 
+                        VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
+                    """, (code, tb.owner, user_id, tb.tid))
+                    conn1.commit()
+                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                        f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!"
+                    )
+                    await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
+                    successful_codes.append(code)
+                    added_owners.add(tb.owner)
+
+                except Exception as e:
+                    await log_error(interaction.guild, bot, interaction.command.name,
+                        f"{interaction.user.mention} ({interaction.user.name}) tried to bulkadd TB `{code}`: {e}"
+                    )
+                    failed_codes.append(code)
+
+            max_codes_display = 20
+            if len(successful_codes) > max_codes_display:
+                successful_str = ", ".join(successful_codes[:max_codes_display]) + f" ... and {len(successful_codes) - max_codes_display} more"
+            else:
+                successful_str = ", ".join(successful_codes) if successful_codes else "None"
+                
+            if len(failed_codes) > max_codes_display:
+                failed_str = ", ".join(failed_codes[:max_codes_display]) + f" ... and {len(failed_codes) - max_codes_display} more"
+            else:
+                failed_str = ", ".join(failed_codes) if failed_codes else "None"
+
+            results_msg = (
+                f"Finished processing TB codes!\n"
+                f"Successfully added: {len(successful_codes)} ({successful_str})\n"
+                f"Failed to add: {len(failed_codes)} ({failed_str})\n"
+            )
             
-        if len(failed_codes) > max_codes_display:
-            failed_str = ", ".join(failed_codes[:max_codes_display]) + f" ... and {len(failed_codes) - max_codes_display} more"
-        else:
-            failed_str = ", ".join(failed_codes) if failed_codes else "None"
+            if added_owners:
+                results_msg += f"**Owners of Added TBs:** {', '.join(added_owners)}\n"
+            
+            results_msg += (
+                f"\nThank you for your contribution(s) towards the trackable database!\n\n"
+                f"*If any of these are NOT you, please immediately </tb remove:1370815537151606925> the relevant TB. Failure to do so could lead to blacklists or suspensions.*"
+            )
 
-        await interaction.followup.send(
-            f"Finished processing TB codes!\n"
-            f"Successfully added: {len(successful_codes)} ({successful_str})\n"
-            f"Failed to add: {len(failed_codes)} ({failed_str})\n"
-            f"Thank you for your contribution(s) towards the trackable database!",
-            ephemeral=True
-        )
+            await intx.followup.send(results_msg, ephemeral=True)
+
+        view = TBOwnershipConfirmView(user_id=interaction.user.id, callback=bulk_confirm_callback, codes=tb_codes)
+        await interaction.response.send_message(f"Please confirm that you own all {len(tb_codes)} TB(s) before they are added to the public database.", view=view, ephemeral=True)
+        view.message = await interaction.original_response()
 
 # TB PURGE
     @app_commands.command()
@@ -349,7 +406,6 @@ class TBDatabase(app_commands.Group):
             existing_entry = cursor1.fetchone()
 
             if existing_entry:
-                print(existing_entry)
                 if existing_entry[0] == interaction.user.id:
                     await interaction.response.send_message(f"Are you sure you want to remove TB `{private_code}` from the database?", view=TBRemoveConfirmView(private_code, interaction.user.id), ephemeral=True)
                 else:

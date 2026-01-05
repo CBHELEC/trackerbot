@@ -94,6 +94,11 @@ class Listeners(commands.Cog):
                 finalmessage = await get_gt_code_info(gt_codes)
                 if finalmessage:
                     await message.reply(finalmessage)
+            
+        # Coordinates
+        coords = find_coordinates(message.content)
+        if coords:
+            await message.reply("\n".join(coords))
 
         if message.poll:
             if message.guild.id != 1368978029056888943:
@@ -178,6 +183,10 @@ class Listeners(commands.Cog):
             await after.reply("thank yous OwO")
 
         else:
+            # Coordinates
+            coords = find_coordinates(after.content)
+            if coords:
+                await after.reply("\n".join(coords))
             return
 
     async def _remove_from_processed(self, message_id: int, delay: float):
