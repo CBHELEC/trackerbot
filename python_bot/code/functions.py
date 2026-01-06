@@ -17,6 +17,7 @@ import psutil
 import discord
 import re
 import requests
+import string
 from google_images_search import GoogleImagesSearch
 from googleapiclient.discovery import build
 from discord import app_commands
@@ -618,7 +619,7 @@ def find_coordinates(text: str) -> list[str]:
             lat_str, lon_str = c.split(',')
             lat_str = lat_str.strip()
             lon_str = lon_str.strip()
-            formatted = f"<:map_dot:1457804317963718840> Geocaching Map: [click](<https://www.geocaching.com/play/map?lat={lat_str}&lng={lon_str}&r=10>), Google Maps: [click](<https://www.google.com/maps/search/?api=1&query={lat_str}%2C{lon_str}>)"
+            formatted = f"<:map_dot:1457804317963718840> Geocaching Map: [click](<https://www.geocaching.com/play/map?lat={lat_str}&lng={lon_str}&r=10>), Google Maps: [click](<https://www.google.com/maps/search/?api=1&query={lat_str}%2C{lon_str}>), OSM Map: [click](<https://www.openstreetmap.org/#map=18/{lat_str}/{lon_str}>)"
             unique_coords.append(formatted)
             seen.add(c)
     
@@ -626,8 +627,10 @@ def find_coordinates(text: str) -> list[str]:
 
 g_obj = pycaching.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
 
-async def get_gt_code_info(gt_codes: Iterable[str]):
+async def get_gt_code_info(gt_codes: Iterable[str] | str):
     messages = []
+    if isinstance(gt_codes, str):
+        gt_codes = [gt_codes]
 
     for code in list(gt_codes)[:3]:
         try:
@@ -701,8 +704,11 @@ async def get_gl_tl_code_info(gl_codes: Iterable[str], tl_codes: Iterable[str]):
 
     return "\n\n".join(messages)
 
-async def get_pr_code_info(pr_codes: Iterable[str], bot):
+async def get_pr_code_info(pr_codes: Iterable[str] | str, bot):
     messages = []
+    if isinstance(pr_codes, str):
+        pr_codes = [pr_codes]
+
     for code in list(pr_codes)[:3]:
         try:
             try:
@@ -730,7 +736,8 @@ async def get_pr_code_info(pr_codes: Iterable[str], bot):
             emoji_guild = bot.get_guild(int(os.getenv("EMOJI_GUILD_ID")) if os.getenv("EMOJI_GUILD_ID") else None)
             emoji = None
             if emoji_guild:
-                emoji2 = await emoji_guild.create_custom_emoji(name=f"PR_{name}", image=requests.get(profile_picture_url).content)
+                emojiname = name.translate(str.maketrans('', '', string.punctuation))
+                emoji2 = await emoji_guild.create_custom_emoji(name=f"PR_{emojiname}", image=requests.get(profile_picture_url).content)
                 emoji = await emoji_guild.fetch_emoji(emoji2.id)
 
             pmo = "<:Premium:1368989525405335552>" if str(membership_status) == "MembershipStatus.premium" else ""
@@ -752,7 +759,61 @@ async def get_pr_code_info(pr_codes: Iterable[str], bot):
             messages.append(finalmessage)
 
         except Exception as e:
+            print(e)
             return
+    
+    return "\n\n".join(messages)
+
+async def get_username_pr_info(usernames: str, bot):
+    messages = []
+    try:
+        try:
+            profile = g_obj.get_user(name=usernames)
+            profile.load()
+        except AttributeError as e:
+            g_obj.logout()
+            g_obj.login(GEOCACHING_USERNAME, GEOCACHING_PASSWORD)
+            profile = g_obj.get_user(name=usernames)
+            profile.load()
+        except Exception as e:
+            print(f"777 {e}")
+        name = profile.name
+        pr_code = profile.pr_code
+        joined_date = profile.joined_date
+        location = profile.location
+        profile_picture_url = profile.profile_picture_url
+        membership_status = profile.membership_status
+        favorite_points_received = profile.favorite_points_received
+        finds_count = profile.found_count
+        hides_count = profile.hidden_count
+        last_visited_date = profile.last_visited_date
+        joined_ts = int(datetime.combine(joined_date, time.min).timestamp())
+        last_visited_ts = int(datetime.combine(last_visited_date, time.min).timestamp())
+        emoji_guild = bot.get_guild(int(os.getenv("EMOJI_GUILD_ID")) if os.getenv("EMOJI_GUILD_ID") else None)
+        emoji = None
+        if emoji_guild:
+            emojiname = name.translate(str.maketrans('', '', string.punctuation))
+            emoji2 = await emoji_guild.create_custom_emoji(name=f"PR_{emojiname}", image=requests.get(profile_picture_url).content)
+            emoji = await emoji_guild.fetch_emoji(emoji2.id)
+        pmo = "<:Premium:1368989525405335552>" if str(membership_status) == "MembershipStatus.premium" else ""
+        emoji_str = f"<:{emoji.name}:{emoji.id}>" if emoji else f"👤"
+        finalmessage = f"""<:user:1453018988362731601> {pr_code} | {pmo} {emoji_str} [{name}](<https://geocaching.com/p/?u={name}>)
+<:join:1453020390803898438> <t:{joined_ts}:R> | 🛂 <t:{last_visited_ts}:R>
+📍 {location} | <:Found:1368989281909215302> {finds_count} | <:OwnedCache:1368989502281875536> {hides_count} | 🩵 {favorite_points_received}"""
+            
+        messages.append(finalmessage)
+        
+        if emoji:
+            async def delete_emoji_later():
+                await asyncio.sleep(60)
+                try:
+                    await emoji.delete()
+                except:
+                    pass 
+            asyncio.create_task(delete_emoji_later())
+    except Exception as e:
+        print(f"812 {e}")
+        return
     
     return "\n\n".join(messages)
 

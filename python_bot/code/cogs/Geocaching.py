@@ -1,7 +1,5 @@
 import rot_cipher
-import os
 import discord
-import re
 from functions import *
 from discord import app_commands
 from discord.ext import commands
@@ -64,15 +62,40 @@ class Geocaching(commands.Cog):
         user = gc_user if gc_user else dc_user.display_name if dc_user else interaction.user.display_name
         user = quote(user)
         await interaction.response.send_message(f"https://cdn2.project-gc.com/BadgeBar/{user}.png")
-        
+
+# PROFILE_INFO
+    @app_commands.user_install()
+    @app_commands.command()
+    @app_commands.describe(
+    gc_pr="The Geocaching PR code for the profile",
+    gc_name="The Geocaching username for the profile",
+    )
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+    async def profile_info(self, interaction: discord.Interaction, gc_pr: str = None, gc_name: str = None):
+        """Sends Geocaching profile info."""
+        if not gc_pr and not gc_name:
+            await interaction.response.send_message("Please provide a Geocaching PR code or username.", ephemeral=True)
+            return
+        await interaction.response.defer()
+        if gc_name:
+            account = await get_username_pr_info(gc_name, self.bot)
+        else:
+            account = await get_pr_code_info(gc_pr, self.bot)
+        if account:
+            await interaction.followup.send(account)
+        else:
+            await interaction.followup.send("Account not found.", ephemeral=True)
+
 # GC_INFO
     @app_commands.user_install()
     @app_commands.command()
     @app_commands.describe(codes="The code(s) to get info for")
-    @app_commands.allowed_installs(guilds=False, users=True)
+    @app_commands.allowed_installs(guilds=True, users=True)
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def gc_info(self, interaction: discord.Interaction, codes: str):
         """Sends info about GC/TB code(s)."""
+        await interaction.response.defer()
         guildiddm = interaction.guild.id if interaction.guild else 0
         succ, gc_codes, tb_codes = find_gc_tb_codes(codes)
         guildsettings = get_guild_settings(guildiddm)
@@ -86,35 +109,34 @@ class Geocaching(commands.Cog):
                     # detection_status is disabled, deadcode is disabled
                     if not interaction.guild:
                         # detection_status is disabled, deadcode is disabled, no guild
-                        await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
+                        await interaction.followup.send("<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
                     else:
                         # detection_status is disabled, deadcode is enabled, yes guild
-                        await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!** | This message has been disabled by the guild Administrator.", ephemeral=True)
+                        await interaction.followup.send("<:DNF:1368989100220092516> **That Geocache doesn't exist!** | This message has been disabled by the guild Administrator.", ephemeral=True)
                 else:
                     # detection_status is disabled, deadcode is disabled, any guild
                     if interaction.guild:
-                        await interaction.response.send_message(finalmessage + "\n" + "**This message has been disabled by the guild Administrator.**", ephemeral=True)
+                        await interaction.followup.send(finalmessage + "\n" + "**This message has been disabled by the guild Administrator.**", ephemeral=True)
                     else:
-                        await interaction.response.send_message(finalmessage)
+                        await interaction.followup.send(finalmessage)
             else:
                 # detection_status is enabled (normal)
                 if deadcode:
                     # detection_status is enabled, deadcode is disabled
                     if not interaction.guild:
                         # detection_status is enabled, deadcode is disabled, no guild
-                        await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
+                        await interaction.followup.send("<:DNF:1368989100220092516> **That Geocache doesn't exist!**")
                     else:
                         # detection_status is enabled, deadcode is disabled, yes guild
-                        await interaction.response.send_message("<:DNF:1368989100220092516> **That Geocache doesn't exist!** | This message has been disabled by the guild Administrator.", ephemeral=True)
+                        await interaction.followup.send("<:DNF:1368989100220092516> **That Geocache doesn't exist!** | This message has been disabled by the guild Administrator.", ephemeral=True)
                 else:
                     # detection_status is enabled, deadcode is enabled, any guild
                     if interaction.guild:
-                        await interaction.response.send_message(finalmessage)
+                        await interaction.followup.send(finalmessage)
                     else:
-                        await interaction.response.send_message(finalmessage)
+                        await interaction.followup.send(finalmessage)
         else:
-            await interaction.response.defer(ephemeral=True, thinking=True)
-            await interaction.followup.send("I couldn't find any valid Geocache or Trackable codes in your input. Please try again.")
+            await interaction.followup.send("I couldn't find any valid Geocache or Trackable codes in your input. Please try again.", ephemeral=True)
         
 # ROT DECODE|ENCODE
     @app_commands.command(name="rotcipher", description="Encode or decode text with ROT-N letter and number ciphers.")
