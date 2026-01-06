@@ -574,12 +574,13 @@ class TBDatabase(app_commands.Group):
     @app_commands.command()
     async def bulkview(self, interaction: discord.Interaction):
         """Sends all codes in the public TB database to your DMs."""
+        await interaction.response.defer()
         try:
             cursor1.execute("SELECT code FROM trackables")
             trackables = cursor1.fetchall()
 
             if not trackables:
-                await interaction.response.send_message("The database is, for some reason, empty.", ephemeral=True)
+                await interaction.followup.send("The database is, for some reason, empty.", ephemeral=True)
                 return
 
             codes = [entry[0] for entry in trackables]
@@ -598,15 +599,15 @@ class TBDatabase(app_commands.Group):
             try:
                 for chunk in chunks:
                     await interaction.user.send(chunk)
-                await interaction.response.send_message("The TB codes have been sent to your DMs.", ephemeral=True)
+                await interaction.followup.send("The TB codes have been sent to your DMs.", ephemeral=True)
             except discord.Forbidden:
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     "I couldn't send you a DM. Please make sure your DMs are open and try again.",
                     ephemeral=True
                 )
 
         except Exception as e:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "An error occurred while retrieving the TB codes. Please ask an Administrator to check the logs.",
                 ephemeral=True
             )
