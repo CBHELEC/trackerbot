@@ -73,7 +73,10 @@ async def home(request: Request):
 
 
 @app.get("/callback")
-async def callback(code: str, support: bool = False):
+async def callback(code: str = None, error: str = None, support: bool = False):
+    if error or not code:
+        return RedirectResponse(url="/")
+
     data = {
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
