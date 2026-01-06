@@ -4,6 +4,7 @@ from discord import app_commands
 from functions import *
 from votefunctions import *
 from discord.ext import commands
+from game_functions.database import dbsetup, dbfunctions
 
 class VoteChecker(commands.Cog):
     def __init__(self, bot):
@@ -76,8 +77,13 @@ class VoteChecker(commands.Cog):
                             value=f"You can't vote!\nExpires {dbl_can_vote_timestamp}\n[Link: ***CLICK***](<https://discordbotlist.com/bots/tracker/upvote>)\nVote Streak: {dbl_vote_streak}",
                             inline=True)
 
+        # Get vote crate count from inventory
+        async with dbsetup.Session() as session:
+            inventory_items = await dbfunctions.get_inventory(session, interaction.user.id)
+            vote_crate_count = inventory_items.count("48")
+        
         embed.add_field(name="Stats:",
-                        value=f"Your Total Votes: {total_votes}\nTotal Vote Crates Earned: {await get_rewardtotal(interaction.user.id)}",
+                        value=f"Your Total Votes: {total_votes}\nVote Crates in Inventory: {vote_crate_count}\nTotal Vote Crates Earned: {await get_rewardtotal(interaction.user.id)}",
                         inline=False)
         await interaction.response.send_message(embed=embed)  
 

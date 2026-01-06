@@ -140,6 +140,7 @@ async def on_ready():
         activity=discord.CustomActivity(f"Merry Crimus! | {len(bot.guilds)} Servers"))
     update_presence.start()
     vote_reminders.start()
+    vote_streakreset.start()
     check_travel_completions.start()
 
 topgg = FastAPI()
@@ -154,7 +155,7 @@ topgg.add_middleware(
 @topgg.post("/topgg")
 async def topgg_webhook(request: Request) -> None:
     data = await request.json()
-    user_id = data.get("user")
+    user_id = int(data.get("user"))
     if datetime.today().weekday() >= 5:
         await notify_vote(user_id, "topgg", bot, weekend=True)
     else:
@@ -172,7 +173,7 @@ dbl.add_middleware(
 @dbl.post("/dbl")
 async def dbl_webhook(request: Request):
     data = await request.json()
-    user_id = data.get("id")
+    user_id = int(data.get("id"))
     if datetime.today().weekday() >= 5:
         await notify_vote(user_id, "dbl", bot, weekend=True)
     else:

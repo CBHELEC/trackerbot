@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine, Column, BigInteger, Integer, String, select
 from sqlalchemy.orm import declarative_base, sessionmaker
 from pathlib import Path
+from game_functions.database import dbsetup, dbfunctions
 
 VOTE_LOG_ID = 1391169156530962553
 
@@ -236,7 +237,7 @@ async def update_last_streak_bonus(user_id, amount: int):
             session.add(reward)
         session.commit()
 
-async def toggle_reminded(user_id, type: str):
+async def set_reminded(user_id, type: str, state: int):
     with Session() as session:
         reminder = session.query(reminders).filter_by(user_id=user_id).first()
         if not reminder:
@@ -244,15 +245,9 @@ async def toggle_reminded(user_id, type: str):
             session.add(reminder)
 
         if type == "topgg":
-            if reminder.topgg_reminded == 0:
-                reminder.topgg_reminded = 1
-            else:
-                reminder.topgg_reminded = 0
+            reminder.topgg_reminded = state
         elif type == "dbl":
-            if reminder.dbl_reminded == 0:
-                reminder.dbl_reminded = 1
-            else:
-                reminder.dbl_reminded = 0
+            reminder.dbl_reminded = state
         session.commit()
 
 async def reset_streak_amt(user_id, type: str):
@@ -335,7 +330,11 @@ async def notify_vote(user_id, type: str, bot, weekend: bool = None):
                     description=f"You voting helps a lot, so take ███████ Vote Crates as your reward!\nThanks! <3\n\nWait wait wait what!? Oh, right... it's the weekend! I guess you get double then? Either way take {reward_amount * 2} Vote Crates.",
                     colour=0xad7e66
                 )
-                embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")  
+                embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")
+                # Add vote crates to inventory
+                async with dbsetup.Session() as session:
+                    for _ in range(reward_amount * 2):
+                        await dbfunctions.add_inv_item(session, user_id, "48")
                 await update_type_rewardtotal(user_id, "topgg", reward_amount * 2)    
             else:
                 embed = discord.Embed(
@@ -344,6 +343,10 @@ async def notify_vote(user_id, type: str, bot, weekend: bool = None):
                     colour=0xad7e66
                 )
                 embed.set_footer(text=f"Vote Streak: {topgg_type_streak} | /vote for more info")
+                # Add vote crates to inventory
+                async with dbsetup.Session() as session:
+                    for _ in range(reward_amount):
+                        await dbfunctions.add_inv_item(session, user_id, "48")
                 await update_type_rewardtotal(user_id, "topgg", reward_amount)
             if new_streak_update:
                 milestoneembed = discord.Embed(
@@ -351,13 +354,17 @@ async def notify_vote(user_id, type: str, bot, weekend: bool = None):
                     description=f"It appears you have reached a total of {topgg_type_streak} total top.gg votes!\nTo reward that, you have been given an additional {bonus_reward_amount} Vote Crates.\nThank you for the support and happy voting!",
                     colour=0xad7e66
                 )
+                # Add bonus vote crates to inventory
+                async with dbsetup.Session() as session:
+                    for _ in range(bonus_reward_amount):
+                        await dbfunctions.add_inv_item(session, user_id, "48")
             try:
                 embeds_to_send = [embed]
                 if milestoneembed is not None:
                     embeds_to_send.append(milestoneembed)
 
                 await user.send(embeds=embeds_to_send)
-                await toggle_reminded(user_id, "topgg")
+                await set_reminded(user_id, "topgg", 0)
                 await bot.get_channel(VOTE_LOG_ID).send(f"<@{user_id}> just voted on top.gg!")
             except discord.Forbidden:
                 print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
@@ -393,7 +400,7 @@ async def notify_vote(user_id, type: str, bot, weekend: bool = None):
                         embeds_to_send.append(milestoneembed)
 
                     await user.send(embeds=embeds_to_send)
-                    await toggle_reminded(user_id, "topgg")
+                    await set_reminded(user_id, "topgg", 0)
                     await bot.get_channel(VOTE_LOG_ID).send(f"<@{user_id}> just voted on top.gg!")
                 except discord.Forbidden:
                     print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
@@ -436,6 +443,10 @@ async def notify_vote(user_id, type: str, bot, weekend: bool = None):
             else:
                 print("Oh Noes! We appear to have someone that has a funky wunky streak uwu! User_ID:" + str(user_id))
             await update_last_streak_bonus(user_id, dbl_streak_amount)
+            # Add bonus vote crates to inventory
+            async with dbsetup.Session() as session:
+                for _ in range(bonus_reward_amount):
+                    await dbfunctions.add_inv_item(session, user_id, "48")
             await update_type_rewardtotal(user_id, "dbl", bonus_reward_amount)
         user = bot.get_user(user_id)
         if user:
@@ -445,7 +456,11 @@ async def notify_vote(user_id, type: str, bot, weekend: bool = None):
                     description=f"You voting helps a lot, so take ███████ Vote Crates as your reward!\nThanks! <3\n\nWait wait wait what!? Oh, right... it's the weekend! I guess you get double then? Either way take {reward_amount * 2} Vote Crates.",
                     colour=0xad7e66
                 )
-                embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")  
+                embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")
+                # Add vote crates to inventory
+                async with dbsetup.Session() as session:
+                    for _ in range(reward_amount * 2):
+                        await dbfunctions.add_inv_item(session, user_id, "48")
                 await update_type_rewardtotal(user_id, "dbl", reward_amount * 2)    
             else:
                 embed = discord.Embed(
@@ -454,6 +469,10 @@ async def notify_vote(user_id, type: str, bot, weekend: bool = None):
                     colour=0xad7e66
                 )
                 embed.set_footer(text=f"Vote Streak: {dbl_type_streak} | /vote for more info")
+                # Add vote crates to inventory
+                async with dbsetup.Session() as session:
+                    for _ in range(reward_amount):
+                        await dbfunctions.add_inv_item(session, user_id, "48")
                 await update_type_rewardtotal(user_id, "dbl", reward_amount)
             if new_streak_update:
                 milestoneembed = discord.Embed(
@@ -461,13 +480,17 @@ async def notify_vote(user_id, type: str, bot, weekend: bool = None):
                     description=f"It appears you have reached a total of {dbl_type_streak} total DBL votes!\nTo reward that, you have been given an additional {bonus_reward_amount} Vote Crates.\nThank you for the support and happy voting!",
                     colour=0xad7e66
                 )
+                # Add bonus vote crates to inventory
+                async with dbsetup.Session() as session:
+                    for _ in range(bonus_reward_amount):
+                        await dbfunctions.add_inv_item(session, user_id, "48")
             try:
                 embeds_to_send = [embed]
                 if milestoneembed is not None:
                     embeds_to_send.append(milestoneembed)
 
                 await user.send(embeds=embeds_to_send)
-                await toggle_reminded(user_id, "dbl")
+                await set_reminded(user_id, "dbl", 0)
                 await bot.get_channel(VOTE_LOG_ID).send(f"<@{user_id}> just voted on DBL!")
             except discord.Forbidden:
                 print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
@@ -503,7 +526,7 @@ async def notify_vote(user_id, type: str, bot, weekend: bool = None):
                         embeds_to_send.append(milestoneembed)
 
                     await user.send(embeds=embeds_to_send)
-                    await toggle_reminded(user_id, "dbl")
+                    await set_reminded(user_id, "dbl", 0)
                     await bot.get_channel(VOTE_LOG_ID).send(f"<@{user_id}> just voted on DBL!")
                 except discord.Forbidden:
                     print(f"Discord User ID {user_id} has DMs disabled, so I was unable to notify them of their vote.")
@@ -526,12 +549,6 @@ async def send_vote_reminders(bot):
             now = datetime.now()
 
             for user_id in all_user_ids:
-                user = bot.get_user(user_id)
-                if not user:
-                    user = await bot.fetch_user(user_id)
-                    if not user:
-                        continue
-
                 result_topgg = session.execute(
                     select(topgg_votes)
                     .where(topgg_votes.user_id == user_id)
@@ -540,6 +557,7 @@ async def send_vote_reminders(bot):
                 )
                 topgg_vote = result_topgg.scalar_one_or_none()
                 topgg_time = topgg_vote.voted_at if topgg_vote else None
+                
                 result_dbl = session.execute(
                     select(dbl_votes)
                     .where(dbl_votes.user_id == user_id)
@@ -549,31 +567,45 @@ async def send_vote_reminders(bot):
                 dbl_vote = result_dbl.scalar_one_or_none()
                 dbl_time = dbl_vote.voted_at if dbl_vote else None
 
+                needs_topgg = False
                 if topgg_time:
-                    if await is_type_reminded(user_id, "topgg"):
-                        return
-                    hours_since_topgg = (now - datetime.fromisoformat(topgg_time)).total_seconds() / 3600
-                    if hours_since_topgg >= 12:
+                    if not await is_type_reminded(user_id, "topgg"):
+                        hours_since_topgg = (now - datetime.fromisoformat(topgg_time)).total_seconds() / 3600
+                        if hours_since_topgg >= 12:
+                            needs_topgg = True
+
+                needs_dbl = False
+                if dbl_time:
+                    if not await is_type_reminded(user_id, "dbl"):
+                        hours_since_dbl = (now - datetime.fromisoformat(dbl_time)).total_seconds() / 3600
+                        if hours_since_dbl >= 12:
+                            needs_dbl = True
+
+                if needs_topgg or needs_dbl:
+                    user = bot.get_user(user_id)
+                    if not user:
+                        try:
+                            user = await bot.fetch_user(user_id)
+                        except (discord.NotFound, discord.HTTPException):
+                            continue
+                    
+                    if needs_topgg:
                         try:
                             embed = discord.Embed(title="Reminder to Vote! ⏰",
                                 description="I noticed you can vote on top.gg again, and it would be a shame to watch that streak disappear. Vote @ https://top.gg/bot/1322305662973116486/vote",
                                 colour=0xad7e66)
                             await user.send(embed=embed)
-                            await toggle_reminded(user_id, "topgg")
+                            await set_reminded(user_id, "topgg", 1)
                         except discord.Forbidden:
                             pass
 
-                if dbl_time:
-                    if await is_type_reminded(user_id, "dbl"):
-                        return
-                    hours_since_dbl = (now - datetime.fromisoformat(dbl_time)).total_seconds() / 3600
-                    if hours_since_dbl >= 12:
+                    if needs_dbl:
                         try:
                             embed = discord.Embed(title="Reminder to Vote! ⏰",
                                 description="I noticed you can vote on DBL again, and it would be a shame to watch that streak disappear. Vote @ https://discordbotlist.com/bots/tracker/upvote",
                                 colour=0xad7e66)
                             await user.send(embed=embed)
-                            await toggle_reminded(user_id, "dbl")
+                            await set_reminded(user_id, "dbl", 1)
                         except discord.Forbidden:
                             pass
 
@@ -593,7 +625,9 @@ async def streak_reset(bot):
             dbl_vote = session.query(dbl_votes).filter_by(user_id=user_id).first()
 
             def too_old(vote):
-                if (not vote) or (not vote.voted_at and vote.streak != 0):
+                if not vote or vote.streak == 0:
+                    return False
+                if not vote.voted_at:
                     return True
                 try:
                     ts = datetime.fromisoformat(str(vote.voted_at))
@@ -605,21 +639,24 @@ async def streak_reset(bot):
             dbl_old = too_old(dbl_vote)
 
             if topgg_old or dbl_old:
+                user = bot.get_user(user_id) or await bot.fetch_user(user_id)
                 if topgg_old:
                     await reset_streak_amt(user_id, "topgg")
-                    embed = discord.Embed(
-                        title="Oh Noes! Your top.gg streak died...",
-                        description=f"It appears that you didn't vote on top.gg in the last 24 hours, so sadly your streak reset.",
-                        colour=0xad7e66
-                    )
-                    embed.set_footer(text=f"Vote Streak: 0 | /vote for more info")  
-                    await bot.get_user(user_id).send(embed=embed)
+                    if user:
+                        embed = discord.Embed(
+                            title="Oh Noes! Your top.gg streak died...",
+                            description=f"It appears that you didn't vote on top.gg in the last 24 hours, so sadly your streak reset.",
+                            colour=0xad7e66
+                        )
+                        embed.set_footer(text=f"Vote Streak: 0 | /vote for more info")  
+                        await user.send(embed=embed)
                 if dbl_old:
                     await reset_streak_amt(user_id, "dbl")
-                    embed = discord.Embed(
-                        title="Oh Noes! Your DBL streak died...",
-                        description=f"It appears that you didn't vote on DBL in the last 24 hours, so sadly your streak reset.",
-                        colour=0xad7e66
-                    )
-                    embed.set_footer(text=f"Vote Streak: 0 | /vote for more info") 
-                    await bot.get_user(user_id).send(embed=embed)
+                    if user:
+                        embed = discord.Embed(
+                            title="Oh Noes! Your DBL streak died...",
+                            description=f"It appears that you didn't vote on DBL in the last 24 hours, so sadly your streak reset.",
+                            colour=0xad7e66
+                        )
+                        embed.set_footer(text=f"Vote Streak: 0 | /vote for more info") 
+                        await user.send(embed=embed)
