@@ -136,14 +136,10 @@ class Listeners(commands.Cog):
             return
 
         setting = get_guild_settings(after.guild.id)
-        detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
-        link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
-        before_succ, before_gc, before_tb = find_gc_tb_codes(before.content)
-        after_succ, after_gc, after_tb = find_gc_tb_codes(after.content)
+        detection_status = bool(setting.detection_status) if hasattr(setting, "detection_status") else True
+        link_embed_status = bool(setting.link_embed_status) if hasattr(setting, "link_embed_status") else True
 
-        if link_embed_status and len(after.embeds) and re.search(GC_LINK_SEARCH,after.content,re.IGNORECASE):
-            if after.author.bot:
-                return
+        if link_embed_status and len(after.embeds) and re.search(GC_LINK_SEARCH, after.content, re.IGNORECASE):
             if after.id in self.recently_processed_embeds:
                 return
             if after.flags.suppress_embeds:
@@ -157,37 +153,50 @@ class Listeners(commands.Cog):
             )
             await after.edit(suppress=True)
 
-        if before_gc == after_gc and before_tb == after_tb:
+        if before.content == after.content:
             return
 
-        if before.embeds and not after.embeds:
-            return
-
-        elif after_succ:
-            if not detection_status:
-                return
-
-            if not after.embeds:
-                if not before.embeds and not after.embeds:
-                    finalmessage, deadcode = get_cache_basic_info(after.guild.id, after_gc, after_tb)
-                    if deadcode: 
-                        return
+        if detection_status:
+            # GC / TB
+            before_succ, before_gc, before_tb = find_gc_tb_codes(before.content)
+            after_succ, after_gc, after_tb = find_gc_tb_codes(after.content)
+            if after_succ and (before_gc != after_gc or before_tb != after_tb):
+                finalmessage, deadcode = get_cache_basic_info(after.guild.id, after_gc, after_tb)
+                if not deadcode:
                     await after.reply(finalmessage)
-                return
-            finalmessage, deadcode = get_cache_basic_info(after.guild.id, after_gc, after_tb)
-            if deadcode:
-                return
-            await after.reply(finalmessage)
 
-        elif "good bot" in after.content.lower():
+            # PR
+            before_pr = await find_pr_codes(before.content)
+            after_pr = await find_pr_codes(after.content)
+            if after_pr and before_pr != after_pr:
+                finalmessage = await get_pr_code_info(after_pr, self.bot)
+                if finalmessage:
+                    await after.reply(finalmessage)
+
+            # GL / TL
+            before_gl, before_tl = await find_gl_tl_codes(before.content)
+            after_gl, after_tl = await find_gl_tl_codes(after.content)
+            if (after_gl or after_tl) and (before_gl != after_gl or before_tl != after_tl):
+                finalmessage = await get_gl_tl_code_info(after_gl, after_tl)
+                if finalmessage:
+                    await after.reply(finalmessage)
+
+            # GT
+            before_gt = await find_gt_codes(before.content)
+            after_gt = await find_gt_codes(after.content)
+            if after_gt and before_gt != after_gt:
+                finalmessage = await get_gt_code_info(after_gt)
+                if finalmessage:
+                    await after.reply(finalmessage)
+
+        # Coordinates
+        before_coords = find_coordinates(before.content)
+        after_coords = find_coordinates(after.content)
+        if after_coords and before_coords != after_coords:
+            await after.reply("\n".join(after_coords))
+
+        if "good bot" in after.content.lower() and "good bot" not in before.content.lower():
             await after.reply("thank yous OwO")
-
-        else:
-            # Coordinates
-            coords = find_coordinates(after.content)
-            if coords:
-                await after.reply("\n".join(coords))
-            return
 
     async def _remove_from_processed(self, message_id: int, delay: float):
         """Remove a message ID from the recently processed set after a delay."""
