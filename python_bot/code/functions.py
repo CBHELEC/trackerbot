@@ -21,7 +21,7 @@ import string
 from google_images_search import GoogleImagesSearch
 from googleapiclient.discovery import build
 from discord import app_commands
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timezone
 from typing import Iterable
 from database import get_guild_settings, get_log_channel
 
@@ -640,6 +640,7 @@ async def get_gt_code_info(gt_codes: Iterable[str] | str):
             location_name = gt['location_name']
             messages.append(f"<:geotour:1457794800714514707> {name} | 🩵 {fp_count} |📍 {location_name}")
         except Exception as e:
+            print(e)
             messages.append(f"<:DNF:1368989100220092516> **That GeoTour doesn't exist!**")
 
     return "\n".join(messages)  
@@ -653,13 +654,33 @@ async def get_gl_tl_code_info(gl_codes: Iterable[str], tl_codes: Iterable[str]):
 
             author = log.author or "Unknown"
             logtype = log.type.name if log.type else "Unknown"
-            date = log.visited.strftime('%Y-%m-%d') if log.visited else "Unknown"
+            raw_date = log.visited if log.visited else "Unknown"
             text = log.text or "Unknown"
-
-            if code_type == "GL":
-                display_code = log.geocache_code
+            cachecode = log.geocache_code if log.geocache_code else log.trackable_code
+            
+            if isinstance(raw_date, (datetime, date)):
+                # If it's already a date or datetime object (e.g. from the fixed library)
+                dt = raw_date if isinstance(raw_date, datetime) else datetime.combine(raw_date, datetime.min.time())
+                timestamp = int(dt.timestamp())
+                time_display = f"<t:{timestamp}:R>"
+            elif isinstance(raw_date, str) and raw_date != "Unknown":
+                try:
+                    # Try ISO format with time
+                    dt = datetime.strptime(raw_date, "%Y-%m-%dT%H:%M:%S")
+                except ValueError:
+                    try:
+                        # Fallback to date only
+                        dt = datetime.strptime(raw_date, "%Y-%m-%d")
+                    except ValueError:
+                        dt = None
+                
+                if dt:
+                    timestamp = int(dt.timestamp())
+                    time_display = f"<t:{timestamp}:R>"
+                else:
+                    time_display = "Unknown date"
             else:
-                display_code = log.trackable_code
+                time_display = "Unknown date"
 
             # Map log type to emoji
             logtype_map = {
@@ -695,11 +716,12 @@ async def get_gl_tl_code_info(gl_codes: Iterable[str], tl_codes: Iterable[str]):
 
             messages.append(
                 f"[{code}](<https://coord.info/{code}>) - {logtype_display} | {author}\n"
-                f"🗓️ {date} | {display_code}\n"
+                f"🗓️ {time_display} | [{cachecode}](<https://coord.info/{cachecode}>)\n"
                 f"Log Contents: {redact_discord_invites(text)}"
             )
 
         except Exception as e:
+            print(e)
             return
 
     return "\n\n".join(messages)
