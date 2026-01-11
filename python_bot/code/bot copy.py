@@ -15,11 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from discord.ext import commands, tasks
 from datetime import datetime
 from discord import app_commands
-from functions import *
 from votefunctions import *
 from discord.ext.ipc import ClientPayload, Server
-
-from functions import *
+from functions import static_var
 
 # NOTE: 8080 = DBL, 7070 = top.gg, 9797 = ping
 
@@ -31,8 +29,8 @@ class Bot(ezcord.Bot):
         intents = discord.Intents.default()
         intents.message_content = True
 
-        super().__init__(command_prefix=BOT_PREFIX, intents=intents)
-        self.ipc = Server(self, secret_key=SECRET_KEY)
+        super().__init__(command_prefix=static_var.BOT_PREFIX, intents=intents)
+        self.ipc = Server(self, secret_key=static_var.SECRET_KEY)
 
     @Server.route()
     async def guild_count(self, _):
@@ -140,7 +138,6 @@ async def on_ready():
     update_presence.start()
     vote_reminders.start()
     vote_streakreset.start()
-    check_travel_completions.start()
 
 topgg = FastAPI()
 topgg.add_middleware(
@@ -231,7 +228,7 @@ async def update_presence():
 
 async def log_unhandled_error(bot, title: str, error_text: str):
     try:
-        channel = await bot.fetch_channel(ERROR_LOG_ID)
+        channel = await bot.fetch_channel(static_var.ERROR_LOG_ID)
         if channel:
             prefix = f"❌ **{title}**\n```py\n"
             suffix = "\n```"
@@ -259,9 +256,9 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         if str(error) == "TB_BLACKLIST":
             return
         try:
-            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+            await interaction.response.send_message(embed=static_var.YOUCANTDOTHIS, ephemeral=True)
         except discord.InteractionResponded:
-            await interaction.followup.send(embed=YOUCANTDOTHIS, ephemeral=True)
+            await interaction.followup.send(embed=static_var.YOUCANTDOTHIS, ephemeral=True)
         return  
 
     import traceback
@@ -291,7 +288,7 @@ bot.remove_command('help')
 async def load_extensions():
     initial_extensions = []
 
-    for filename in os.listdir(CODE_DIR / "cogs"):
+    for filename in os.listdir(static_var.CODE_DIR / "cogs"):
         if filename.endswith('.py'):
             initial_extensions.append("cogs." + filename[:-3])
 
