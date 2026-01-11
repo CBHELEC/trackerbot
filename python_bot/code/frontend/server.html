@@ -221,6 +221,54 @@
             border-color: #6366f1;
             color: #818cf8;
         }
+
+        /* Hide number input spinners */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none !important;
+            margin: 0 !important;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield !important;
+            appearance: textfield !important;
+        }
+
+        .stepper-btn {
+            position: absolute;
+            right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.5rem;
+            height: 1.2rem;
+            border-radius: 0.375rem;
+            color: #cbd5e1;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(30, 41, 59, 0.8);
+        }
+
+        .stepper-btn:hover {
+            background-color: #475569;
+            color: #ffffff;
+            border-color: rgba(99, 102, 241, 0.6);
+        }
+
+        .stepper-up {
+            top: 4px;
+        }
+
+        .stepper-down {
+            bottom: 4px;
+        }
     </style>
 </head>
 
@@ -372,22 +420,6 @@
         </h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            <!-- Detection -->
-            <div
-                class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 hover:bg-slate-900/80 transition-all">
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="scan-line"
-                            class="w-5 h-5"></i></div>
-                    <span class="font-semibold text-slate-200">Code Detection</span>
-                </div>
-                <div class="toggle-buttons grid grid-cols-2 gap-3 mt-auto">
-                    <button id="detection-enable"
-                        class="toggle-btn {% if detection_status %}active{% endif %}">Enable</button>
-                    <button id="detection-disable"
-                        class="toggle-btn {% if not detection_status %}active{% endif %}">Disable</button>
-                </div>
-            </div>
-
             <!-- Embeds -->
             <div
                 class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 hover:bg-slate-900/80 transition-all">
@@ -431,12 +463,36 @@
                     <button id="fun-disable" class="toggle-btn {% if not fun_set %}active{% endif %}">Disable</button>
                 </div>
             </div>
+        </div>
+
+        <!-- Section 2.5: Code Detection Config -->
+        <h2 class="text-2xl font-bold text-white mt-12 mb-6 px-2 flex items-center gap-3">
+            <span class="w-2 h-8 rounded-full bg-gradient-to-b from-cyan-400 to-blue-500"></span>
+            Code Detection Config
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <!-- Detection -->
+            <div
+                class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 hover:bg-slate-900/80 transition-all">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400"><i data-lucide="scan-line"
+                            class="w-5 h-5"></i></div>
+                    <span class="font-semibold text-slate-200">Code Detection</span>
+                </div>
+                <div class="toggle-buttons grid grid-cols-2 gap-3 mt-auto">
+                    <button id="detection-enable"
+                        class="toggle-btn {% if detection_status %}active{% endif %}">Enable</button>
+                    <button id="detection-disable"
+                        class="toggle-btn {% if not detection_status %}active{% endif %}">Disable</button>
+                </div>
+            </div>
 
             <!-- Code Not Found -->
             <div
                 class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 hover:bg-slate-900/80 transition-all">
                 <div class="flex items-center gap-3 mb-2">
-                    <div class="p-2 rounded-lg bg-red-500/10 text-red-400"><i data-lucide="alert-circle"
+                    <div class="p-2 rounded-lg bg-red-500/10 text-red-400"><i data-lucide="circle-x"
                             class="w-5 h-5"></i></div>
                     <span class="font-semibold text-slate-200">'Code Not Found' Message</span>
                 </div>
@@ -446,11 +502,59 @@
                         class="toggle-btn {% if not cnf_status %}active{% endif %}">Disable</button>
                 </div>
             </div>
+
+            <!-- Split Message -->
+            <div
+                class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 hover:bg-slate-900/80 transition-all">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 rounded-lg bg-red-500/10 text-red-400"><i data-lucide="split" class="w-5 h-5"></i>
+                    </div>
+                    <span class="font-semibold text-slate-200">Split Overlength Messages</span>
+                </div>
+                <div class="toggle-buttons grid grid-cols-2 gap-3 mt-auto">
+                    <button id="split-enable" class="toggle-btn {% if split_status %}active{% endif %}">Enable</button>
+                    <button id="split-disable"
+                        class="toggle-btn {% if not split_status %}active{% endif %}">Disable</button>
+                </div>
+            </div>
+
+            <!-- Code Detection Limit -->
+            <div
+                class="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 hover:bg-slate-900/80 transition-all">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+                        <i data-lucide="list-ordered" class="w-5 h-5"></i>
+                    </div>
+                    <span class="font-semibold text-slate-200">Detection Result Limit</span>
+                </div>
+                <form id="cdLimitForm" class="flex flex-col gap-4 mt-auto">
+                    <div class="relative">
+                        <input type="number" id="cd_limit" name="limit" min="1" max="20"
+                            value="{{ code_detection_limit }}"
+                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all">
+                        <div
+                            class="absolute right-0 top-0 bottom-0 flex flex-col justify-center h-full pr-1.5 pointer-events-none">
+                            <button type="button" onclick="stepCdLimit(1)"
+                                class="stepper-btn stepper-up pointer-events-auto">
+                                <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button type="button" onclick="stepCdLimit(-1)"
+                                class="stepper-btn stepper-down pointer-events-auto">
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="submit" value="Set Amount"
+                        class="w-full py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 text-indigo-400 text-sm font-semibold transition-all cursor-pointer">
+                </form>
+            </div>
+
         </div>
 
         <!-- Section 3: Verification System -->
         <div class="mt-12 rounded-3xl border border-slate-800 bg-slate-900/30 overflow-hidden relative">
-            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none">
+            </div>
 
             <!-- Header -->
             <div
@@ -461,7 +565,8 @@
                     </div>
                     <div>
                         <h2 class="text-2xl font-bold text-white">Verification System</h2>
-                        <p class="text-slate-400 mt-1">Manage automated user verification and role assignments.</p>
+                        <p class="text-slate-400 mt-1">Manage automated user verification and role assignments.
+                        </p>
                     </div>
                 </div>
                 <div class="toggle-buttons grid grid-cols-2 gap-3 w-full md:w-auto min-w-[200px]">
@@ -495,7 +600,8 @@
                         </div>
                         <select id="verify-channel" name="verify_channel_id"
                             class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                            <option value="none" {% if verify_channel_id=='none' %}selected{% endif %}>🚫 None</option>
+                            <option value="none" {% if verify_channel_id=='none' %}selected{% endif %}>🚫 None
+                            </option>
                             {% for channel in channels if not channel.category_id %}
                             {% set is_selected = verify_channel_id|string == channel.id|string %}
                             <option value="{{ channel.id }}" {% if is_selected %}selected{% endif %}>{{ '✅ ' if
@@ -505,7 +611,8 @@
                             <optgroup label="{{ category.name }}">
                                 {% for channel in category.channels %}
                                 {% set is_selected = verify_channel_id|string == channel.id|string %}
-                                <option value="{{ channel.id }}" {% if is_selected %}selected{% endif %}>{{ '✅ ' if
+                                <option value="{{ channel.id }}" {% if is_selected %}selected{% endif %}>{{ '✅ '
+                                    if
                                     is_selected else '' }}{{ channel.name }}</option>
                                 {% endfor %}
                             </optgroup>
@@ -780,6 +887,17 @@
                 };
             });
 
+            const cdLimitForm = document.getElementById('cdLimitForm');
+            if (cdLimitForm) {
+                cdLimitForm.onsubmit = async e => {
+                    e.preventDefault();
+                    const limit = document.getElementById('cd_limit').value;
+                    if (await updateSetting('set_cd_limit', { limit: limit })) {
+                        showButtonSuccess(cdLimitForm);
+                    }
+                };
+            }
+
             function setupToggle(enableId, disableId, route) {
                 const enable = document.getElementById(enableId);
                 const disable = document.getElementById(disableId);
@@ -924,6 +1042,7 @@
             setupToggleWithCallback('fun-enable', 'fun-disable', 'toggle_set/fun_set');
             setupToggleWithCallback('cnf-enable', 'cnf-disable', 'toggle_set/deadcode');
             setupToggleWithCallback('fasttrack-enable', 'fasttrack-disable', 'toggle_set/verify_fasttrack_status');
+            setupToggleWithCallback('split-enable', 'split-disable', 'toggle_set/cd_split_status');
 
             const overlayElement = document.querySelector('.verify-blocking-overlay');
             if (overlayElement) {
@@ -944,6 +1063,15 @@
                     setTimeout(() => enableBtn.classList.remove('highlight'), 2000);
                 }
             }
+
+            window.stepCdLimit = (delta) => {
+                const input = document.getElementById('cd_limit');
+                let val = parseInt(input.value) || 3;
+                val += delta;
+                if (val < 1) val = 1;
+                if (val > 20) val = 20;
+                input.value = val;
+            };
 
             // Initial State Check
             updateVerifySection();

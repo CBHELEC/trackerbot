@@ -40,6 +40,8 @@ class GuildSettings(Base):
     verify_fasttrack_status = Column(BoolInt, default=True)
     verify_muggle_role_id = Column(BigInteger, nullable=True)
     verification_status = Column(BoolInt, default=False) 
+    code_detection_limit = Column(Integer, default=3)
+    cd_split_status = Column(BoolInt, default=True)
 
 engine = create_engine(DATABASE_URL, echo=False)
 Base.metadata.create_all(engine)
@@ -55,8 +57,16 @@ def migrate_database():
                 with engine.begin() as conn:
                     conn.execute(text("ALTER TABLE guild_settings ADD COLUMN verification_status INTEGER DEFAULT 0"))
                 print("Migration: Added 'verification_status' column to guild_settings table")
+            if 'code_detection_limit' not in columns:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE guild_settings ADD COLUMN code_detection_limit INTEGER DEFAULT 3"))
+                print("Migration: Added 'code_detection_limit' column to guild_settings table")
+            if 'cd_split_status' not in columns:
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE guild_settings ADD COLUMN cd_split_status INTEGER DEFAULT 1"))
+                print("Migration: Added 'cd_split_status' column to guild_settings table")
     except Exception as e:
-        print(f"Migration warning: Could not add verification_status column: {e}")
+        print(f"Migration warning: Could not update database schema: {e}")
 
 migrate_database()
 

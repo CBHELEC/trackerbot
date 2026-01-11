@@ -211,6 +211,8 @@ async def server(request: Request, guild_id: int):
         verify_fasttrack_status = int(setting.verify_fasttrack_status) if hasattr(setting, 'verify_fasttrack_status') else 1
         verify_muggle_role_id = str(setting.verify_muggle_role_id)
         verification_enabled = bool(setting.verification_status) if hasattr(setting, 'verification_status') and setting.verification_status is not None else False
+        code_detection_limit = int(setting.code_detection_limit) if hasattr(setting, 'code_detection_limit') and setting.code_detection_limit is not None else 3
+        split_status = bool(setting.cd_split_status) if hasattr(setting, 'cd_split_status') and setting.cd_split_status is not None else True
     else:
         feature_txt = "Feature is not set."
         selected_roles = []
@@ -228,6 +230,8 @@ async def server(request: Request, guild_id: int):
         verify_fasttrack_status = 1
         verify_muggle_role_id = "Feature is not set."
         verification_enabled = False
+        code_detection_limit = 3
+        split_status = True
 
     session_id = request.cookies.get("session_id")
     session = await db.get_session(session_id)
@@ -280,7 +284,9 @@ async def server(request: Request, guild_id: int):
             "verify_admin_role_id": verify_admin_role_id,
             "verify_fasttrack_status": verify_fasttrack_status,
             "verify_muggle_role_id": verify_muggle_role_id,
-            "verification_enabled": verification_enabled
+            "verification_enabled": verification_enabled,
+            "split_status": split_status,
+            "code_detection_limit": code_detection_limit
         },
     )
 
@@ -388,6 +394,26 @@ async def set_verify(guild_id: int, session_id: str = Cookie(None), body: dict =
     else:
         update_guild_settings(guild_id, **{setting: str(channel_id)})
     return JSONResponse({"success": True})
+
+@app.post("/server/{guild_id}/settings/set_cd_limit")
+async def set_cd_limit(guild_id: int, request: Request, session_id: str = Cookie(None), body: dict = Body(...)):
+    user_id = await db.get_user_id(session_id)
+    if not session_id or not user_id:
+        raise HTTPException(status_code=401, detail="no auth")
+
+    perms = await ipc.request("check_perms", guild_id=guild_id, user_id=user_id)
+    if not perms.response.get("perms"):
+        return JSONResponse({"error": "You do not have access to this server"}, status_code=403)
+
+    limit = body.get("limit")
+    try:
+        limit = int(limit)
+        if limit < 1: limit = 1
+        if limit > 20: limit = 20
+        update_guild_settings(guild_id, code_detection_limit=limit)
+        return JSONResponse({"success": True})
+    except (ValueError, TypeError):
+        return JSONResponse({"error": "Invalid limit"}, status_code=400)
 
 @app.get("/logout")
 async def logout(session_id: str = Cookie(None)):
