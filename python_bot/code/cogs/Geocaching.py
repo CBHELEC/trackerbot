@@ -1,6 +1,6 @@
 import rot_cipher
 import discord
-from functions import *
+from functions import codedetection
 from discord import app_commands
 from discord.ext import commands
 from num2words import num2words
@@ -79,9 +79,9 @@ class Geocaching(commands.Cog):
             return
         await interaction.response.defer()
         if gc_name:
-            account = await get_username_pr_info(gc_name, self.bot)
+            account = await codedetection.get_username_pr_info(gc_name, self.bot)
         else:
-            account = await get_pr_code_info(gc_pr, self.bot)
+            account = await codedetection.get_pr_code_info(gc_pr, self.bot, None)
         if account:
             await interaction.followup.send(account)
         else:
@@ -97,12 +97,12 @@ class Geocaching(commands.Cog):
         """Sends info about GC/TB code(s)."""
         await interaction.response.defer()
         guildiddm = interaction.guild.id if interaction.guild else 0
-        succ, gc_codes, tb_codes = find_gc_tb_codes(codes)
+        succ, gc_codes, tb_codes = codedetection.find_gc_tb_codes(codes)
         guildsettings = get_guild_settings(guildiddm)
 
         if succ:
-            guildid = interaction.guild.id if interaction.guild else 0
-            finalmessage, deadcode = get_cache_basic_info(guildid, gc_codes, tb_codes)
+            guildid = interaction.guild.id if interaction.guild else None
+            finalmessage, deadcode = codedetection.get_cache_basic_info(guildid, gc_codes, tb_codes)
             if not guildsettings.detection_status:
                 # detection_status is disabled (not normal)
                 if not deadcode:

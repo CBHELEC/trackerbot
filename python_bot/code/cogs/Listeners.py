@@ -2,14 +2,15 @@ import asyncio
 import re
 import discord
 import sqlite3
-from functions import *
+from functions import static_var, skullboard, codedetection, coorddetect, poll
 from discord.ext import commands
 from datetime import datetime
+from database import *
 
 class Listeners(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.conn2 = sqlite3.connect(DATA_DIR / 'votes.db')
+        self.conn2 = sqlite3.connect(static_var.DATA_DIR / 'votes.db')
         self.c = self.conn2.cursor()
         self.recently_processed_embeds = set() 
 
@@ -29,18 +30,18 @@ class Listeners(commands.Cog):
         if payload.channel_id == STARBOARD_CHANNEL_ID:
             return  
 
-        if str(payload.emoji.name) not in STAR_EMOJIS:
+        if str(payload.emoji.name) not in SKULL_EMOJI:
             return  
 
         guild = self.bot.get_guild(payload.guild_id)
         channel = guild.get_channel(payload.channel_id)
         message = await channel.fetch_message(payload.message_id)  
 
-        if message.id in skullboarded_messages:
+        if message.id in skullboard.skullboarded_messages:
             return 
 
         reaction = discord.utils.get(message.reactions, emoji=payload.emoji.name)
-        if reaction and reaction.count == REACTION_THRESHOLD:
+        if reaction and reaction.count == skullboard.REACTION_THRESHOLD:
             starboard_channel = self.bot.get_channel(STARBOARD_CHANNEL_ID)
             if not starboard_channel:
                 return  
@@ -48,8 +49,8 @@ class Listeners(commands.Cog):
             await message.forward(destination=starboard_channel)
             await starboard_channel.send(f"**lmao get clipped 💀** - {message.author.mention}")
 
-            skullboarded_messages.append(message.id) 
-            save_skullboarded_messages(skullboarded_messages) 
+            skullboard.skullboarded_messages.append(message.id) 
+            skullboard.save_skullboarded_messages(skullboard.skullboarded_messages) 
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -64,39 +65,43 @@ class Listeners(commands.Cog):
         setting = get_guild_settings(message.guild.id)
         detection_status = bool(setting.detection_status) if hasattr(setting, 'detection_status') else True
         link_embed_status = bool(setting.link_embed_status) if hasattr(setting, 'link_embed_status') else True
+        cd_split_status = bool(setting.cd_split_status) if hasattr(setting, 'cd_split_status') else True
 
         if detection_status:
             if message.author.bot:
                 return
             
-            # GC / TB
-            succ, gc_codes, tb_codes = find_gc_tb_codes(message.content)
-            if succ:
-                finalmessage, deadcode = get_cache_basic_info(message.guild.id, gc_codes, tb_codes)
-                if deadcode:
-                    return
-                await message.reply(finalmessage)
-            # PR
-            pr_codes = await find_pr_codes(message.content)
-            if pr_codes:
-                finalmessage = await get_pr_code_info(pr_codes, self.bot)
-                if finalmessage:
-                    await message.reply(finalmessage)
-            # GL / TL
-            gl_codes, tl_codes = await find_gl_tl_codes(message.content)
-            if gl_codes or tl_codes:
-                finalmessage = await get_gl_tl_code_info(gl_codes, tl_codes)
-                if finalmessage:
-                    await message.reply(finalmessage)
-            # GT
-            gt_codes = await find_gt_codes(message.content)
-            if gt_codes:
-                finalmessage = await get_gt_code_info(gt_codes)
-                if finalmessage:
-                    await message.reply(finalmessage)
+        # GC / TB
+        succ, gc_codes, tb_codes = codedetection.find_gc_tb_codes(message.content)
+        if succ:
+            finalmessage, deadcode = codedetection.get_cache_basic_info(message.guild.id, gc_codes, tb_codes)
+            if deadcode:
+                return
+            await codedetection.split_message(message, finalmessage, cd_split_status)
+
+        # PR
+        pr_codes = await codedetection.find_pr_codes(message.content)
+        if pr_codes:
+            finalmessage = await codedetection.get_pr_code_info(pr_codes, self.bot, message.guild.id)
+            if finalmessage:
+                await codedetection.split_message(message, finalmessage, cd_split_status)
+
+        # GL / TL
+        gl_codes, tl_codes = await codedetection.find_gl_tl_codes(message.content)
+        if gl_codes or tl_codes:
+            finalmessage = await codedetection.get_gl_tl_code_info(gl_codes, tl_codes, message.guild.id)
+            if finalmessage:
+                await codedetection.split_message(message, finalmessage, cd_split_status)
+
+        # GT
+        gt_codes = await codedetection.find_gt_codes(message.content)
+        if gt_codes:
+            finalmessage = await codedetection.get_gt_code_info(gt_codes, message.guild.id)
+            if finalmessage:
+                await codedetection.split_message(message, finalmessage, cd_split_status)
             
         # Coordinates
-        coords = find_coordinates(message.content)
+        coords = coorddetect.find_coordinates(message.content)
         if coords:
             await message.reply("\n".join(coords))
 
@@ -106,14 +111,14 @@ class Listeners(commands.Cog):
             if message.channel.id == 1368978994518556844:
                 today = datetime.now().date()
 
-                if last_poll_date != today:
-                    last_poll_date = today
-                    save_poll_date(today)
+                if poll.last_poll_date != today:
+                    poll.last_poll_date = today
+                    poll.save_poll_date(today)
                     await message.channel.send(f"It's poll time! <@&1369003389576417300>")
             else:
                 return
 
-        if link_embed_status and len(message.embeds) and re.search(GC_LINK_SEARCH, message.content, re.IGNORECASE):
+        if link_embed_status and len(message.embeds) and re.search(static_var.GC_LINK_SEARCH, message.content, re.IGNORECASE):
             if message.author.bot:
                 return
             if message.id in self.recently_processed_embeds:
@@ -138,8 +143,9 @@ class Listeners(commands.Cog):
         setting = get_guild_settings(after.guild.id)
         detection_status = bool(setting.detection_status) if hasattr(setting, "detection_status") else True
         link_embed_status = bool(setting.link_embed_status) if hasattr(setting, "link_embed_status") else True
+        cd_split_status = bool(setting.cd_split_status) if hasattr(setting, "cd_split_status") else True
 
-        if link_embed_status and len(after.embeds) and re.search(GC_LINK_SEARCH, after.content, re.IGNORECASE):
+        if link_embed_status and len(after.embeds) and re.search(static_var.GC_LINK_SEARCH, after.content, re.IGNORECASE):
             if after.id in self.recently_processed_embeds:
                 return
             if after.flags.suppress_embeds:
@@ -158,42 +164,46 @@ class Listeners(commands.Cog):
 
         if detection_status:
             # GC / TB
-            before_succ, before_gc, before_tb = find_gc_tb_codes(before.content)
-            after_succ, after_gc, after_tb = find_gc_tb_codes(after.content)
+            before_succ, before_gc, before_tb = codedetection.find_gc_tb_codes(before.content)
+            after_succ, after_gc, after_tb = codedetection.find_gc_tb_codes(after.content)
             if after_succ and (before_gc != after_gc or before_tb != after_tb):
-                finalmessage, deadcode = get_cache_basic_info(after.guild.id, after_gc, after_tb)
+                finalmessage, deadcode = codedetection.get_cache_basic_info(
+                    after.guild.id,
+                    list(after_gc),
+                    list(after_tb)
+                )
                 if not deadcode:
-                    await after.reply(finalmessage)
+                    await codedetection.split_message(after, finalmessage, cd_split_status)
 
             # PR
-            before_pr = await find_pr_codes(before.content)
-            after_pr = await find_pr_codes(after.content)
+            before_pr = await codedetection.find_pr_codes(before.content)
+            after_pr = await codedetection.find_pr_codes(after.content)
             if after_pr and before_pr != after_pr:
-                finalmessage = await get_pr_code_info(after_pr, self.bot)
+                finalmessage = await codedetection.get_pr_code_info(after_pr, self.bot, after.guild.id)
                 if finalmessage:
-                    await after.reply(finalmessage)
+                    await codedetection.split_message(after, finalmessage, cd_split_status)
 
             # GL / TL
-            before_gl, before_tl = await find_gl_tl_codes(before.content)
-            after_gl, after_tl = await find_gl_tl_codes(after.content)
+            before_gl, before_tl = await codedetection.find_gl_tl_codes(before.content)
+            after_gl, after_tl = await codedetection.find_gl_tl_codes(after.content)
             if (after_gl or after_tl) and (before_gl != after_gl or before_tl != after_tl):
-                finalmessage = await get_gl_tl_code_info(after_gl, after_tl)
+                finalmessage = await codedetection.get_gl_tl_code_info(after_gl, after_tl, after.guild.id)
                 if finalmessage:
-                    await after.reply(finalmessage)
+                    await codedetection.split_message(after, finalmessage, cd_split_status)
 
             # GT
-            before_gt = await find_gt_codes(before.content)
-            after_gt = await find_gt_codes(after.content)
+            before_gt = await codedetection.find_gt_codes(before.content)
+            after_gt = await codedetection.find_gt_codes(after.content)
             if after_gt and before_gt != after_gt:
-                finalmessage = await get_gt_code_info(after_gt)
+                finalmessage = await codedetection.get_gt_code_info(after_gt, after.guild.id)
                 if finalmessage:
-                    await after.reply(finalmessage)
+                    await codedetection.split_message(after, finalmessage, cd_split_status)
 
         # Coordinates
-        before_coords = find_coordinates(before.content)
-        after_coords = find_coordinates(after.content)
+        before_coords = coorddetect.find_coordinates(before.content)
+        after_coords = coorddetect.find_coordinates(after.content)
         if after_coords and before_coords != after_coords:
-            await after.reply("\n".join(after_coords))
+            await codedetection.split_message(after, "\n".join(after_coords))
 
         if "good bot" in after.content.lower() and "good bot" not in before.content.lower():
             await after.reply("thank yous OwO")

@@ -3,7 +3,7 @@ import re
 import aiohttp
 from discord import app_commands
 from embedbuilder import BaseView
-from functions import *
+from functions import checks, logs
 from bot import bot
 from logger import log
 from discord.app_commands import CheckFailure
@@ -35,7 +35,7 @@ class Message(app_commands.Group):
 
 # SAY
     @app_commands.command()
-    @is_perm_mod()
+    @checks.is_perm_mod()
     @app_commands.describe(
     saying="What you want me to say",
     channel="Please ignore this"
@@ -57,7 +57,7 @@ class Message(app_commands.Group):
                     ephemeral=True,
                 )
             except Exception as e:
-                await log_error(interaction.guild, bot, interaction.command.name,
+                await logs.log_error(interaction.guild, bot, interaction.command.name,
                     f"User: {interaction.user.mention} ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) saying `{saying}`. Error: \n```\n{str(e)}\n```"
                 )
                 await interaction.response.send_message(
@@ -77,7 +77,7 @@ class Message(app_commands.Group):
                     ephemeral=True,
                 )
             except Exception as e:
-                await log_error(interaction.guild, bot, interaction.command.name, 
+                await logs.log_error(interaction.guild, bot, interaction.command.name, 
                     f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) saying `{saying}`. Error: \n```\n{str(e)}\n```"
                 )
                 await interaction.response.send_message(
@@ -89,7 +89,7 @@ class Message(app_commands.Group):
         
 # REPLY
     @app_commands.command()
-    @is_perm_mod()
+    @checks.is_perm_mod()
     @app_commands.describe(
     message_id="The message ID I will reply to",
     message="What I will reply with"
@@ -114,7 +114,7 @@ class Message(app_commands.Group):
                                 ephemeral=True,
                             )
                         except Exception as e:
-                            await log_error(interaction.guild, bot, interaction.command.name, 
+                            await logs.log_error(interaction.guild, bot, interaction.command.name, 
                                 f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) replied with `{reply_content}`. Error: \n```\n{str(e)}\n```"
                             )
                             await interaction.response.send_message(
@@ -135,7 +135,7 @@ class Message(app_commands.Group):
                 ephemeral=True,
             )
         except Exception as e:
-            await log_error(interaction.guild, bot, interaction.command.name, 
+            await logs.log_error(interaction.guild, bot, interaction.command.name, 
                 f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) replying with `{message}`. Error: \n```\n{str(e)}\n```"
             )
             await interaction.response.send_message(
@@ -145,7 +145,7 @@ class Message(app_commands.Group):
 
 # DELETE
     @app_commands.command()
-    @is_perm_mod()
+    @checks.is_perm_mod()
     @app_commands.describe(messageid="ID of the message to delete")
     async def delete(self, interaction: discord.Interaction, messageid: str):
         """Delete a specified message."""
@@ -167,7 +167,7 @@ class Message(app_commands.Group):
     @app_commands.command(name="react", description="React to a specified message.")
     @app_commands.describe(messageid="ID of the message to react to")
     @app_commands.describe(reaction="How do you want me to react?")
-    @is_perm_mod()
+    @checks.is_perm_mod()
     async def react(self, interaction: discord.Interaction, messageid: str, reaction: str):
         if not re.fullmatch(r"\d{18,19}", messageid):
             await interaction.response.send_message("Invalid `/react` Usage. Please get the correct messageID and try again.", ephemeral=True)
@@ -199,7 +199,7 @@ class Message(app_commands.Group):
             
 # EDIT
     @app_commands.command(name="edit", description="Edit a specified message.")
-    @is_perm_mod()
+    @checks.is_perm_mod()
     @app_commands.describe(messageid="ID of the message to delete")
     @app_commands.describe(newmessage="New message content")
     async def edit(self, interaction: discord.Interaction, messageid: str, newmessage: str):
@@ -224,7 +224,7 @@ class Message(app_commands.Group):
                             ephemeral=True,
                         )
                     except Exception as e:
-                        await log_error(interaction.guild, bot, interaction.command.name, 
+                        await logs.log_error(interaction.guild, bot, interaction.command.name, 
                             f"User: {interaction.user.mention} ({interaction.user.name}) ({interaction.user.name}) in <#{interaction.channel.id}> ({interaction.channel.name}) editing to `{newmessage}`. Error: \n```\n{str(e)}\n```"
                         )
                         await interaction.response.send_message(
@@ -239,7 +239,7 @@ class Message(app_commands.Group):
             
 # EMBEDBUILDER
     @app_commands.command()
-    @is_perm_mod()
+    @checks.is_perm_mod()
     async def embedbuilder(self, interaction: discord.Interaction): 
         """Interactive embed builder."""
         view = BaseView(interaction, self.session)

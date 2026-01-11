@@ -3,12 +3,12 @@ from datetime import datetime, timedelta
 
 import ezcord
 
-from functions import DATA_DIR
+from functions import static_var
 
 
 class DashboardDB(ezcord.DBHandler):
     def __init__(self):
-        super().__init__(DATA_DIR / "dashboard.db")
+        super().__init__(static_var.DATA_DIR / "dashboard.db")
 
     async def setup(self):
         await self.exec(
@@ -55,7 +55,7 @@ class DashboardDB(ezcord.DBHandler):
 
 class FeatureDB(ezcord.DBHandler):
     def __init__(self):
-        super().__init__(DATA_DIR / "dashboard.db")
+        super().__init__(static_var.DATA_DIR / "dashboard.db")
 
     async def setup(self):
         await self.exec(

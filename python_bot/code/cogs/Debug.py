@@ -7,7 +7,7 @@ import sys
 import os 
 import importlib.util
 from votefunctions import *
-from functions import *
+from functions import checks
 from datetime import datetime
 from discord import app_commands, Role, Interaction, Embed, ButtonStyle
 from discord.ui import View, Button
@@ -81,7 +81,7 @@ class Debug(app_commands.Group):
         
 # DEBUG SETPERM  
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(roles='The roles to add', server_id='The server to add them for')
     async def setperm(self, interaction: discord.Interaction, roles: Transform[List[Role], RoleTransformer], server_id: str = None):
         """Force add roles to the permission roles."""
@@ -98,7 +98,7 @@ class Debug(app_commands.Group):
     
 # DEBUG SETTINGS
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(server_id='The server to view the settings for')
     async def settings(self, interaction: discord.Interaction, server_id: str = None):
         """Forcibly fetch and display the guild settings."""
@@ -122,7 +122,7 @@ class Debug(app_commands.Group):
 
 # DEBUG REMOVEPERM
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(roles="The roles to remove from permission roles.", server_id='The server to remove the roles from')
     async def removeperm(self, interaction: discord.Interaction, roles: Transform[List[Role], RoleTransformer], server_id: str = None):
         """Force remove roles from the permission roles."""
@@ -143,7 +143,7 @@ class Debug(app_commands.Group):
         app_commands.Choice(name="Enable ", value="1"),
         app_commands.Choice(name="Disable", value="2")
     ])
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(channel="The channel to send skullboard messages to if enabled.")
     @app_commands.describe(status="Enable or disable the skullboard feature.")
     @app_commands.describe(server_id='The server to change settings for')
@@ -168,7 +168,7 @@ class Debug(app_commands.Group):
    
 # DEBUG GUILDS 
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     async def guilds(self, interaction: discord.Interaction):
         """Sends paginated list of all guilds the bot is in."""
         guilds = interaction.client.guilds
@@ -198,7 +198,7 @@ class Debug(app_commands.Group):
 
 # DEBUG LEAVE_SERVER    
     @app_commands.command(name="leave_server", description="Force the bot to leave a server by ID (requires confirmation).")
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(guild_id='The guild to leave')
     async def leave_server(self, interaction: discord.Interaction, guild_id: str):
         bot = interaction.client
@@ -258,7 +258,7 @@ class Debug(app_commands.Group):
 
 # DEBUG GET_LOGS
     @app_commands.command(name="get_logs", description="Get logs for a user ID, guild ID, or a date (dd-mm-yyyy)")
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(
         user_id="User ID to search logs for",
         guild_id="Guild ID to search logs for",
@@ -310,7 +310,7 @@ class Debug(app_commands.Group):
         user="User to add the votes crate to",
         user_id="User ID to add the votes crate to (if not using @user)"
     )
-    @is_dev()
+    @checks.is_dev()
     async def addvotecrate(self, interaction: discord.Interaction, amount: int, type: str, user: discord.Member = None, user_id: str = None):
         """Add votes crate to a user."""
         if not user_id and not user:
@@ -332,7 +332,7 @@ class Debug(app_commands.Group):
 
 # DEBUG EVAL
     @app_commands.command(name="eval", description="Evaluate Python code.")
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(code="The Python code to evaluate.")
     async def eval(self, interaction: discord.Interaction, code: str):
         """Evaluate Python code."""

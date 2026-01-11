@@ -1,7 +1,7 @@
 import discord
 import requests
 from discord import app_commands
-from functions import *
+from functions import static_var, logs
 from urllib.parse import quote
 from bs4 import BeautifulSoup
 from verifydb import *
@@ -263,7 +263,7 @@ class Verification(app_commands.Group):
             interaction.user.guild_permissions.manage_guild
         )
         if not has_permission:
-            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+            await interaction.response.send_message(embed=static_var.YOUCANTDOTHIS, ephemeral=True)
             return
 
         await interaction.response.defer(thinking=True, ephemeral=True)
@@ -417,7 +417,7 @@ class Verification(app_commands.Group):
                     message = await channel.fetch_message(message_id)
                     await message.delete()
             except Exception as e:
-                await log_error(guild, self.bot, "verify", f"Error deleting message: {e}")
+                await logs.log_error(guild, self.bot, "verify", f"Error deleting message: {e}")
 
             await update_verification_status(interaction.guild.id, verification_id, "approved")
 
@@ -449,7 +449,7 @@ class Verification(app_commands.Group):
             interaction.user.guild_permissions.manage_guild
         )
         if not has_permission:
-            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+            await interaction.response.send_message(embed=static_var.YOUCANTDOTHIS, ephemeral=True)
             return
 
         await interaction.response.defer(thinking=True, ephemeral=True)
@@ -495,7 +495,7 @@ class Verification(app_commands.Group):
                         message = await channel.fetch_message(message_id)
                         await message.delete()
                 except Exception as e:
-                    await log_error(interaction.guild, self.bot, "verify", f"Error deleting message: {e}")
+                    await logs.log_error(interaction.guild, self.bot, "verify", f"Error deleting message: {e}")
 
                 await update_verification_status(interaction.guild.id, verification_id, "denied")
 
@@ -593,7 +593,7 @@ class Verification(app_commands.Group):
             interaction.user.guild_permissions.manage_guild
         )
         if not has_permission:
-            await interaction.response.send_message(embed=YOUCANTDOTHIS, ephemeral=True)
+            await interaction.response.send_message(embed=static_var.YOUCANTDOTHIS, ephemeral=True)
             return
 
         if guildsettings.verify_verified_role_id in [role.id for role in user.roles]:

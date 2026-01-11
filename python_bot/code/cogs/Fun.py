@@ -10,9 +10,8 @@ import re
 import os
 import numpy as np
 from giphy_client.rest import ApiException
-from functions import *
+from functions import logs, eightball, google, general
 from discord import app_commands
-from datetime import datetime, timezone
 from bot import bot
 from PIL import Image, ImageSequence
 from io import BytesIO
@@ -147,7 +146,7 @@ class Fun(app_commands.Group):
             result = round_floats(result)
 
             embed = discord.Embed(
-                title=f"{escape_markdown(expression)} = {result}",
+                title=f"{general.escape_markdown(expression)} = {result}",
                 colour=0xad7e66
             )
             embed.set_footer(
@@ -188,7 +187,7 @@ class Fun(app_commands.Group):
     async def eight_ball(self, interaction: discord.Interaction, *, question: str, potato_mode: app_commands.Choice[str] = None):
         """Asks the magic 8ball a question."""
         if potato_mode == None or potato_mode.value == "2":
-            response = random.choice(eightball_answers) 
+            response = random.choice(eightball.eightball_answers) 
             embed = discord.Embed(title=f"{question}",
                         description=f"{response}", colour=0xad7e66)
 
@@ -196,7 +195,7 @@ class Fun(app_commands.Group):
                     icon_url="https://i.imgur.com/UrJoUHP.png")
             await interaction.response.send_message(embed=embed)  
         else:
-            response = random.choice(funny_eightball_answers) 
+            response = random.choice(eightball.funny_eightball_answers) 
             embed = discord.Embed(title=f"<:potato:1341804459977605130> {question}",
                         description=f"{response}", colour=0xad7e66)
 
@@ -245,11 +244,11 @@ class Fun(app_commands.Group):
         await interaction.response.defer()
         msg = await interaction.followup.send(f"<:search:1338134220718997625> | Searching for '{query}'. This may take a while!")
         msgid = msg.id
-        results = google_search(query)
+        results = google.google_search(query)
         if not results:
             return await interaction.followup.edit_message(message_id=msgid, content=f"<:denied:1336100920039313448> | No images found for '{query}'.")
 
-        view = GoogleSearchView(results, query)
+        view = google.GoogleSearchView(results, query)
         embed = discord.Embed(
             title=results[0]['title'],
             url=results[0]['link'],
@@ -278,12 +277,12 @@ class Fun(app_commands.Group):
             'fileType': 'png',  # Only JPG and PNG images
         }
 
-        gis.search(search_params=search_params)
+        google.gis.search(search_params=search_params)
         
-        images = [result.url for result in gis.results()] if gis.results() else []
+        images = [result.url for result in google.gis.results()] if google.gis.results() else []
 
         if images:
-            view = ImageSearchView(images, query, timeout=300)
+            view = google.ImageSearchView(images, query, timeout=300)
             view.msg = msg
             embed = discord.Embed(colour=0xad7e66)
             embed.set_footer(text=f"Image 1 / 15 | {query} | Tracker",
@@ -446,17 +445,17 @@ class Fun(app_commands.Group):
         
         response = requests.get(api_url)
         if response.status_code != 200:
-            await log_error(interaction.guild, bot, interaction.command.name, "Failed to generate petpet GIF. The API may be down.")
+            await logs.log_error(interaction.guild, bot, interaction.command.name, "Failed to generate petpet GIF. The API may be down.")
             return
         
         gif_url = response.json().get("url")
         if not gif_url:
-            await log_error(interaction.guild, bot, interaction.command.name, "Failed to retrieve petpet GIF. API response was invalid.")
+            await logs.log_error(interaction.guild, bot, interaction.command.name, "Failed to retrieve petpet GIF. API response was invalid.")
             return
         
         gif_response = requests.get(gif_url)
         if gif_response.status_code != 200:
-            await log_error(interaction.guild, bot, interaction.command.name, "Failed to download the GIF.")
+            await logs.log_error(interaction.guild, bot, interaction.command.name, "Failed to download the GIF.")
             return
         
         gif_image = Image.open(BytesIO(gif_response.content))
@@ -514,7 +513,7 @@ class Fun(app_commands.Group):
                         await interaction.response.send_message(api_response.data.url)
                         break
             except ApiException as e:
-                await log_error(interaction.guild, bot, interaction.command.name, f"Failed to retrieve GIF from Giphy API. Error: {e}")
+                await logs.log_error(interaction.guild, bot, interaction.command.name, f"Failed to retrieve GIF from Giphy API. Error: {e}")
         else:
             await interaction.response.send_message("Invalid type selected. Please choose either 'Image' or 'GIF'.")
 

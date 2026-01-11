@@ -1,16 +1,15 @@
 import discord
-import asyncio
 import sqlite3
 import re
 from discord import app_commands
 from discord.ui import View, Button
-from functions import *
+from functions import checks, logs, static_var
 from bot import bot
 from datetime import datetime
 from logger import log
 from discord.app_commands import CheckFailure
 
-conn1 = sqlite3.connect(DATA_DIR / "trackables.db")
+conn1 = sqlite3.connect(static_var.DATA_DIR / "trackables.db")
 cursor1 = conn1.cursor()
 
 cursor1.execute("""
@@ -83,7 +82,7 @@ class TBRemoveConfirmView(View):
                 await interaction.response.send_message(f"An error occurred while trying to remove the TB. The Dev has been notified.", ephemeral=True)
             else:
                 await interaction.followup.send(f"An error occurred while trying to remove the TB. The Dev has been notified.", ephemeral=True)
-            await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB `{self.code}`. Error: {e}")
+            await logs.log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB `{self.code}`. Error: {e}")
 
         self.stop()
 
@@ -184,7 +183,7 @@ class TBDatabase(app_commands.Group):
         code = code.upper()
         if code.lower().startswith("tb"):
             await interaction.response.send_message(f"Please try again with the private code (this can be found on the TB itself) as the code, instead of `{code}`. If you believe this to be an error, please contact the Developer @not.cbh (<@820297275448098817>).", ephemeral=True)
-            await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb add` but entered the public code instead of the private one: `{code}`.")
+            await logs.master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to use `tb add` but entered the public code instead of the private one: `{code}`.")
             return
 
         async def confirm_callback(intx: discord.Interaction):
@@ -194,7 +193,7 @@ class TBDatabase(app_commands.Group):
                     tb.load()
                 except Exception:
                     await intx.followup.send(f"The TB code you entered (`{code}`) was not valid or is not activated. Please try again with a valid, activated TB code.", ephemeral=True)
-                    await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add` but the TB code was not valid or unactivated.")
+                    await logs.master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) used `tb add` but the TB code was not valid or unactivated.")
                     return
 
                 cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
@@ -211,11 +210,11 @@ class TBDatabase(app_commands.Group):
                 conn1.commit()
                 await intx.followup.send(f"This TB (`{code}`) has been added to the public database - thanks for sharing!\nOwner Name: {tb.owner}. If this is NOT you, please immediately </tb remove:1370815537151606925> it. Failure to do so could lead to blacklists or suspensions.", ephemeral=True)
                 await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
-                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
+                await logs.master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
 
             except Exception as e:
                 await intx.followup.send(f"An unknown error occured whilst processing code `{code}`. The Dev has been notified.", ephemeral=True)
-                await log_error(interaction.guild, bot, interaction.command.name, 
+                await logs.log_error(interaction.guild, bot, interaction.command.name, 
                     f"User: {interaction.user.mention} ({interaction.user.name}) adding TB `{code}` to the database. Error: \n```\n{str(e)}\n```"
                 )
 
@@ -243,7 +242,7 @@ class TBDatabase(app_commands.Group):
 
             for code in tb_codes:
                 if code.lower().startswith("tb"):
-                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                    await logs.master_log_message(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) tried to use `bulkadd` but entered the public code instead of the private one: `{code}`."
                     )
                     failed_codes.append(code)
@@ -254,7 +253,7 @@ class TBDatabase(app_commands.Group):
                     try:
                         tb.load()
                     except Exception:
-                        await master_log_message(interaction.guild, bot, interaction.command.name,
+                        await logs.master_log_message(interaction.guild, bot, interaction.command.name,
                             f"{interaction.user.mention} ({interaction.user.name}) used `bulkadd` but the TB code was invalid or unactivated for code: `{code}`."
                         )
                         failed_codes.append(code)
@@ -263,7 +262,7 @@ class TBDatabase(app_commands.Group):
                     cursor1.execute("SELECT * FROM trackables WHERE code = ?", (code,))
                     existing_entry = cursor1.fetchone()
                     if existing_entry:
-                        await master_log_message(interaction.guild, bot, interaction.command.name,
+                        await logs.master_log_message(interaction.guild, bot, interaction.command.name,
                             f"{interaction.user.mention} ({interaction.user.name}) attempted to bulkadd TB `{code}`, but it already exists in the database."
                         )
                         failed_codes.append(code)
@@ -275,7 +274,7 @@ class TBDatabase(app_commands.Group):
                         VALUES (?, ?, CURRENT_TIMESTAMP, ?, ?)
                     """, (code, tb.owner, user_id, tb.tid))
                     conn1.commit()
-                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                    await logs.master_log_message(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!"
                     )
                     await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) has shared TB `{code}` and it has been added to the database!")
@@ -283,7 +282,7 @@ class TBDatabase(app_commands.Group):
                     added_owners.add(tb.owner)
 
                 except Exception as e:
-                    await log_error(interaction.guild, bot, interaction.command.name,
+                    await logs.log_error(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) tried to bulkadd TB `{code}`: {e}"
                     )
                     failed_codes.append(code)
@@ -321,7 +320,7 @@ class TBDatabase(app_commands.Group):
 
 # TB PURGE
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(
         username="The Geocaching username of the owner of the TBs you want to remove",
         user="The Discord user who added the TBs you want to remove"
@@ -355,7 +354,7 @@ class TBDatabase(app_commands.Group):
                     await interaction.response.send_message(
                         f"Successfully purged {count} TB(s) added by {user.mention} ({user.name}).", ephemeral=True
                     )
-                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                    await logs.master_log_message(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) added by {user.mention} ({user.name}, ID: {user_id})."
                     )
                     await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) added by {user.mention} ({user.name}, ID: {user_id}).")
@@ -363,7 +362,7 @@ class TBDatabase(app_commands.Group):
                     await interaction.response.send_message(
                         f"No TBs were found added by {user.mention} ({user.name}).", ephemeral=True
                     )
-                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                    await logs.master_log_message(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) attempted to purge TBs for {user.mention} ({user.name}, ID: {user_id}), but none were found."
                     )
             else:
@@ -377,7 +376,7 @@ class TBDatabase(app_commands.Group):
                     await interaction.response.send_message(
                         f"Successfully purged {count} TB(s) associated with the username `{username}`.", ephemeral=True
                     )
-                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                    await logs.master_log_message(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) associated with the username `{username}`."
                     )
                     await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) purged {count} TB(s) associated with the username `{username}`.")
@@ -385,14 +384,14 @@ class TBDatabase(app_commands.Group):
                     await interaction.response.send_message(
                         f"No TBs were found associated with the username `{username}`.", ephemeral=True
                     )
-                    await master_log_message(interaction.guild, bot, interaction.command.name,
+                    await logs.master_log_message(interaction.guild, bot, interaction.command.name,
                         f"{interaction.user.mention} ({interaction.user.name}) attempted to purge TBs for `{username}`, but none were found."
                     )
         except Exception as e:
             await interaction.response.send_message(
                 f"An error occurred while attempting to purge TBs. The Dev has been alerted.", ephemeral=True
             )
-            await log_error(interaction.guild, bot, interaction.command.name,
+            await logs.log_error(interaction.guild, bot, interaction.command.name,
                 f"{interaction.user.mention} ({interaction.user.name}) tried to purge TBs. Error: `{e}`"
             )
       
@@ -415,12 +414,12 @@ class TBDatabase(app_commands.Group):
 
         except Exception as e:
             await interaction.response.send_message(f"An error occurred while trying to find the TB. The Dev has been notified.", ephemeral=True)
-            await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB `{private_code}`. Error: {e}")
+            await logs.log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to remove TB `{private_code}`. Error: {e}")
             return
             
 # TB FORCEREMOVE
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(code="The PRIVATE code of the TB you want to remove")
     async def forceremove(self, interaction: discord.Interaction, code: str):
         """Smash crash forces removal of a TB from the public database."""
@@ -433,13 +432,13 @@ class TBDatabase(app_commands.Group):
                 conn1.commit()
                 await interaction.response.send_message(f"The TB with code `{code}` has been forcibly removed from the database.", ephemeral=True)
                 await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) forcibly removed TB `{code}` from the database.")
-                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) forcibly removed TB `{code}` from the database.")
+                await logs.master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) forcibly removed TB `{code}` from the database.")
             else:
                 await interaction.response.send_message(f"No TB with the code `{code}` was found in the database.", ephemeral=True)
-                await master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}` from the database but it wasn't there.")
+                await logs.master_log_message(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}` from the database but it wasn't there.")
         except Exception as e:
             await interaction.response.send_message(f"An error occurred while trying to remove the TB. The Dev has been notified.", ephemeral=True)
-            await log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}`. Error: {e}")
+            await logs.log_error(interaction.guild, bot, interaction.command.name, f"{interaction.user.mention} ({interaction.user.name}) tried to forcibly remove TB `{code}`. Error: {e}")
             
 # TB VIEW
     @app_commands.command()
@@ -453,7 +452,7 @@ class TBDatabase(app_commands.Group):
                 "An error occurred while retrieving the TB database. Please try again later.",
                 ephemeral=True
             )
-            await log_error(interaction.guild, bot, interaction.command.name,
+            await logs.log_error(interaction.guild, bot, interaction.command.name,
                 f"{interaction.user.mention} ({interaction.user.name}) used `view`. Error: {e}"
             )
             return
@@ -611,7 +610,7 @@ class TBDatabase(app_commands.Group):
                 "An error occurred while retrieving the TB codes. Please ask an Administrator to check the logs.",
                 ephemeral=True
             )
-            await log_error(
+            await logs.log_error(
                 interaction.guild, bot, interaction.command.name,
                 f"{interaction.user.mention} ({interaction.user.name}) used `bulkview`. Error: {e}"
             )

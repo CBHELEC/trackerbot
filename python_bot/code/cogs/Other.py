@@ -1,5 +1,5 @@
 import discord
-from functions import *
+from functions import checks, hostinfo
 from discord.ext import commands
 from discord import app_commands, Role
 from discord.app_commands import Transformer
@@ -43,7 +43,7 @@ class Other(commands.Cog):
 
 # FOXFIL
     @app_commands.command()
-    @is_perm_mod()
+    @checks.is_perm_mod()
     async def foxfil(self, interaction: discord.Interaction):
         """Sends some useful websites."""
         embed = discord.Embed(title="Websites, applications, and other resources for Geocaching",
@@ -77,7 +77,7 @@ class Other(commands.Cog):
     @commands.hybrid_command()
     async def about(self, ctx):
         """About the bot, and the Dev team."""
-        total, prefix, slash = get_command_counts(self.bot)
+        total, prefix, slash = hostinfo.get_command_counts(self.bot)
         embed = discord.Embed(title="About Me",
                             description=f"Yo! I'm Tracker, the ultimate Discord bot for Geocachers, made by Geocachers. Here's a bit about me...\nI'm made by a small team of Developers and Helpers. These people are:\n- CBH (me!, Lead Developer & Founder),\n- democat (Assistant Developer),\n- mikaboo055 (Tester & Helper),\n- echoperson (Artist & Tester),\n- fisk (Bugfixer & Tester),\n- FoxFil (Development Helper, yall can thank him for the OG code detection)\nWe have worked hard to make this bot and grow it to how it is now, and your support means the world to us.\nHere's some info about me, the bot:\n- I am in **{len(self.bot.guilds)}** servers,\n- I have **{total}** commands,\n- I am written in Python, more specifically with the discord.py library,\n- My prefix is **!**, but I mainly use slash (**/**) commands,\n- My website is [trackerbot.xyz](<https://trackerbot.xyz>).",
                             colour=0xad7e66)

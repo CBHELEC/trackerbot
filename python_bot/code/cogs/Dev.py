@@ -1,6 +1,6 @@
 import discord
 import asyncio
-from functions import *
+from functions import checks, logs, hostinfo, suggestreport
 from discord.ext import commands
 from discord import app_commands, Embed, Interaction, ButtonStyle
 from datetime import datetime
@@ -76,21 +76,15 @@ class HelpView(View):
             "Command Sets": Embed(
                 title="📦 | Command Sets",
                 description="/fun help - Shows all Fun commands and what they do\n"
-                            "/verify help - IS NOT AVAILABLE OUTSIDE OF THE MAIN SERVER (/invite geocaching)\n"
-                            "shows info about the verification system and what commands do\n"
+                            "/verify help - Shows info about the verification system and what commands do\n"
                             "/tb help - Shows all commands for the public TB database and what they do\n"
                             "/invite help - Shows all invite commands and what they do",
                 color=color
             ),
             "Bot Configuration": Embed(
                 title="🔧 | Bot Configuration",
-                description="/setperm <@role> - Sets roles that can use the message commands\n"
-                            "(/say, /delete, /edit, /react, /reply)\n"
-                            "/removeperm <@role> - Removes roles that can use the message commands\n"
-                            "(/say, /delete, /edit, /react, /reply)\n"
-                            "/setskullboard <status (enable or disable)> <#channel> - Sets whether skullboard is enabled and which channel it posts to\n"
-                            "/toggles - Toggles the bot's features on or off\n"
-                            "/settings - Shows the bot configuration for your server",
+                description="/config - Shows how to configure the bot\n"
+                            "/toggles - Toggles the bot's features on or off",
                 color=color
             ),
         }
@@ -109,18 +103,18 @@ class Dev(app_commands.Group):
 
 # STATUS  
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     @app_commands.describe(new_status="The new status for the bot.")
     async def status(self, interaction: discord.Interaction, *, new_status: str):
         """⚙️ | Change the Bot's status."""
         await self.bot.change_presence(activity=discord.CustomActivity(name=new_status))
         await interaction.response.send_message(f'Status changed to: `{new_status}`', ephemeral=True)
-        await master_log_message(interaction.guild, self.bot, interaction.command.name,f"{interaction.user.mention} ({interaction.user.name}) changed my status to `{new_status}`.")  
+        await logs.master_log_message(interaction.guild, self.bot, interaction.command.name,f"{interaction.user.mention} ({interaction.user.name}) changed my status to `{new_status}`.")  
         await log(interaction, f"{interaction.user.mention} ({interaction.user.name}) changed my status to `{new_status}`.")
 
 # CLEAR CMD  
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     async def clear_cmds(self, interaction: discord.Interaction):
         """⚙️ | Clears the Bot's app commands."""
         await interaction.response.defer()
@@ -137,7 +131,7 @@ class Dev(app_commands.Group):
         
 # SYNC    
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     async def sync(self, interaction: discord.Interaction):
         """⚙️ | Syncs the Bot's app commands."""
         await interaction.response.defer(ephemeral=True, thinking=True)        
@@ -154,7 +148,7 @@ class Dev(app_commands.Group):
 
 # RELOAD    
     @app_commands.command(name="reload", description="⚙️ | Reloads all cogs.")
-    @is_dev()
+    @checks.is_dev()
     async def reload(self, interaction: discord.Interaction):
         script_dir = Path(__file__).parent.resolve()
         for file in script_dir.glob("*.py"):
@@ -168,7 +162,7 @@ class Dev(app_commands.Group):
 
 # meme mode
     @app_commands.command()
-    @is_dev()
+    @checks.is_dev()
     async def meme_mode(self, interaction: discord.Interaction, user: discord.Member, amount: int):
         """⚙️ | Meme Mode."""
         await interaction.response.send_message("meme time folks")
@@ -189,7 +183,7 @@ class Misc(app_commands.Group):
         delta = now - self.bot.start_time
         formatted = str(delta).split('.')[0]
         embed = discord.Embed(title="Tracker's Status",
-                      description=f"Heya, I am running on a Raspberry Pi 3b cable tied behind my Dev's monitor, taped inside a cardboard box. I'm not a fan of it, but I can't do anything about it. Heres a lil more about me:\n⌚ | Uptime: **{formatted}** (HH:MM:SS)\n{get_formatted_ram_usage()}\n{get_formatted_cpu_usage()}\n{get_formatted_storage_usage()}\nWant live status info, maintenence plans, and previous downtime logs? [status.trackerbot.xyz](<https://status.trackerbot.xyz>)",
+                      description=f"Heya, I am running on a Raspberry Pi 3b cable tied behind my Dev's monitor, taped inside a cardboard box. I'm not a fan of it, but I can't do anything about it. Heres a lil more about me:\n⌚ | Uptime: **{formatted}** (HH:MM:SS)\n{hostinfo.get_formatted_ram_usage()}\n{hostinfo.get_formatted_cpu_usage()}\n{hostinfo.get_formatted_storage_usage()}\nWant live status info, maintenence plans, and previous downtime logs? [status.trackerbot.xyz](<https://status.trackerbot.xyz>)",
                       colour=0xad7e66)
 
         embed.set_footer(text="Developed by not.cbh | /invite support")
@@ -208,7 +202,7 @@ class Misc(app_commands.Group):
     @app_commands.command()
     async def suggest_report(self, interaction: discord.Interaction):
         """Suggest a new feature or report a bug."""
-        await interaction.response.send_modal(FullModal(self.bot, interaction))
+        await interaction.response.send_modal(suggestreport.FullModal(self.bot, interaction))
 
 class HelpCMD(commands.Cog):
     def __init__(self, bot):
